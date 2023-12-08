@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Audio Recording with Buffering</title>
+</head>
+<body>
+
+<button id="startButton">Start Recording</button>
+<button id="stopButton" disabled>Stop Recording</button>
+<audio id="audioPlayer" controls type="audio/wav"></audio>
+
+<script>
+    const startButton = document.getElementById('startButton');
+    const stopButton = document.getElementById('stopButton');
+    const audioPlayer = document.getElementById('audioPlayer');
+
+    let playingContext = {
+        audioContext: null,
+        nextTime: 0,
+        playing: false,
+        sendFinish: false,
+        latestAudioBufferSourceNode: null,
+        recordStartTime: 0,
+        recordStopTime: 0,
+    };
+
+    let recordingContext = {
+        stream: null,
+        isRecordingAllow: false,
+        isRecording: false,
+        audioContext: null,
+        mediaRecorder: null,
+        audioChunks: [],
+        bufferChunks: [],
+        bufferTime: 1000,
+    };
+
+    let socketContext = {
+        socket: null,
+    };
+
+    const url = 'ws://localhost:3000/v1/ws/talk/1/webm';
+    socketContext.socket = new WebSocket(url);
+    socketContext.socket.binaryType = "arraybuffer";
+
+    // init
+    (async () => {
+        if (!recordingContext.stream) {
+            recordingContext.stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                },
+                
+            });
+            const sampleRate = recordingContext.stream.getAudioTracks()[0].getSettings().sampleRate;
+            playingContext.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            recordingContext.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+            await recordingContext.audioContext.audioWorklet.addModule('audio-worklet-processors.js');
+            const volumeNode = new AudioWorkletNode(recordingContext.audioContext, 'volume-processor', {
+                processorOptions: {
+                    sampleRate: sampleRate,
+                    threshold: 0.02,
+                }
+            });
+            const source = recordingContext.audioContext.createMediaStreamSource(recordingContext.stream);
+
+            volumeNode.port.onmessage = event => {
+                const speak = event.data.speak;
+                if (speak && recordingContext.isRecordingAllow && !playingContext.playing) {
+                    console.log('start recording');
+                    recordingContext.mediaRecorder.start();
+                    recordingContext.recordStartTime = Date.now();
+                }else{
+                    if (recordingContext.mediaRecorder.state !== 'inactive'){
+                        console.log('stop recording');
+                        recordingContext.recordStopTime = Date.now();
+                        recordingContext.mediaRecorder.stop();
+                    }
+                }
+            };
+
+            source.connect(volumeNode).connect(recordingContext.audioContext.destination);
+
+            recordingContext.mediaRecorder = new MediaRecorder(recordingContext.stream, { mimeType: 'audio/webm' });
+            recordingContext.mediaRecorder.ondataavailable = event => {
+                const recordingTime = recordingContext.recordStopTime - recordingContext.recordStartTime;
+                // 1.3秒以上の音声データを送信
+                if (event.data.size > 0 && recordingTime > 1299) {
+                    playingStart();
+                    socketContext.socket.send(event.data);
+                }
+            };
+        }
+    })();
+
+    socketContext.socket.onmessage = function(event) {
+        // binaryの場合
+        if (event.data instanceof ArrayBuffer) {
+            //playPCM(event.data);
+            playWAV(event.data);
+            return;
+        }
+        // textの場合
+        const data = JSON.parse(event.data);
+        if (data.type === 'connection') {
+            console.log('connection', data.output, data.format);
+        } else if (data.type === 'chat-response') {
+            console.log('chat-response', data.text);
+        } else if (data.type === 'chat-request') {
+            console.log('chat-request', data.text);
+        } else if (data.type === 'chat-response-chunk') {
+            console.log('chat-response-chunk', data.text);
+        } else if (data.type === 'finish') {
+            playingContext.sendFinish = true;
+            console.log('finish');
+
+        } else if (data.type === 'error') {
+            console.log('error', data.error);
+        }
+    };
+
+    function playWAV(arrayBuffer) {
+        playingContext.audioContext.decodeAudioData(arrayBuffer, audioBuffer => {
+            const source = playingContext.audioContext.createBufferSource();
+            source.buffer = audioBuffer;
+            source.onended = (event) => {
+                if (event.target === playingContext.latestAudioBufferSourceNode && playingContext.sendFinish) {
+                    playingStop();
+                }
+            };
+            source.connect(playingContext.audioContext.destination);
+
+            // シームレスな再生のために次の開始時間を設定
+            if (playingContext.nextTime === 0) {
+                playingContext.nextTime = playingContext.audioContext.currentTime;
+            }
+
+            source.start(playingContext.nextTime);
+            // 次のオーディオチャンクの再生開始時間を更新
+            // 100msのバッファを設ける
+            playingContext.nextTime += (audioBuffer.duration + 0.1);
+
+            playingContext.latestAudioBufferSourceNode = source;
+        });
+    }
+
+    function playPCM(arrayBuffer) {
+        // 16ビットのサンプルをFloat32Arrayに変換
+        const int16Array = new Int16Array(arrayBuffer);
+        const float32Array = new Float32Array(int16Array.length);
+
+        for (let i = 0; i < int16Array.length; i++) {
+            // Int16の範囲(-32768 to 32767)をFloat32の範囲(-1.0 to 1.0)に正規化
+            float32Array[i] = int16Array[i] / 32768;
+        }
+
+        // AudioBufferの作成
+        const audioBuffer = playingContext.audioContext.createBuffer(1, float32Array.length, 22050);
+        audioBuffer.getChannelData(0).set(float32Array);
+
+        // AudioBufferSourceNodeの作成と設定
+        const source = playingContext.audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(playingContext.audioContext.destination);
+
+        // シームレスな再生のために次の開始時間を設定
+        if (playingContext.nextTime === 0) {
+            playingContext.nextTime = playingContext.audioContext.currentTime;
+        }
+
+        source.start(playingContext.nextTime);
+        // 次のオーディオチャンクの再生開始時間を更新
+        playingContext.nextTime += audioBuffer.duration;
+    }
+
+    function playingStart(){
+        playingContext.nextTime = 0;
+        playingContext.playing = true;
+        playingContext.sendFinish = false;
+    }
+
+    function playingStop(){
+        playingContext.nextTime = 0;
+        playingContext.playing = false;
+        playingContext.sendFinish = false;
+    }
+
+    startButton.addEventListener('click', startRecordingAllow);
+    stopButton.addEventListener('click', stopRecordingAllow);
+
+    function startRecordingAllow() {
+        if (!recordingContext.isRecordingAllow) {
+            recordingContext.isRecordingAllow = true;
+        }
+
+        startButton.disabled = true;
+        stopButton.disabled = false;
+
+    }
+
+    function stopRecordingAllow() {
+        if (recordingContext.isRecordingAllow) {
+            recordingContext.isRecordingAllow = false;
+        }
+
+        startButton.disabled = false;
+        stopButton.disabled = true;
+    }
+</script>
+
+</body>
+</html>
