@@ -15,6 +15,10 @@ type BinaryInput struct {
 	Data []byte
 }
 
+type TextInput struct {
+	Text string `json:"text"`
+}
+
 type ConnectionOutput struct {
 	BaseOutput // Type: connection
 	// elevenlabs, voicevox
@@ -92,24 +96,33 @@ func WSTalk() fiber.Handler {
 
 		c.WriteMessage(websocket.TextMessage, []byte(connectionOutput))
 
-		var mt int
-		var msg []byte
-		var err error
 		for {
-			if mt, msg, err = c.ReadMessage(); err != nil || mt != websocket.BinaryMessage {
-				sendError(c, err)
-				break
-			}
-			binaryInput := BinaryInput{
-				Data: msg,
-			}
-
+			mt, msg, err := c.ReadMessage()
 			start := time.Now()
-
-			requestText, err := api.Whisper(openai, binaryInput.Data, fileType)
 			if err != nil {
 				sendError(c, err)
 				break
+			}
+
+			var requestText string
+			if mt == websocket.BinaryMessage {
+				binaryInput := BinaryInput{
+					Data: msg,
+				}
+				requestText, err = api.Whisper(openai, binaryInput.Data, fileType)
+				if err != nil {
+					sendError(c, err)
+					break
+				}
+			}
+			if mt == websocket.TextMessage {
+				textInput := TextInput{}
+				err = json.Unmarshal(msg, &textInput)
+				if err != nil {
+					sendError(c, err)
+					break
+				}
+				requestText = textInput.Text
 			}
 
 			chatReqOutput, _ := json.Marshal(ChatRequestOutput{

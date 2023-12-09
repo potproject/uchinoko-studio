@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Audio Recording with Buffering</title>
+</head>
+<body>
+
+<button id="startButton">Start Recording</button>
+<button id="stopButton" disabled>Stop Recording</button>
+<audio id="audioPlayer" controls type="audio/wav"></audio>
+
+<script>
+    const startButton = document.getElementById('startButton');
+    const stopButton = document.getElementById('stopButton');
+    const audioPlayer = document.getElementById('audioPlayer');
+
+    let playingContext = {
+        audioContext: null,
+        nextTime: 0,
+        playing: false,
+        sendFinish: false,
+        latestAudioBufferSourceNode: null,
+        recordStartTime: 0,
+        recordStopTime: 0,
+    };
+
+    let recordingContext = {
+        speechRecognition: null,
+        isRecordingAllow: false,
+    };
+
+    let socketContext = {
+        socket: null,
+    };
+
+    const url = 'ws://localhost:3000/v1/ws/talk/1/webm';
+    socketContext.socket = new WebSocket(url);
+    socketContext.socket.binaryType = "arraybuffer";
+
+    // init
+    (async () => {
+        playingContext.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        if (!recordingContext.speechRecognition) {
+            
+            const speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recordingContext.speechRecognition = new speech();
+            recordingContext.speechRecognition.lang = 'ja-JP';
+            recordingContext.speechRecognition.continuous = true;
+            recordingContext.speechRecognition.interimResults = true;
+            recordingContext.speechRecognition.maxAlternatives = 1;
+            recordingContext.speechRecognition.onresult = (event) => {
+                const results = event.results;
+                for (let i = event.resultIndex; i < results.length; i++) {
+                    if (results[i].isFinal && results[i][0].confidence > 0.5 && results[i][0].transcript) {
+                        const text = results[i][0].transcript;
+                        socketContext.socket.send(JSON.stringify({
+                            text: text,
+                        }));
+                    }
+                }
+            };
+        }
+    })();
+
+    socketContext.socket.onmessage = function(event) {
+        // binaryの場合
+        if (event.data instanceof ArrayBuffer) {
+            //playPCM(event.data);
+            playWAV(event.data);
+            return;
+        }
+        // textの場合
+        const data = JSON.parse(event.data);
+        if (data.type === 'connection') {
+            console.log('connection', data.output, data.format);
+        } else if (data.type === 'chat-response') {
+            console.log('chat-response', data.text);
+        } else if (data.type === 'chat-request') {
+            console.log('chat-request', data.text);
+        } else if (data.type === 'chat-response-chunk') {
+            console.log('chat-response-chunk', data.text);
+        } else if (data.type === 'finish') {
+            playingContext.sendFinish = true;
+            console.log('finish');
+
+        } else if (data.type === 'error') {
+            console.log('error', data.error);
+        }
+    };
+
+    function playWAV(arrayBuffer) {
+        playingContext.audioContext.decodeAudioData(arrayBuffer, audioBuffer => {
+            const source = playingContext.audioContext.createBufferSource();
+            source.buffer = audioBuffer;
+            source.onended = (event) => {
+                if (event.target === playingContext.latestAudioBufferSourceNode && playingContext.sendFinish) {
+                    playingStop();
+                }
+            };
+            source.connect(playingContext.audioContext.destination);
+
+            // シームレスな再生のために次の開始時間を設定
+            if (playingContext.nextTime === 0) {
+                playingContext.nextTime = playingContext.audioContext.currentTime;
+            }
+
+            source.start(playingContext.nextTime);
+            // 次のオーディオチャンクの再生開始時間を更新
+            // 100msのバッファを設ける
+            playingContext.nextTime += (audioBuffer.duration + 0.1);
+
+            playingContext.latestAudioBufferSourceNode = source;
+        });
+    }
+
+    function playPCM(arrayBuffer) {
+        // 16ビットのサンプルをFloat32Arrayに変換
+        const int16Array = new Int16Array(arrayBuffer);
+        const float32Array = new Float32Array(int16Array.length);
+
+        for (let i = 0; i < int16Array.length; i++) {
+            // Int16の範囲(-32768 to 32767)をFloat32の範囲(-1.0 to 1.0)に正規化
+            float32Array[i] = int16Array[i] / 32768;
+        }
+
+        // AudioBufferの作成
+        const audioBuffer = playingContext.audioContext.createBuffer(1, float32Array.length, 22050);
+        audioBuffer.getChannelData(0).set(float32Array);
+
+        // AudioBufferSourceNodeの作成と設定
+        const source = playingContext.audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(playingContext.audioContext.destination);
+
+        // シームレスな再生のために次の開始時間を設定
+        if (playingContext.nextTime === 0) {
+            playingContext.nextTime = playingContext.audioContext.currentTime;
+        }
+
+        source.start(playingContext.nextTime);
+        // 次のオーディオチャンクの再生開始時間を更新
+        playingContext.nextTime += audioBuffer.duration;
+    }
+
+    function playingStart(){
+        playingContext.nextTime = 0;
+        playingContext.playing = true;
+        playingContext.sendFinish = false;
+    }
+
+    function playingStop(){
+        playingContext.nextTime = 0;
+        playingContext.playing = false;
+        playingContext.sendFinish = false;
+    }
+
+    startButton.addEventListener('click', startRecordingAllow);
+    stopButton.addEventListener('click', stopRecordingAllow);
+
+    function startRecordingAllow() {
+        if (!recordingContext.isRecordingAllow) {
+            recordingContext.isRecordingAllow = true;
+            recordingContext.speechRecognition.start();
+        }
+
+        startButton.disabled = true;
+        stopButton.disabled = false;
+
+    }
+
+    function stopRecordingAllow() {
+        if (recordingContext.isRecordingAllow) {
+            recordingContext.isRecordingAllow = false;
+            recordingContext.speechRecognition.stop();
+        }
+
+        startButton.disabled = false;
+        stopButton.disabled = true;
+    }
+</script>
+
+</body>
+</html>
