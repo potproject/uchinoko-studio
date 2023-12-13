@@ -14,24 +14,24 @@ import (
 
 const chars = ".,?!;:—-()[]{} 。、？！；：ー「」（）［］｛｝　\"'"
 
-func ChatStream(c *OpenAIClientExtend, text string, chunkMessage chan<- TextMessage, responseText chan string) error {
+func ChatStream(c *OpenAIClientExtend, cm []openai.ChatCompletionMessage, text string, chunkMessage chan<- TextMessage, responseText chan string) ([]openai.ChatCompletionMessage, error) {
 	ctx := context.Background()
+
+	ncm := append(cm, openai.ChatCompletionMessage{
+		Role:    openai.ChatMessageRoleUser,
+		Content: text,
+	})
 
 	req := openai.ChatCompletionRequest{
 		Model:     envgen.Get().OPENAI_CHAT_MODEL(),
 		MaxTokens: 4096,
-		Messages: []openai.ChatCompletionMessage{
-			{
-				Role:    openai.ChatMessageRoleUser,
-				Content: text,
-			},
-		},
-		Stream: true,
+		Messages:  ncm,
+		Stream:    true,
 	}
 	stream, err := c.Client.CreateChatCompletionStream(ctx, req)
 	if err != nil {
 		log.Printf("ChatCompletionStream error: %v\n", err)
-		return err
+		return cm, err
 	}
 	defer stream.Close()
 
@@ -47,12 +47,18 @@ func ChatStream(c *OpenAIClientExtend, text string, chunkMessage chan<- TextMess
 				IsFirst: firstSend,
 				IsFinal: true,
 			}
-			return nil
+			return append(
+				ncm,
+				openai.ChatCompletionMessage{
+					Role:    openai.ChatMessageRoleAssistant,
+					Content: allText,
+				},
+			), nil
 		}
 
 		if err != nil {
 			fmt.Printf("\nStream error: %v\n", err)
-			return err
+			return cm, err
 		}
 		content := response.Choices[0].Delta.Content
 		allText += content
@@ -82,7 +88,13 @@ func ChatStream(c *OpenAIClientExtend, text string, chunkMessage chan<- TextMess
 				IsFirst: firstSend,
 				IsFinal: true,
 			}
-			return nil
+			return append(
+				ncm,
+				openai.ChatCompletionMessage{
+					Role:    openai.ChatMessageRoleAssistant,
+					Content: allText,
+				},
+			), nil
 		}
 	}
 }

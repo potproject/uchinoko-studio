@@ -40,7 +40,21 @@
         socket: null,
     };
 
-    const url = 'ws://localhost:3000/v1/ws/talk/1/webm';
+    // generate uuid
+    function uuidv4() {
+        return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
+            (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+        );
+    }
+
+    // load uuid from local storage
+    let uuid = localStorage.getItem('uuid');
+    if (!uuid){
+        uuid = uuidv4();
+        localStorage.setItem('uuid', uuid);
+    }
+
+    const url = `ws://localhost:3000/v1/ws/talk/${uuid}/webm`;
     socketContext.socket = new WebSocket(url);
     socketContext.socket.binaryType = "arraybuffer";
 

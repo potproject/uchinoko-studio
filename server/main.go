@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/joho/godotenv"
+	"github.com/potproject/uchinoko/db"
 	"github.com/potproject/uchinoko/envgen"
 	"github.com/potproject/uchinoko/router"
 	"tailscale.com/tsnet"
@@ -13,11 +14,16 @@ import (
 
 func main() {
 	envSetup()
+	dbSetup()
 	if envgen.Get().TAILSCALE_ENABLED() == false {
 		serverSetup()
 	} else {
 		tailscaleSetup()
 	}
+}
+
+func dbSetup() {
+	db.Start()
 }
 
 func envSetup() {

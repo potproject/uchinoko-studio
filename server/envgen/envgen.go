@@ -9,6 +9,13 @@ import (
 	"strings"
 )
 
+func (g getter) DB_FILE_PATH() string {
+	return env.DB_FILE_PATH
+}
+func (s setter) DB_FILE_PATH(value string) {
+	env.DB_FILE_PATH = value
+	return
+}
 func (g getter) ELEVENLABS_API_KEY() string {
 	return env.ELEVENLABS_API_KEY
 }
@@ -109,6 +116,7 @@ func (s setter) VOICE_OUTPUT(value string) {
 }
 
 type environment struct {
+	DB_FILE_PATH             string
 	ELEVENLABS_API_KEY       string
 	ELEVENLABS_OUTPUT_FORMAT string
 	ELEVENLABS_VOICEID       string
@@ -131,6 +139,7 @@ var env environment
 // If the type conversion fails, it returns error.
 func Load() error {
 	var err error
+	DB_FILE_PATH := os.Getenv("DB_FILE_PATH")
 	ELEVENLABS_API_KEY := os.Getenv("ELEVENLABS_API_KEY")
 	ELEVENLABS_OUTPUT_FORMAT := os.Getenv("ELEVENLABS_OUTPUT_FORMAT")
 	ELEVENLABS_VOICEID := os.Getenv("ELEVENLABS_VOICEID")
@@ -177,6 +186,7 @@ func Load() error {
 	VOICEVOX_SPEAKER := int64(VOICEVOX_SPEAKER__64)
 	VOICE_OUTPUT := os.Getenv("VOICE_OUTPUT")
 	env = environment{
+		DB_FILE_PATH:             DB_FILE_PATH,
 		ELEVENLABS_API_KEY:       ELEVENLABS_API_KEY,
 		ELEVENLABS_OUTPUT_FORMAT: ELEVENLABS_OUTPUT_FORMAT,
 		ELEVENLABS_VOICEID:       ELEVENLABS_VOICEID,
@@ -196,6 +206,7 @@ func Load() error {
 }
 
 type getterInterface interface {
+	DB_FILE_PATH() string
 	ELEVENLABS_API_KEY() string
 	ELEVENLABS_OUTPUT_FORMAT() string
 	ELEVENLABS_VOICEID() string
@@ -222,6 +233,7 @@ func Get() getter {
 }
 
 type setterInterface interface {
+	DB_FILE_PATH() string
 	ELEVENLABS_API_KEY() string
 	ELEVENLABS_OUTPUT_FORMAT() string
 	ELEVENLABS_VOICEID() string

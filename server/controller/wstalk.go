@@ -8,6 +8,8 @@ import (
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/potproject/uchinoko/api"
+	"github.com/potproject/uchinoko/data"
+	"github.com/potproject/uchinoko/db"
 	"github.com/potproject/uchinoko/envgen"
 )
 
@@ -62,7 +64,7 @@ type BinaryOutput struct {
 
 func WSTalk() fiber.Handler {
 	return websocket.New(func(c *websocket.Conn) {
-		// id := c.Params("id")
+		id := c.Params("id")
 		fileType := c.Params("fileType")
 
 		if fileType != "mp4" && fileType != "mp3" && fileType != "wav" && fileType != "webm" {
@@ -141,7 +143,17 @@ func WSTalk() fiber.Handler {
 			chunkMessage := make(chan api.TextMessage)
 
 			go func() {
-				err = api.ChatStream(openai, requestText, chunkMessage, chatDone)
+				cm, err := db.GetChatMessage(id)
+				if err != nil {
+					sendError(c, err)
+				}
+				ncm, err := api.ChatStream(openai, cm.Chat, requestText, chunkMessage, chatDone)
+				if err != nil {
+					sendError(c, err)
+				}
+				db.PutChatMessage(id, data.ChatMessage{
+					Chat: ncm,
+				})
 				if err != nil {
 					sendError(c, err)
 				}

@@ -8,6 +8,7 @@ import (
 func Route() *fiber.App {
 	app := fiber.New()
 	app.Static("/", "../public")
+	app.Get("stat", controller.Stat)
 	app.Use("/v1/ws/talk", controller.WS)
 	app.Get("/v1/ws/talk/:id/:fileType", controller.WSTalk())
 
