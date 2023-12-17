@@ -7,12 +7,21 @@
     let wsOk = false;
     let start = false;
 
+    let slientAudio: HTMLAudioElement;
+
     let onClick = () => {
         start = true;
-        // 0.5秒後にstartイベントを発火
-        setTimeout(() => {
-            dispatch('start');
-        }, 500);
+        // 音声アンロック
+        const audio = new AudioContext();
+        const source = audio.createMediaElementSource(slientAudio);
+        source.connect(audio.destination);
+        slientAudio.play();
+        
+        slientAudio.onended = () => {
+            dispatch('start', {
+                audio,
+            });
+        }
     }
 
     const checkMic = async () => {
@@ -41,6 +50,7 @@
 
 
 <main class="bg-gradient-to-r from-cyan-100 to-blue-400 w-screen h-screen flex justify-center items-center">
+    <audio src="/audio/silent.mp3" preload="auto" class="hidden" bind:this={slientAudio}></audio>
     <div class="card bg-white shadow-lg rounded-3xl h-auto mx-auto border border-cyan-600 border-opacity-50 border-2 w-96 md:w-1/2 lg:w-1/3 {start ? 'animate-scale-out-horizontal' : 'animate-scale-in-hor-center'}">
         <div class="card-header p-4 flex m-2">
             <h1 class="text-3xl font-bold flex-1">Uchinoko(β)</h1>

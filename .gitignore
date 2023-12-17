@@ -1,3 +1,4 @@
 .env
 *.mp3
+!slient.mp3
 server/leveldb
