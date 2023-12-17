@@ -23,18 +23,18 @@ func PutChatMessage(id string, cM data.ChatMessage) error {
 	return put(key, value)
 }
 
-func GetChatMessage(id string) (data.ChatMessage, error) {
+func GetChatMessage(id string) (cm data.ChatMessage, empty bool, err error) {
 	key := []byte(id + "/chatmessage")
 	value, err := get(key)
 	if err == leveldb.ErrNotFound {
-		return initChatMessage(), nil
+		return initChatMessage(), true, nil
 	} else if err != nil {
-		return data.ChatMessage{}, err
+		return data.ChatMessage{}, false, err
 	}
 	var cM data.ChatMessage
 	err = json.Unmarshal(value, &cM)
 	if err != nil {
-		return data.ChatMessage{}, err
+		return data.ChatMessage{}, false, err
 	}
-	return cM, nil
+	return cM, false, nil
 }

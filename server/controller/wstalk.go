@@ -143,7 +143,7 @@ func WSTalk() fiber.Handler {
 			chunkMessage := make(chan api.TextMessage)
 
 			go func() {
-				cm, err := db.GetChatMessage(id)
+				cm, _, err := db.GetChatMessage(id)
 				if err != nil {
 					sendError(c, err)
 				}
