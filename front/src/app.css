@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+    font-family: -apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans",Meiryo,sans-serif,"Segoe UI Emoji";
+}
+
+@layer utilities {
+    .hidden-scrollbar {
+      -ms-overflow-style: none; /* IE, Edge 対応 */
+      scrollbar-width: none; /* Firefox 対応 */
+    }
+    .hidden-scrollbar::-webkit-scrollbar {
+      /* Chrome, Safari 対応 */
+      display: none;
+    }
+}
