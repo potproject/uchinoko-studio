@@ -12,7 +12,7 @@ func Route() *fiber.App {
 	app.Get("/adminopr/stat", controller.Stat)
 	app.Get("/v1/chat/:id", controller.Chat)
 	app.Use("/v1/ws/talk", controller.WS)
-	app.Get("/v1/ws/talk/:id/:fileType", controller.WSTalk())
+	app.Get("/v1/ws/talk/:id/:voiceType/:fileType", controller.WSTalk())
 
 	return app
 }

@@ -66,13 +66,17 @@ func WSTalk() fiber.Handler {
 	return websocket.New(func(c *websocket.Conn) {
 		id := c.Params("id")
 		fileType := c.Params("fileType")
+		voiceType := c.Params("voiceType")
 
 		if fileType != "mp4" && fileType != "mp3" && fileType != "wav" && fileType != "webm" {
 			c.Close()
 			return
 		}
 
-		outputSelect := envgen.Get().VOICE_OUTPUT()
+		if voiceType != "voicevox" && voiceType != "elevenlabs" {
+			c.Close()
+			return
+		}
 
 		openai := api.OpenAINewClient()
 
@@ -84,7 +88,7 @@ func WSTalk() fiber.Handler {
 		voicevoxSpeaker := envgen.Get().VOICEVOX_SPEAKER()
 
 		format := "wav"
-		if outputSelect == "elevenlabs" {
+		if voiceType == "elevenlabs" {
 			format = outputFormat
 		}
 
@@ -92,7 +96,7 @@ func WSTalk() fiber.Handler {
 			BaseOutput: BaseOutput{
 				Type: "connection",
 			},
-			Output: outputSelect,
+			Output: voiceType,
 			Format: format,
 		})
 
@@ -158,16 +162,18 @@ func WSTalk() fiber.Handler {
 					sendError(c, err)
 				}
 			}()
-			if outputSelect == "voicevox" {
+			if voiceType == "voicevox" {
 				go func() {
-					err = api.VoicevoxTTSStream(voicevox, voicevoxSpeaker, chunkMessage, outAudio, outText, ttsDone)
+					err = api.VoicevoxTTSStream(voicevox, voicevoxSpeaker, chunkMessage, outAudio, outText)
+					ttsDone <- true
 					if err != nil {
 						sendError(c, err)
 					}
 				}()
 			} else {
 				go func() {
-					err := api.ElevenLabsTTSWebsocket(el, voiceID, outputFormat, chunkMessage, outAudio, outText, ttsDone)
+					err := api.ElevenLabsTTSWebsocket(el, voiceID, outputFormat, chunkMessage, outAudio, outText)
+					ttsDone <- true
 					if err != nil {
 						sendError(c, err)
 					}
@@ -221,6 +227,7 @@ func WSTalk() fiber.Handler {
 					c.WriteMessage(websocket.TextMessage, chatResOutput)
 				}
 			}
+			log.Println("close")
 			close(outText)
 			close(outAudio)
 			close(chatDone)

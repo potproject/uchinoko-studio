@@ -45,7 +45,8 @@ type ElevenLabsWebsocketResponse struct {
 	} `json:"normalizedAlignment"`
 }
 
-func ElevenLabsTTSWebsocket(c *ElevenLabsClientExtend, voiceID string, outputFormat string, chunkMessage <-chan TextMessage, outAudio chan []byte, outText chan string, done chan bool) error {
+func ElevenLabsTTSWebsocket(c *ElevenLabsClientExtend, voiceID string, outputFormat string, chunkMessage <-chan TextMessage, outAudio chan []byte, outText chan string) error {
+	var done = make(chan bool)
 	// Setup
 	url := elevenlabsWebsocketURL
 	url = strings.Replace(url, "{voice_id}", voiceID, 1)
@@ -81,14 +82,22 @@ func ElevenLabsTTSWebsocket(c *ElevenLabsClientExtend, voiceID string, outputFor
 				return
 			}
 			outAudio <- decudeAudio
+			if res.IsFinal {
+				done <- true
+				return
+			}
 		}
 	}()
 
 	// Write Routine
 	go func() {
+	Process:
 		for {
 			select {
 			case t := <-chunkMessage:
+				if len(t.Text) == 0 && !t.IsFinal && !t.IsFirst {
+					continue
+				}
 				outText <- t.Text
 				if t.IsFirst {
 					err := ws.WriteJSON(ElevenLabsWebsocketRequestStart{
@@ -105,8 +114,7 @@ func ElevenLabsTTSWebsocket(c *ElevenLabsClientExtend, voiceID string, outputFor
 
 					if err != nil {
 						log.Printf("write error: %v", err)
-						done <- true
-						return
+						break Process
 					}
 					continue
 				}
@@ -117,8 +125,7 @@ func ElevenLabsTTSWebsocket(c *ElevenLabsClientExtend, voiceID string, outputFor
 
 				if err != nil {
 					log.Printf("write error: %v", err)
-					done <- true
-					return
+					break Process
 				}
 
 				if t.IsFinal {
@@ -128,8 +135,7 @@ func ElevenLabsTTSWebsocket(c *ElevenLabsClientExtend, voiceID string, outputFor
 
 					if err != nil {
 						log.Printf("write error: %v", err)
-						done <- true
-						return
+						break Process
 					}
 				}
 			}

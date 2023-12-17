@@ -14,7 +14,7 @@ import (
 
 const chars = ".,?!;:—-()[]{} 。、？！；：ー「」（）［］｛｝　\"'"
 
-func ChatStream(c *OpenAIClientExtend, cm []openai.ChatCompletionMessage, text string, chunkMessage chan<- TextMessage, responseText chan string) ([]openai.ChatCompletionMessage, error) {
+func ChatStream(c *OpenAIClientExtend, cm []openai.ChatCompletionMessage, text string, chunkMessage chan TextMessage, responseText chan string) ([]openai.ChatCompletionMessage, error) {
 	ctx := context.Background()
 
 	ncm := append(cm, openai.ChatCompletionMessage{

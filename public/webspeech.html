@@ -14,7 +14,9 @@
     const startButton = document.getElementById('startButton');
     const stopButton = document.getElementById('stopButton');
     const audioPlayer = document.getElementById('audioPlayer');
-
+    const voiceType = 'voicevox';
+    // const voiceType = 'elevenlabs';
+    
     let playingContext = {
         audioContext: null,
         nextTime: 0,
@@ -48,7 +50,7 @@
         localStorage.setItem('uuid', uuid);
     }
 
-    const url = `ws://localhost:3000/v1/ws/talk/${uuid}/webm`;
+    const url = `ws://localhost:3000/v1/ws/talk/${uuid}/${voiceType}/webm`;
     socketContext.socket = new WebSocket(url);
     socketContext.socket.binaryType = "arraybuffer";
 
@@ -80,9 +82,13 @@
     socketContext.socket.onmessage = function(event) {
         // binaryの場合
         if (event.data instanceof ArrayBuffer) {
-            //playPCM(event.data);
-            playWAV(event.data);
-            return;
+            if (voiceType === 'voicevox'){
+                playWAV(event.data);
+                return;
+            }else{
+                playPCM(event.data);
+                return;
+            }
         }
         // textの場合
         const data = JSON.parse(event.data);
@@ -145,6 +151,12 @@
         // AudioBufferSourceNodeの作成と設定
         const source = playingContext.audioContext.createBufferSource();
         source.buffer = audioBuffer;
+        source.onended = (event) => {
+            console.log('onended', event);
+            if (event.target === playingContext.latestAudioBufferSourceNode && playingContext.sendFinish) {
+                playingStop();
+            }
+        };
         source.connect(playingContext.audioContext.destination);
 
         // シームレスな再生のために次の開始時間を設定
@@ -155,6 +167,8 @@
         source.start(playingContext.nextTime);
         // 次のオーディオチャンクの再生開始時間を更新
         playingContext.nextTime += audioBuffer.duration;
+
+        playingContext.latestAudioBufferSourceNode = source;
     }
 
     function playingStart(){

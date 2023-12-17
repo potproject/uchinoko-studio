@@ -107,13 +107,6 @@ func (s setter) VOICEVOX_SPEAKER(value int64) {
 	env.VOICEVOX_SPEAKER = value
 	return
 }
-func (g getter) VOICE_OUTPUT() string {
-	return env.VOICE_OUTPUT
-}
-func (s setter) VOICE_OUTPUT(value string) {
-	env.VOICE_OUTPUT = value
-	return
-}
 
 type environment struct {
 	DB_FILE_PATH             string
@@ -130,7 +123,6 @@ type environment struct {
 	TAILSCALE_PORT           int32
 	VOICEVOX_ENDPOINT        string
 	VOICEVOX_SPEAKER         int64
-	VOICE_OUTPUT             string
 }
 
 var env environment
@@ -184,7 +176,6 @@ func Load() error {
 		return errors.New("VOICEVOX_SPEAKER: " + err.Error())
 	}
 	VOICEVOX_SPEAKER := int64(VOICEVOX_SPEAKER__64)
-	VOICE_OUTPUT := os.Getenv("VOICE_OUTPUT")
 	env = environment{
 		DB_FILE_PATH:             DB_FILE_PATH,
 		ELEVENLABS_API_KEY:       ELEVENLABS_API_KEY,
@@ -200,7 +191,6 @@ func Load() error {
 		TAILSCALE_PORT:           TAILSCALE_PORT,
 		VOICEVOX_ENDPOINT:        VOICEVOX_ENDPOINT,
 		VOICEVOX_SPEAKER:         VOICEVOX_SPEAKER,
-		VOICE_OUTPUT:             VOICE_OUTPUT,
 	}
 	return err
 }
@@ -220,7 +210,6 @@ type getterInterface interface {
 	TAILSCALE_PORT() int32
 	VOICEVOX_ENDPOINT() string
 	VOICEVOX_SPEAKER() int64
-	VOICE_OUTPUT() string
 }
 type getter struct {
 	getterInterface
@@ -247,7 +236,6 @@ type setterInterface interface {
 	TAILSCALE_PORT() int32
 	VOICEVOX_ENDPOINT() string
 	VOICEVOX_SPEAKER() int64
-	VOICE_OUTPUT() string
 }
 type setter struct {
 	setterInterface

@@ -16,13 +16,12 @@ type Request struct {
 	Text string `json:"text"`
 }
 
-func VoicevoxTTSStream(endpoint string, speaker int64, chunkMessage <-chan TextMessage, outAudio chan []byte, outText chan string, done chan bool) error {
+func VoicevoxTTSStream(endpoint string, speaker int64, chunkMessage <-chan TextMessage, outAudio chan []byte, outText chan string) error {
 	for {
 		select {
 		case t := <-chunkMessage:
 			if len(t.Text) == 0 {
 				if t.IsFinal {
-					done <- true
 					return nil
 				}
 				continue
@@ -35,7 +34,6 @@ func VoicevoxTTSStream(endpoint string, speaker int64, chunkMessage <-chan TextM
 			outText <- t.Text
 			outAudio <- bin
 			if t.IsFinal {
-				done <- true
 				return nil
 			}
 		}
