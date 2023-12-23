@@ -15,7 +15,8 @@
     const stopButton = document.getElementById('stopButton');
     const audioPlayer = document.getElementById('audioPlayer');
     //const voiceType = 'voicevox';
-    const voiceType = 'elevenlabs';
+    //const voiceType = 'elevenlabs';
+    const voiceType = 'bertvits2';
 
     let playingContext = {
         audioContext: null,
@@ -115,7 +116,7 @@
     socketContext.socket.onmessage = function(event) {
         // binaryの場合
         if (event.data instanceof ArrayBuffer) {
-            if (voiceType === 'voicevox'){
+            if (voiceType === 'voicevox' || voiceType === 'bertvits2') {
                 playWAV(event.data);
                 return;
             }else{

@@ -9,6 +9,27 @@ import (
 	"strings"
 )
 
+func (g getter) BERTVITS2_ENDPOINT() string {
+	return env.BERTVITS2_ENDPOINT
+}
+func (s setter) BERTVITS2_ENDPOINT(value string) {
+	env.BERTVITS2_ENDPOINT = value
+	return
+}
+func (g getter) BERTVITS2_MODEL_ID() int64 {
+	return env.BERTVITS2_MODEL_ID
+}
+func (s setter) BERTVITS2_MODEL_ID(value int64) {
+	env.BERTVITS2_MODEL_ID = value
+	return
+}
+func (g getter) BERTVITS2_SPEAKER_ID() int64 {
+	return env.BERTVITS2_SPEAKER_ID
+}
+func (s setter) BERTVITS2_SPEAKER_ID(value int64) {
+	env.BERTVITS2_SPEAKER_ID = value
+	return
+}
 func (g getter) DB_FILE_PATH() string {
 	return env.DB_FILE_PATH
 }
@@ -109,6 +130,9 @@ func (s setter) VOICEVOX_SPEAKER(value int64) {
 }
 
 type environment struct {
+	BERTVITS2_ENDPOINT       string
+	BERTVITS2_MODEL_ID       int64
+	BERTVITS2_SPEAKER_ID     int64
 	DB_FILE_PATH             string
 	ELEVENLABS_API_KEY       string
 	ELEVENLABS_OUTPUT_FORMAT string
@@ -131,6 +155,19 @@ var env environment
 // If the type conversion fails, it returns error.
 func Load() error {
 	var err error
+	BERTVITS2_ENDPOINT := os.Getenv("BERTVITS2_ENDPOINT")
+	BERTVITS2_MODEL_ID__S := os.Getenv("BERTVITS2_MODEL_ID")
+	BERTVITS2_MODEL_ID__64, err := strconv.ParseInt(BERTVITS2_MODEL_ID__S, 10, 64)
+	if err != nil {
+		return errors.New("BERTVITS2_MODEL_ID: " + err.Error())
+	}
+	BERTVITS2_MODEL_ID := int64(BERTVITS2_MODEL_ID__64)
+	BERTVITS2_SPEAKER_ID__S := os.Getenv("BERTVITS2_SPEAKER_ID")
+	BERTVITS2_SPEAKER_ID__64, err := strconv.ParseInt(BERTVITS2_SPEAKER_ID__S, 10, 64)
+	if err != nil {
+		return errors.New("BERTVITS2_SPEAKER_ID: " + err.Error())
+	}
+	BERTVITS2_SPEAKER_ID := int64(BERTVITS2_SPEAKER_ID__64)
 	DB_FILE_PATH := os.Getenv("DB_FILE_PATH")
 	ELEVENLABS_API_KEY := os.Getenv("ELEVENLABS_API_KEY")
 	ELEVENLABS_OUTPUT_FORMAT := os.Getenv("ELEVENLABS_OUTPUT_FORMAT")
@@ -177,6 +214,9 @@ func Load() error {
 	}
 	VOICEVOX_SPEAKER := int64(VOICEVOX_SPEAKER__64)
 	env = environment{
+		BERTVITS2_ENDPOINT:       BERTVITS2_ENDPOINT,
+		BERTVITS2_MODEL_ID:       BERTVITS2_MODEL_ID,
+		BERTVITS2_SPEAKER_ID:     BERTVITS2_SPEAKER_ID,
 		DB_FILE_PATH:             DB_FILE_PATH,
 		ELEVENLABS_API_KEY:       ELEVENLABS_API_KEY,
 		ELEVENLABS_OUTPUT_FORMAT: ELEVENLABS_OUTPUT_FORMAT,
@@ -196,6 +236,9 @@ func Load() error {
 }
 
 type getterInterface interface {
+	BERTVITS2_ENDPOINT() string
+	BERTVITS2_MODEL_ID() int64
+	BERTVITS2_SPEAKER_ID() int64
 	DB_FILE_PATH() string
 	ELEVENLABS_API_KEY() string
 	ELEVENLABS_OUTPUT_FORMAT() string
@@ -222,6 +265,9 @@ func Get() getter {
 }
 
 type setterInterface interface {
+	BERTVITS2_ENDPOINT() string
+	BERTVITS2_MODEL_ID() int64
+	BERTVITS2_SPEAKER_ID() int64
 	DB_FILE_PATH() string
 	ELEVENLABS_API_KEY() string
 	ELEVENLABS_OUTPUT_FORMAT() string

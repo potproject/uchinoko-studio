@@ -73,7 +73,7 @@ func WSTalk() fiber.Handler {
 			return
 		}
 
-		if voiceType != "voicevox" && voiceType != "elevenlabs" {
+		if voiceType != "voicevox" && voiceType != "elevenlabs" && voiceType != "bertvits2" {
 			c.Close()
 			return
 		}
@@ -86,6 +86,10 @@ func WSTalk() fiber.Handler {
 
 		voicevox := envgen.Get().VOICEVOX_ENDPOINT()
 		voicevoxSpeaker := envgen.Get().VOICEVOX_SPEAKER()
+
+		bertvits2 := envgen.Get().BERTVITS2_ENDPOINT()
+		bertvits2ModelID := envgen.Get().BERTVITS2_MODEL_ID()
+		bertvits2SpeakerId := envgen.Get().BERTVITS2_SPEAKER_ID()
 
 		format := "wav"
 		if voiceType == "elevenlabs" {
@@ -170,9 +174,17 @@ func WSTalk() fiber.Handler {
 						sendError(c, err)
 					}
 				}()
-			} else {
+			} else if voiceType == "elevenlabs" {
 				go func() {
 					err := api.ElevenLabsTTSWebsocket(el, voiceID, outputFormat, chunkMessage, outAudio, outText)
+					ttsDone <- true
+					if err != nil {
+						sendError(c, err)
+					}
+				}()
+			} else {
+				go func() {
+					err := api.BertVits2TTSStream(bertvits2, bertvits2ModelID, bertvits2SpeakerId, chunkMessage, outAudio, outText)
 					ttsDone <- true
 					if err != nil {
 						sendError(c, err)
