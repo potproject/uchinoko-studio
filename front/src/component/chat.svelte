@@ -10,13 +10,14 @@
     let stopMic = false;
 
     const speakDisabled = (disabled: boolean) => {
-        if (stopMic){
+        if (stopMic || initLoading) {
             disabled = true;
         }
         recording.changeRecordingAllow(!disabled);
     }
 
     export let audio: AudioContext;
+    export let selected: string;
 
     let timer = 0;
     let timerId: number | undefined = undefined;
@@ -25,7 +26,7 @@
 
 
     type Message = {
-        type: 'my' | 'your';
+        type: 'my' | 'your' | 'error';
         text: string;
         loading: boolean;
         speaking: boolean;
@@ -63,7 +64,7 @@
     (async () => {
         // WS
         const wsTLS = location.protocol === 'https:' ? 'wss' : 'ws';
-        const url = `${wsTLS}://${location.host}/v1/ws/talk/1/bertvits2/webm`;
+        const url = `${wsTLS}://${location.host}/v1/ws/talk/1/${selected}/webm`;
         socket = new SocketContext(url);
         await new Promise(resolve => {
             socket.onConnected = () => {
@@ -71,7 +72,11 @@
             }
         });
         socket.onBinary = (data) => {
-            playing.playWAV(data);
+            if (selected === 'bertvits2' || selected === 'voicevox') {
+                playing.playWAV(data);
+                return;
+            }
+            playing.playPCM(data);
         }
         socket.onText = (data) => {
             if(data.type === 'finish') {
@@ -146,6 +151,18 @@
                 }];
                 return;
             }*/
+
+            if(data.type === 'error') {
+                messages = [...messages, {
+                    type: 'error',
+                    text: data.text,
+                    loading: false,
+                    speaking: false,
+                    chunk: false
+                }];
+                updateChat();
+                return;
+            }
         }
 
         // Playing 再生
@@ -223,11 +240,22 @@
     <div class="w-screen">
         <div class="flex justify-center items-center">
             <div class="w-full md:w-1/2 h-96 overflow-y-scroll hidden-scrollbar" bind:this={chatarea}>
+                {#if initLoading}
+                    <div class="flex justify-center items-center">
+                        <div class="flex justify-center items-center rounded-md bg-gray-600 p-2 m-2 text-white">
+                            <i class="las text-2xl animate-spin la-spinner"></i>Loading...
+                        </div>
+                    </div>
+                {/if}
                 {#each messages as msg}
                     {#if msg.type === 'my'}
                         <ChatMyMsg message={msg.text} loading={msg.loading} speaking={msg.speaking} />
-                    {:else}
+                    {:else if msg.type === 'your'}
                         <ChatYourMsg message={msg.text} loading={msg.loading} speaking={msg.speaking} />
+                    {:else if msg.type === 'error'}
+                    <div class="flex justify-center items-center rounded-md bg-red-600 p-2 m-2 text-white">
+                        <i class="las text-2xl la-exclamation-circle"></i>{msg.text}
+                    </div>
                     {/if}
                 {/each}
             </div>

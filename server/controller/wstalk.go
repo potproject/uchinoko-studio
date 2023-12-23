@@ -230,7 +230,6 @@ func WSTalk() fiber.Handler {
 					c.WriteMessage(websocket.TextMessage, chatResOutput)
 				}
 			}
-			log.Println("close")
 			close(outText)
 			close(outAudio)
 			close(chatDone)

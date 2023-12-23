@@ -5,13 +5,15 @@
 
     let route: "start" | "chat" = "start";
     let audio: AudioContext;
+    let selected = "bertvits2";
 
     const changeRoute = (newRoute: "start" | "chat") => {
         route = newRoute;
     }
 
-    const onStart = (e: CustomEvent<{ audio: AudioContext }>) => {
+    const onStart = (e: CustomEvent<{ audio: AudioContext, selected: string }>) => {
         audio = e.detail.audio;
+        selected = e.detail.selected;
         changeRoute("chat");
     }
 </script>
@@ -21,6 +23,6 @@
     <Start on:start={onStart} />
     {/if}
     {#if route === "chat"}
-    <Chat audio={audio} />
+    <Chat audio={audio} selected={selected} />
     {/if}
 </main>
