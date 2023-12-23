@@ -266,7 +266,7 @@
         </p>
     </div>
     <!-- chat area -->
-    <div class="w-screen">
+    <div class="w-full">
         <div class="flex justify-center items-center py-2">
             <div class="w-full md:w-2/3 h-96 overflow-y-scroll hidden-scrollbar" bind:this={chatarea}>
                 {#if initLoading}

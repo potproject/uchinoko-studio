@@ -24,6 +24,6 @@
     <Start on:start={onStart} />
     {/if}
     {#if route === "chat"}
-    <Chat audio={audio} selected={selected} uuid={"1"} />s
+    <Chat audio={audio} selected={selected} uuid={"1"} />
     {/if}
 </main>
