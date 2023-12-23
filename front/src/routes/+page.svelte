@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { uuid } from 'uuidv4';
     /* @ts-ignore */
     import Start from "../component/start.svelte";
     import Chat from "../component/chat.svelte";
@@ -23,6 +24,6 @@
     <Start on:start={onStart} />
     {/if}
     {#if route === "chat"}
-    <Chat audio={audio} selected={selected} />
+    <Chat audio={audio} selected={selected} uuid={"1"} />s
     {/if}
 </main>

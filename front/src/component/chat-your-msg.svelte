@@ -5,7 +5,7 @@
 </script>
 
 <div class="flex">
-    <div class="flex mt-3">
+    <div class="flex mt-3 w-12 h-12 pl-2 justify-center items-center">
         <img src="default.png" class="rounded-full w-6 h-6" />
     </div>
     <div class="flex justify-center items-center">

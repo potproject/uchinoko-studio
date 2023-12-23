@@ -18,6 +18,7 @@
 
     export let audio: AudioContext;
     export let selected: string;
+    export let uuid: string;
 
     let timer = 0;
     let timerId: number | undefined = undefined;
@@ -64,7 +65,7 @@
     (async () => {
         // WS
         const wsTLS = location.protocol === 'https:' ? 'wss' : 'ws';
-        const url = `${wsTLS}://${location.host}/v1/ws/talk/1/${selected}/webm`;
+        const url = `${wsTLS}://${location.host}/v1/ws/talk/${uuid}/${selected}/webm`;
         socket = new SocketContext(url);
         await new Promise(resolve => {
             socket.onConnected = () => {
@@ -221,7 +222,31 @@
         recording.onDataAvailable = (event) => {
             socket.sendBinary(event.data);
         }
+
+        // old message load
+        const res = await fetch(`/v1/chat/${uuid}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        const oldMessages = (await res.json()).Chat as { role: string, content: string }[];
+        console.log(oldMessages);
+        const newmessages: Message[] = [];
+        for(const msg of oldMessages) {
+            if(msg.role === 'user' || msg.role === 'assistant') {
+                newmessages.push({
+                    type: msg.role === 'user' ? 'my' : 'your',
+                    text: msg.content,
+                    loading: false,
+                    speaking: false,
+                    chunk: false
+                });
+            }
+        }
+        messages = newmessages;
         initLoading = false;
+        updateChat();
     })();
 </script>
 
@@ -238,8 +263,8 @@
     </div>
     <!-- chat area -->
     <div class="w-screen">
-        <div class="flex justify-center items-center">
-            <div class="w-full md:w-1/2 h-96 overflow-y-scroll hidden-scrollbar" bind:this={chatarea}>
+        <div class="flex justify-center items-center py-2">
+            <div class="w-full md:w-2/3 h-96 overflow-y-scroll hidden-scrollbar" bind:this={chatarea}>
                 {#if initLoading}
                     <div class="flex justify-center items-center">
                         <div class="flex justify-center items-center rounded-md bg-gray-600 p-2 m-2 text-white">

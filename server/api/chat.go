@@ -12,7 +12,7 @@ import (
 	openai "github.com/sashabaranov/go-openai"
 )
 
-const chars = ".,?!;:—-()[]{} 。、？！；：ー「」（）［］｛｝　\"'"
+const chars = ".,?!;:—-()[]{} 。、？！；：「」（）［］｛｝　\"'"
 
 func ChatStream(c *OpenAIClientExtend, cm []openai.ChatCompletionMessage, text string, chunkMessage chan TextMessage, responseText chan string) ([]openai.ChatCompletionMessage, error) {
 	ctx := context.Background()
