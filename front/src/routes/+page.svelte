@@ -4,27 +4,15 @@
     import Chat from "../component/chat.svelte";
 
     let route: "start" | "chat" = "start";
+    let audio: AudioContext;
 
     const changeRoute = (newRoute: "start" | "chat") => {
         route = newRoute;
     }
 
     const onStart = (e: CustomEvent<{ audio: AudioContext }>) => {
-        console.log(e.detail);
+        audio = e.detail.audio;
         changeRoute("chat");
-
-        // audio test play https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3
-        /*const audio = e.detail.audio;
-        const source = audio.createBufferSource();
-        fetch("https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3")
-            .then(res => res.arrayBuffer())
-            .then(buf => audio.decodeAudioData(buf))
-            .then(buf => {
-                source.buffer = buf;
-                source.connect(audio.destination);
-                source.start();
-            })
-        */
     }
 </script>
 
@@ -33,6 +21,6 @@
     <Start on:start={onStart} />
     {/if}
     {#if route === "chat"}
-    <Chat />
+    <Chat audio={audio} />
     {/if}
 </main>

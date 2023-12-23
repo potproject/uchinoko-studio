@@ -23,39 +23,31 @@ type TextInput struct {
 
 type ConnectionOutput struct {
 	BaseOutput // Type: connection
-	// elevenlabs, voicevox
-	Output string `json:"output"`
-	// pcm_16000 or pcm_22050, pcm_24000, pcm_44100, mp3, wav
-	Format string `json:"format"`
 }
 
 type BaseOutput struct {
 	Type string `json:"type"`
+	Text string `json:"text"`
 }
 
 type ChatRequestOutput struct {
-	BaseOutput        // Type: chat-request
-	Text       string `json:"text"`
+	BaseOutput // Type: chat-request
 }
 
 type ChatResponseOutput struct {
-	BaseOutput        // Type: chat-response
-	Text       string `json:"text"`
+	BaseOutput // Type: chat-response
 }
 
 type ChatResponseChunkOutput struct {
-	BaseOutput        // Type: chat-response-chunk
-	Text       string `json:"text"`
+	BaseOutput // Type: chat-response-chunk
 }
 
 type ErrorOutput struct {
-	BaseOutput        // Type: error
-	Error      string `json:"error"`
+	BaseOutput // Type: error
 }
 
 type FinishOutput struct {
-	BaseOutput      // Type: finish
-	Finish     bool `json:"finish"`
+	BaseOutput // Type: finish
 }
 
 type BinaryOutput struct {
@@ -99,9 +91,8 @@ func WSTalk() fiber.Handler {
 		connectionOutput, _ := json.Marshal(ConnectionOutput{
 			BaseOutput: BaseOutput{
 				Type: "connection",
+				Text: format,
 			},
-			Output: voiceType,
-			Format: format,
 		})
 
 		c.WriteMessage(websocket.TextMessage, []byte(connectionOutput))
@@ -138,8 +129,8 @@ func WSTalk() fiber.Handler {
 			chatReqOutput, _ := json.Marshal(ChatRequestOutput{
 				BaseOutput: BaseOutput{
 					Type: "chat-request",
+					Text: requestText,
 				},
-				Text: requestText,
 			})
 			c.WriteMessage(websocket.TextMessage, chatReqOutput)
 
@@ -203,8 +194,8 @@ func WSTalk() fiber.Handler {
 					chatResOutput, _ := json.Marshal(ChatResponseOutput{
 						BaseOutput: BaseOutput{
 							Type: "chat-response-chunk",
+							Text: t,
 						},
-						Text: t,
 					})
 					c.WriteMessage(websocket.TextMessage, chatResOutput)
 				case a := <-outAudio:
@@ -224,8 +215,8 @@ func WSTalk() fiber.Handler {
 					finishOutput, _ := json.Marshal(FinishOutput{
 						BaseOutput: BaseOutput{
 							Type: "finish",
+							Text: "",
 						},
-						Finish: true,
 					})
 					c.WriteMessage(websocket.TextMessage, finishOutput)
 					break Process
@@ -233,8 +224,8 @@ func WSTalk() fiber.Handler {
 					chatResOutput, _ := json.Marshal(ChatResponseOutput{
 						BaseOutput: BaseOutput{
 							Type: "chat-response",
+							Text: responseText,
 						},
-						Text: responseText,
 					})
 					c.WriteMessage(websocket.TextMessage, chatResOutput)
 				}
@@ -253,8 +244,8 @@ func sendError(c *websocket.Conn, err error) {
 	errorOutput, _ := json.Marshal(ErrorOutput{
 		BaseOutput: BaseOutput{
 			Type: "error",
+			Text: err.Error(),
 		},
-		Error: err.Error(),
 	})
 	c.WriteMessage(websocket.TextMessage, []byte(errorOutput))
 }
