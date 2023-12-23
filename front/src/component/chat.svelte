@@ -230,8 +230,12 @@
                 'Content-Type': 'application/json'
             }
         });
+        if(res.status === 204) {
+            initLoading = false;
+            updateChat();
+            return;
+        }
         const oldMessages = (await res.json()).Chat as { role: string, content: string }[];
-        console.log(oldMessages);
         const newmessages: Message[] = [];
         for(const msg of oldMessages) {
             if(msg.role === 'user' || msg.role === 'assistant') {
