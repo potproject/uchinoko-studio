@@ -35,6 +35,9 @@
 
     const startTimer = () => {
         timerId = window.setInterval(() => {
+            if (stopMic) {
+                return;
+            }
             timer++;
         }, 1000);
     }
@@ -207,11 +210,11 @@
 <div>
     <!-- center img circle -->
     <div class="flex justify-center items-center">
-        <img src="https://picsum.photos/200" class="rounded-full w-32 h-32 {speaking ? 'animate-pulsate-fwd border-4 border-blue-500' : ''}" />
+        <img src="default.png" class="rounded-full w-32 h-32 {speaking ? 'animate-pulsate-fwd border-4 border-blue-500' : ''}" alt="ai" />
     </div>
     <!-- Timer -->
     <div class="flex justify-center items-center">
-        <p class="text-white bg-blue-600 rounded-md px-2 py-1 m-2">
+        <p class="text-white rounded-md px-2 py-1 m-2 {!stopMic ? 'bg-blue-600' : 'bg-red-600'}">
             {parseTime(timer)}
         </p>
     </div>

@@ -6,7 +6,7 @@
 
 <div class="flex">
     <div class="flex mt-3">
-        <img src="https://picsum.photos/200" class="rounded-full w-6 h-6" />
+        <img src="default.png" class="rounded-full w-6 h-6" />
     </div>
     <div class="flex justify-center items-center">
         <div class="bg-gray-200 rounded-xl p-2 m-2">

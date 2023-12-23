@@ -1,6 +1,7 @@
 package db
 
 import (
+	_ "embed"
 	"encoding/json"
 
 	"github.com/potproject/uchinoko/data"
@@ -8,9 +9,17 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
+//go:embed propmt.txt
+var systemMessage string
+
 func initChatMessage() data.ChatMessage {
 	return data.ChatMessage{
-		Chat: []openai.ChatCompletionMessage{},
+		Chat: []openai.ChatCompletionMessage{
+			{
+				Role:    openai.ChatMessageRoleSystem,
+				Content: systemMessage,
+			},
+		},
 	}
 }
 
