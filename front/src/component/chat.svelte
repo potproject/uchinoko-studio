@@ -62,7 +62,8 @@
 
     (async () => {
         // WS
-        const url = `ws://localhost:3000/v1/ws/talk/1/bertvits2/webm`;
+        const wsTLS = location.protocol === 'https:' ? 'wss' : 'ws';
+        const url = `${wsTLS}://${location.host}/v1/ws/talk/1/bertvits2/webm`;
         socket = new SocketContext(url);
         await new Promise(resolve => {
             socket.onConnected = () => {

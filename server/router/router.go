@@ -7,7 +7,7 @@ import (
 
 func Route() *fiber.App {
 	app := fiber.New()
-	app.Static("/", "../public")
+	app.Static("/", "../front/build")
 	app.Get("/adminopr/statall", controller.StatAll)
 	app.Get("/adminopr/stat", controller.Stat)
 	app.Get("/v1/chat/:id", controller.Chat)

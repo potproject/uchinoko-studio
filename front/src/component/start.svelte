@@ -64,7 +64,7 @@
                 <i class="las la-info"></i>
                 <span>概要</span>
             </h2>
-            <p class="text-gray-500">Uchinokoは、Webアプリケーションの開発を支援するためのツールです。</p>
+            <p class="text-gray-500">Uchinokoは、AIと音声で通話できることを目指した、Webアプリです。</p>
         </div>
         <!-- 利用規約欄 Textarea -->
         <div class="card-body p-3 m-2">
