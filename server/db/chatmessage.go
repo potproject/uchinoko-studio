@@ -4,7 +4,7 @@ import (
 	_ "embed"
 	"encoding/json"
 
-	"github.com/potproject/uchinoko/data"
+	"github.com/potproject/uchinoko-studio/data"
 	"github.com/sashabaranov/go-openai"
 	"github.com/syndtr/goleveldb/leveldb"
 )

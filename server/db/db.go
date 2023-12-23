@@ -3,7 +3,7 @@ package db
 import (
 	"log"
 
-	"github.com/potproject/uchinoko/envgen"
+	"github.com/potproject/uchinoko-studio/envgen"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 

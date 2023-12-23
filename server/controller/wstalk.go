@@ -7,10 +7,10 @@ import (
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
-	"github.com/potproject/uchinoko/api"
-	"github.com/potproject/uchinoko/data"
-	"github.com/potproject/uchinoko/db"
-	"github.com/potproject/uchinoko/envgen"
+	"github.com/potproject/uchinoko-studio/api"
+	"github.com/potproject/uchinoko-studio/data"
+	"github.com/potproject/uchinoko-studio/db"
+	"github.com/potproject/uchinoko-studio/envgen"
 )
 
 type BinaryInput struct {

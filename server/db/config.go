@@ -3,7 +3,7 @@ package db
 import (
 	"encoding/json"
 
-	"github.com/potproject/uchinoko/data"
+	"github.com/potproject/uchinoko-studio/data"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 

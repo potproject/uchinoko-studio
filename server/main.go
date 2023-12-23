@@ -6,9 +6,9 @@ import (
 	"strconv"
 
 	"github.com/joho/godotenv"
-	"github.com/potproject/uchinoko/db"
-	"github.com/potproject/uchinoko/envgen"
-	"github.com/potproject/uchinoko/router"
+	"github.com/potproject/uchinoko-studio/db"
+	"github.com/potproject/uchinoko-studio/envgen"
+	"github.com/potproject/uchinoko-studio/router"
 	"tailscale.com/tsnet"
 )
 

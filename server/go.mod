@@ -1,4 +1,4 @@
-module github.com/potproject/uchinoko
+module github.com/potproject/uchinoko-studio
 
 go 1.21
 

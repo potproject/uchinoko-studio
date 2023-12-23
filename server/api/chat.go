@@ -8,7 +8,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/potproject/uchinoko/envgen"
+	"github.com/potproject/uchinoko-studio/envgen"
 	openai "github.com/sashabaranov/go-openai"
 )
 

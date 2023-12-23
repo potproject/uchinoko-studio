@@ -2,8 +2,8 @@ package controller
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/potproject/uchinoko/data"
-	"github.com/potproject/uchinoko/db"
+	"github.com/potproject/uchinoko-studio/data"
+	"github.com/potproject/uchinoko-studio/db"
 )
 
 func postConfig(c *fiber.Ctx) error {

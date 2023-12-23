@@ -2,7 +2,7 @@ package router
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/potproject/uchinoko/controller"
+	"github.com/potproject/uchinoko-studio/controller"
 )
 
 func Route() *fiber.App {

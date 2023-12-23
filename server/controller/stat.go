@@ -2,7 +2,7 @@ package controller
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/potproject/uchinoko/db"
+	"github.com/potproject/uchinoko-studio/db"
 )
 
 func StatAll(c *fiber.Ctx) error {

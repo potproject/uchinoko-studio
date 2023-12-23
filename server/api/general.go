@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/haguro/elevenlabs-go"
-	"github.com/potproject/uchinoko/envgen"
+	"github.com/potproject/uchinoko-studio/envgen"
 	openai "github.com/sashabaranov/go-openai"
 )
 
