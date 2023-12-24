@@ -10,7 +10,8 @@ func Route() *fiber.App {
 	app.Static("/", "../front/build")
 	app.Get("/adminopr/statall", controller.StatAll)
 	app.Get("/adminopr/stat", controller.Stat)
-	app.Get("/v1/chat/:id", controller.Chat)
+	app.Get("/v1/chat/:id", controller.GetChat)
+	app.Delete("/v1/chat/:id", controller.DeleteChat)
 	app.Use("/v1/ws/talk", controller.WS)
 	app.Get("/v1/ws/talk/:id/:voiceType/:fileType", controller.WSTalk())
 

@@ -5,7 +5,7 @@ import (
 	"github.com/potproject/uchinoko-studio/db"
 )
 
-func Chat(c *fiber.Ctx) error {
+func GetChat(c *fiber.Ctx) error {
 	//get id
 	id := c.Params("id")
 	//get message
@@ -20,4 +20,16 @@ func Chat(c *fiber.Ctx) error {
 	//return message
 	return c.JSON(d)
 
+}
+
+func DeleteChat(c *fiber.Ctx) error {
+	//get id
+	id := c.Params("id")
+	//delete message
+	err := db.DeleteChatMessage(id)
+	if err != nil {
+		return err
+	}
+	// No Content
+	return c.SendStatus(fiber.StatusOK)
 }

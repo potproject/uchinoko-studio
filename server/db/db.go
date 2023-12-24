@@ -47,3 +47,7 @@ func ListAll() ([]ListAllResponse, error) {
 	}
 	return response, nil
 }
+
+func delete(key []byte) error {
+	return db.Delete(key, nil)
+}

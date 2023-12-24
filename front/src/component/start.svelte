@@ -1,6 +1,8 @@
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
 
+    export let id: string;
+
     const dispatch = createEventDispatcher();
     let micOk: boolean|undefined = undefined;
     let audioOk = false;
@@ -11,6 +13,15 @@
 
     let slientAudio: HTMLAudioElement;
 
+    let onReset = () => {
+        fetch(`/v1/chat/${id}`, {
+            method: 'DELETE'
+        }).finally(() => {
+            location.reload();
+            localStorage.removeItem('id');
+        });
+    }
+
     let onClick = () => {
         start = true;
         // 音声アンロック
@@ -20,7 +31,6 @@
         slientAudio.play();
         
         slientAudio.onended = () => {
-            console.log('start', selected);
             dispatch('start', {
                 audio,
                 selected
@@ -58,6 +68,10 @@
     <div class="card bg-white shadow-lg rounded-3xl h-auto mx-auto border border-cyan-600 border-opacity-50 border-2 w-96 md:w-1/2 lg:w-1/3 {start ? 'animate-scale-out-horizontal' : 'animate-scale-in-hor-center'}">
         <div class="card-header p-4 flex m-2">
             <h1 class="text-3xl font-bold flex-1">Uchinoko Studio(β)</h1>
+        </div>
+        <div class="card-header mt-2 px-4 text-xs">
+            <div>Chat ID: {id}</div>
+            <a href="#" class="text-blue-500 hover:text-blue-600" on:click={onReset}>チャット履歴をリセットする</a>
         </div>
         <!-- 使用する音声生成サービス -->
         <div class="card-body p-2 m-2">

@@ -18,7 +18,7 @@
 
     export let audio: AudioContext;
     export let selected: string;
-    export let uuid: string;
+    export let id: string;
 
     let timer = 0;
     let timerId: number | undefined = undefined;
@@ -65,7 +65,7 @@
     (async () => {
         // WS
         const wsTLS = location.protocol === 'https:' ? 'wss' : 'ws';
-        const url = `${wsTLS}://${location.host}/v1/ws/talk/${uuid}/${selected}/webm`;
+        const url = `${wsTLS}://${location.host}/v1/ws/talk/${id}/${selected}/webm`;
         socket = new SocketContext(url);
         await new Promise(resolve => {
             socket.onConnected = () => {
@@ -224,7 +224,7 @@
         }
 
         // old message load
-        const res = await fetch(`/v1/chat/${uuid}`, {
+        const res = await fetch(`/v1/chat/${id}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'

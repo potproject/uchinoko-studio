@@ -47,3 +47,8 @@ func GetChatMessage(id string) (cm data.ChatMessage, empty bool, err error) {
 	}
 	return cM, false, nil
 }
+
+func DeleteChatMessage(id string) error {
+	key := []byte(id + "/chatmessage")
+	return delete(key)
+}
