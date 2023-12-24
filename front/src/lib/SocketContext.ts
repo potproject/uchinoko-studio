@@ -9,6 +9,7 @@ export class SocketContext{
     public onConnected: () => void = () => {};
     public onBinary: (data: ArrayBuffer) => void = () => {};
     public onText: (data: TextMessage) => void = () => {};
+    public onClosed: () => void = () => {};
 
     constructor(url: string){
         this.socket = new WebSocket(url);
@@ -36,6 +37,10 @@ export class SocketContext{
                 console.log('error', data.text);
             }
             this.onText(data);
+        }
+
+        this.socket.onclose = () => {
+            this.onClosed();
         }
     }
 

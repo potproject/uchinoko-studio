@@ -72,6 +72,16 @@
                 resolve(null);
             }
         });
+        socket.onClosed = () => {
+            messages = [...messages, {
+                type: 'error',
+                text: '接続が切断されました。再度ページを読み込んでください。',
+                loading: false,
+                speaking: false,
+                chunk: false
+            }];
+            updateChat();
+        }
         socket.onBinary = (data) => {
             if (selected === 'bertvits2' || selected === 'voicevox') {
                 playing.playWAV(data);
@@ -266,7 +276,7 @@
         </p>
     </div>
     <!-- chat area -->
-    <div class="w-full">
+    <div class="w-screen">
         <div class="flex justify-center items-center py-2">
             <div class="w-full md:w-2/3 h-96 overflow-y-scroll hidden-scrollbar" bind:this={chatarea}>
                 {#if initLoading}
