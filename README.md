@@ -14,13 +14,13 @@ See Article(Japanese Only): https://blog.potproject.net/2023/12/24/ai-web-uchino
 
 ## Features
 
+* Real-time Voice Conversation
+* __Fast Response(Maybe 2 second)__
 * Run on Browser(Google Chrome Supported)
 * Japanese Support(for now...)
 * Chat-based LLM Support: [Open AI GPT-4(Cloud Only)](https://openai.com/gpt-4)
 * STT LLM Support: [Whisper(Cloud Only)](https://openai.com/research/whisper)
 * TTS LLM Support: [Bert-Vits2](https://github.com/fishaudio/Bert-VITS2), [VOICEVOX](https://voicevox.hiroshiba.jp/), [ElevenLabs(Cloud Only)](https://elevenlabs.io/)
-* Real-time Voice Conversation
-* __Fast Response(Maybe 2 second)__
 * More bugs...
 
 ## TODO
