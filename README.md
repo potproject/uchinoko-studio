@@ -2,7 +2,7 @@
 
 https://github.com/potproject/uchinoko-studio/assets/6498055/02d56c92-34c4-4ed3-8abf-83fc1b155b1a
 
-Using Bert-Vits2, GPT-4 Turbo. Real-Time.
+Using Whisper, Bert-Vits2, GPT-4 Turbo. Real-Time.
 
 ## About
 
