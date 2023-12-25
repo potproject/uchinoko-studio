@@ -8,7 +8,7 @@ Using Bert-Vits2, GPT-4 Turbo. Real-Time.
 
 __Work In Progress__
 
-Uchinoko Studio is a web application that aims to enable real-time voice conversations with AI by combining Chat-based Large Language Models such as [Open AI GPT-4](https://openai.com/) with Text-To-Speech Large Language Models like [Bert-Vits2](https://github.com/fishaudio/Bert-VITS2).
+Uchinoko Studio is a web application designed to facilitate real-time voice conversations with AI. This is achieved by integrating various Large Language Models (LLMs), including Speech-To-Text LLMs like [Whisper](https://github.com/openai/whisper), Chat-based LLMs such as [GPT-4](https://openai.com/), and Text-To-Speech LLMs like [Bert-Vits2](https://github.com/fishaudio/Bert-VITS2).
 
 See Article(Japanese Only): https://blog.potproject.net/2023/12/24/ai-web-uchinoko-studio/
 
@@ -16,7 +16,8 @@ See Article(Japanese Only): https://blog.potproject.net/2023/12/24/ai-web-uchino
 
 * Run on Browser(Google Chrome Supported)
 * Japanese Support(for now...)
-* Chat-based LLM Support: [Open AI GPT-4(Cloud Only)](https://openai.com/)
+* Chat-based LLM Support: [Open AI GPT-4(Cloud Only)](https://openai.com/gpt-4)
+* STT LLM Support: [Whisper(Cloud Only)](https://openai.com/research/whisper)
 * TTS LLM Support: [Bert-Vits2](https://github.com/fishaudio/Bert-VITS2), [VOICEVOX](https://voicevox.hiroshiba.jp/), [ElevenLabs(Cloud Only)](https://elevenlabs.io/)
 * Real-time Voice Conversation
 * __Fast Response(Maybe 2 second)__
