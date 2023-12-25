@@ -10,6 +10,8 @@ __Work In Progress__
 
 Uchinoko Studio is a web application designed to facilitate real-time voice conversations with AI. This is achieved by integrating various Large Language Models (LLMs), including Speech-To-Text LLMs like [Whisper](https://github.com/openai/whisper), Chat-based LLMs such as [GPT-4](https://openai.com/), and Text-To-Speech LLMs like [Bert-Vits2](https://github.com/fishaudio/Bert-VITS2).
 
+`Uchinoko` is a Japanese word that means `Waifu / My Daughter`.
+
 See Article(Japanese Only): https://blog.potproject.net/2023/12/24/ai-web-uchinoko-studio/
 
 ## Features
