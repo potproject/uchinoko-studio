@@ -1,7 +1,6 @@
 # Uchinoko Studio (β)
 
-<video controls="" width="500px" src="https://videos.ctfassets.net/a9tjjm7bfbeq/2hLdwk86Pj2AO1Djpy37g8/66d8a191914feeded9f0a83119bef880/test_mini_low.mp4" type="video/mp4">
-</video>
+https://github.com/potproject/uchinoko-studio/assets/6498055/02d56c92-34c4-4ed3-8abf-83fc1b155b1a
 
 Using Bert-Vits2, GPT-4 Turbo. Real-Time.
 
