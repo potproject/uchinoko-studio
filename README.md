@@ -23,8 +23,13 @@ See Article(Japanese Only): https://blog.potproject.net/2023/12/24/ai-web-uchino
 * TTS LLM Support: [Bert-Vits2](https://github.com/fishaudio/Bert-VITS2), [VOICEVOX](https://voicevox.hiroshiba.jp/), [ElevenLabs(Cloud Only)](https://elevenlabs.io/)
 * More bugs...
 
+## Getting Started
+
+TODO
+
 ## TODO
 
+* Docs
 * [Tailscale](https://tailscale.com/) Support
 * Mobile Browser Support(iOS Safari, Android Chrome)
 * Add Multilingual Support(EN and CH)
