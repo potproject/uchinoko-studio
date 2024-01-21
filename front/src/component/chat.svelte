@@ -65,7 +65,11 @@
     (async () => {
         // WS
         const wsTLS = location.protocol === 'https:' ? 'wss' : 'ws';
-        const url = `${wsTLS}://${location.host}/v1/ws/talk/${id}/${selected}/webm`;
+
+        const extenstion = MediaRecorder.isTypeSupported('audio/webm') ? 'webm' : 'mp4';
+        const mimeType = `audio/${extenstion}`;
+
+        const url = `${wsTLS}://${location.host}/v1/ws/talk/${id}/${selected}/${extenstion}`;
         socket = new SocketContext(url);
         await new Promise(resolve => {
             socket.onConnected = () => {
@@ -197,7 +201,7 @@
         }
 
         // Recording 録音
-        recording = new RecordingContext(await navigator.mediaDevices.getUserMedia({ audio: true }));
+        recording = new RecordingContext(await navigator.mediaDevices.getUserMedia({ audio: true }), mimeType);
         await recording.init();
 
         recording.onSpeakingStart = () => {

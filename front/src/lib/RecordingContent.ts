@@ -14,12 +14,12 @@ export class RecordingContext{
     public onSpeakingEnd: (ignore: boolean) => void = () => {};
     public onDataAvailable: (event: BlobEvent) => void = () => {};
 
-    constructor(stream: MediaStream){
+    constructor(stream: MediaStream, mimeType: string){
         this.stream = stream;
         /** @ts-ignore */
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         this.sampleRate = this.stream.getAudioTracks()[0].getSettings().sampleRate ?? 44100;
-        this.mediaRecorder = new MediaRecorder(this.stream, { mimeType: 'audio/webm' });
+        this.mediaRecorder = new MediaRecorder(this.stream, { mimeType });
     }
 
     public changeRecordingAllow(check: boolean){
