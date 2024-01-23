@@ -81,7 +81,6 @@
             >
                 <option value="bertvits2">Bert-VITS2(FastAPI)</option>
                 <option value="voicevox">VOICEVOX</option>
-                <option value="elevenlabs">ELEVENLABS</option>
             </select>
         </div>
         <!-- 概要欄 -->

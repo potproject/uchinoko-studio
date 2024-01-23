@@ -13,45 +13,49 @@ import (
 	"github.com/potproject/uchinoko-studio/envgen"
 )
 
-type BinaryInput struct {
-	Data []byte
-}
-
 type TextInput struct {
 	Text string `json:"text"`
 }
 
-type ConnectionOutput struct {
-	BaseOutput // Type: connection
-}
-
-type BaseOutput struct {
+type TextOutput struct {
 	Type string `json:"type"`
 	Text string `json:"text"`
 }
 
-type ChatRequestOutput struct {
-	BaseOutput // Type: chat-request
+const (
+	ConnectionOutputType        = "connection"
+	ChatRequestOutputType       = "chat-request"
+	ChatResponseOutputType      = "chat-response"
+	ChatResponseChunkOutputType = "chat-response-chunk"
+	ErrorOutputType             = "error"
+	FinishOutputType            = "finish"
+)
+
+func messageProcess(mt int, msg []byte, fileType string, openai *api.OpenAIClientExtend) (string, error) {
+	if mt == websocket.BinaryMessage {
+		return api.Whisper(openai, msg, fileType)
+	}
+	if mt == websocket.TextMessage {
+		textInput := TextInput{}
+		err := json.Unmarshal(msg, &textInput)
+		if err != nil {
+			return "", err
+		}
+		return textInput.Text, nil
+	}
+	return "", nil
 }
 
-type ChatResponseOutput struct {
-	BaseOutput // Type: chat-response
+func wsSendTextMessage(c *websocket.Conn, msgType string, text string) error {
+	chatResOutput, _ := json.Marshal(TextOutput{
+		Type: msgType,
+		Text: text,
+	})
+	return c.WriteMessage(websocket.TextMessage, chatResOutput)
 }
 
-type ChatResponseChunkOutput struct {
-	BaseOutput // Type: chat-response-chunk
-}
-
-type ErrorOutput struct {
-	BaseOutput // Type: error
-}
-
-type FinishOutput struct {
-	BaseOutput // Type: finish
-}
-
-type BinaryOutput struct {
-	Data []byte
+func wsSendBinaryMessage(c *websocket.Conn, data []byte) error {
+	return c.WriteMessage(websocket.BinaryMessage, data)
 }
 
 func WSTalk() fiber.Handler {
@@ -65,16 +69,12 @@ func WSTalk() fiber.Handler {
 			return
 		}
 
-		if voiceType != "voicevox" && voiceType != "elevenlabs" && voiceType != "bertvits2" {
+		if voiceType != "voicevox" && voiceType != "bertvits2" {
 			c.Close()
 			return
 		}
 
 		openai := api.OpenAINewClient()
-
-		el := api.ElevenLabsNewClient()
-		voiceID := envgen.Get().ELEVENLABS_VOICEID()
-		outputFormat := envgen.Get().ELEVENLABS_OUTPUT_FORMAT()
 
 		voicevox := envgen.Get().VOICEVOX_ENDPOINT()
 		voicevoxSpeaker := envgen.Get().VOICEVOX_SPEAKER()
@@ -84,18 +84,8 @@ func WSTalk() fiber.Handler {
 		bertvits2SpeakerId := envgen.Get().BERTVITS2_SPEAKER_ID()
 
 		format := "wav"
-		if voiceType == "elevenlabs" {
-			format = outputFormat
-		}
 
-		connectionOutput, _ := json.Marshal(ConnectionOutput{
-			BaseOutput: BaseOutput{
-				Type: "connection",
-				Text: format,
-			},
-		})
-
-		c.WriteMessage(websocket.TextMessage, []byte(connectionOutput))
+		wsSendTextMessage(c, ConnectionOutputType, format)
 
 		for {
 			mt, msg, err := c.ReadMessage()
@@ -105,34 +95,9 @@ func WSTalk() fiber.Handler {
 				break
 			}
 
-			var requestText string
-			if mt == websocket.BinaryMessage {
-				binaryInput := BinaryInput{
-					Data: msg,
-				}
-				requestText, err = api.Whisper(openai, binaryInput.Data, fileType)
-				if err != nil {
-					sendError(c, err)
-					break
-				}
-			}
-			if mt == websocket.TextMessage {
-				textInput := TextInput{}
-				err = json.Unmarshal(msg, &textInput)
-				if err != nil {
-					sendError(c, err)
-					break
-				}
-				requestText = textInput.Text
-			}
+			requestText, err := messageProcess(mt, msg, fileType, openai)
 
-			chatReqOutput, _ := json.Marshal(ChatRequestOutput{
-				BaseOutput: BaseOutput{
-					Type: "chat-request",
-					Text: requestText,
-				},
-			})
-			c.WriteMessage(websocket.TextMessage, chatReqOutput)
+			wsSendTextMessage(c, ChatRequestOutputType, requestText)
 
 			outAudio := make(chan []byte)
 			outText := make(chan string)
@@ -165,14 +130,6 @@ func WSTalk() fiber.Handler {
 						sendError(c, err)
 					}
 				}()
-			} else if voiceType == "elevenlabs" {
-				go func() {
-					err := api.ElevenLabsTTSWebsocket(el, voiceID, outputFormat, chunkMessage, outAudio, outText)
-					ttsDone <- true
-					if err != nil {
-						sendError(c, err)
-					}
-				}()
 			} else {
 				go func() {
 					err := api.BertVits2TTSStream(bertvits2, bertvits2ModelID, bertvits2SpeakerId, chunkMessage, outAudio, outText)
@@ -191,13 +148,7 @@ func WSTalk() fiber.Handler {
 					if len(t) == 0 {
 						continue
 					}
-					chatResOutput, _ := json.Marshal(ChatResponseOutput{
-						BaseOutput: BaseOutput{
-							Type: "chat-response-chunk",
-							Text: t,
-						},
-					})
-					c.WriteMessage(websocket.TextMessage, chatResOutput)
+					wsSendTextMessage(c, ChatResponseChunkOutputType, t)
 				case a := <-outAudio:
 					if len(a) == 0 {
 						continue
@@ -207,27 +158,12 @@ func WSTalk() fiber.Handler {
 						firstSend = false
 						log.Printf("First Send: %s", time.Since(start))
 					}
-					binaryOutput := BinaryOutput{
-						Data: a,
-					}
-					c.WriteMessage(websocket.BinaryMessage, binaryOutput.Data)
+					wsSendBinaryMessage(c, a)
 				case <-ttsDone:
-					finishOutput, _ := json.Marshal(FinishOutput{
-						BaseOutput: BaseOutput{
-							Type: "finish",
-							Text: "",
-						},
-					})
-					c.WriteMessage(websocket.TextMessage, finishOutput)
+					wsSendTextMessage(c, FinishOutputType, "")
 					break Process
 				case responseText := <-chatDone:
-					chatResOutput, _ := json.Marshal(ChatResponseOutput{
-						BaseOutput: BaseOutput{
-							Type: "chat-response",
-							Text: responseText,
-						},
-					})
-					c.WriteMessage(websocket.TextMessage, chatResOutput)
+					wsSendTextMessage(c, ChatResponseOutputType, responseText)
 				}
 			}
 			close(outText)
@@ -239,12 +175,6 @@ func WSTalk() fiber.Handler {
 	})
 }
 
-func sendError(c *websocket.Conn, err error) {
-	errorOutput, _ := json.Marshal(ErrorOutput{
-		BaseOutput: BaseOutput{
-			Type: "error",
-			Text: err.Error(),
-		},
-	})
-	c.WriteMessage(websocket.TextMessage, []byte(errorOutput))
+func sendError(c *websocket.Conn, err error) error {
+	return wsSendTextMessage(c, ErrorOutputType, err.Error())
 }

@@ -37,27 +37,6 @@ func (s setter) DB_FILE_PATH(value string) {
 	env.DB_FILE_PATH = value
 	return
 }
-func (g getter) ELEVENLABS_API_KEY() string {
-	return env.ELEVENLABS_API_KEY
-}
-func (s setter) ELEVENLABS_API_KEY(value string) {
-	env.ELEVENLABS_API_KEY = value
-	return
-}
-func (g getter) ELEVENLABS_OUTPUT_FORMAT() string {
-	return env.ELEVENLABS_OUTPUT_FORMAT
-}
-func (s setter) ELEVENLABS_OUTPUT_FORMAT(value string) {
-	env.ELEVENLABS_OUTPUT_FORMAT = value
-	return
-}
-func (g getter) ELEVENLABS_VOICEID() string {
-	return env.ELEVENLABS_VOICEID
-}
-func (s setter) ELEVENLABS_VOICEID(value string) {
-	env.ELEVENLABS_VOICEID = value
-	return
-}
 func (g getter) OPENAI_API_KEY() string {
 	return env.OPENAI_API_KEY
 }
@@ -134,9 +113,6 @@ type environment struct {
 	BERTVITS2_MODEL_ID       int64
 	BERTVITS2_SPEAKER_ID     int64
 	DB_FILE_PATH             string
-	ELEVENLABS_API_KEY       string
-	ELEVENLABS_OUTPUT_FORMAT string
-	ELEVENLABS_VOICEID       string
 	OPENAI_API_KEY           string
 	OPENAI_CHAT_MODEL        string
 	OPENAI_ORG_ID            string
@@ -169,9 +145,6 @@ func Load() error {
 	}
 	BERTVITS2_SPEAKER_ID := int64(BERTVITS2_SPEAKER_ID__64)
 	DB_FILE_PATH := os.Getenv("DB_FILE_PATH")
-	ELEVENLABS_API_KEY := os.Getenv("ELEVENLABS_API_KEY")
-	ELEVENLABS_OUTPUT_FORMAT := os.Getenv("ELEVENLABS_OUTPUT_FORMAT")
-	ELEVENLABS_VOICEID := os.Getenv("ELEVENLABS_VOICEID")
 	OPENAI_API_KEY := os.Getenv("OPENAI_API_KEY")
 	OPENAI_CHAT_MODEL := os.Getenv("OPENAI_CHAT_MODEL")
 	OPENAI_ORG_ID := os.Getenv("OPENAI_ORG_ID")
@@ -218,9 +191,6 @@ func Load() error {
 		BERTVITS2_MODEL_ID:       BERTVITS2_MODEL_ID,
 		BERTVITS2_SPEAKER_ID:     BERTVITS2_SPEAKER_ID,
 		DB_FILE_PATH:             DB_FILE_PATH,
-		ELEVENLABS_API_KEY:       ELEVENLABS_API_KEY,
-		ELEVENLABS_OUTPUT_FORMAT: ELEVENLABS_OUTPUT_FORMAT,
-		ELEVENLABS_VOICEID:       ELEVENLABS_VOICEID,
 		OPENAI_API_KEY:           OPENAI_API_KEY,
 		OPENAI_CHAT_MODEL:        OPENAI_CHAT_MODEL,
 		OPENAI_ORG_ID:            OPENAI_ORG_ID,
@@ -240,9 +210,6 @@ type getterInterface interface {
 	BERTVITS2_MODEL_ID() int64
 	BERTVITS2_SPEAKER_ID() int64
 	DB_FILE_PATH() string
-	ELEVENLABS_API_KEY() string
-	ELEVENLABS_OUTPUT_FORMAT() string
-	ELEVENLABS_VOICEID() string
 	OPENAI_API_KEY() string
 	OPENAI_CHAT_MODEL() string
 	OPENAI_ORG_ID() string
@@ -269,9 +236,6 @@ type setterInterface interface {
 	BERTVITS2_MODEL_ID() int64
 	BERTVITS2_SPEAKER_ID() int64
 	DB_FILE_PATH() string
-	ELEVENLABS_API_KEY() string
-	ELEVENLABS_OUTPUT_FORMAT() string
-	ELEVENLABS_VOICEID() string
 	OPENAI_API_KEY() string
 	OPENAI_CHAT_MODEL() string
 	OPENAI_ORG_ID() string
