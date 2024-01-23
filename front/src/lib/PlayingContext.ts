@@ -54,9 +54,14 @@ export class PlayingContext {
                 this.nextTime = this.audioContext.currentTime;
             }
 
+            // 遅延対策
+            // すでに次の開始時間が過ぎていたら、次の開始時間を現在時刻にする
+            if (this.nextTime < this.audioContext.currentTime) {
+                this.nextTime = this.audioContext.currentTime;
+            }
+
             source.start(this.nextTime);
             this.nextTime += (audioBuffer.duration + bufferSeconds);
-
             this.latestAudioBufferSourceNode = source;
         });
     }
