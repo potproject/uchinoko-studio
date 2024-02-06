@@ -79,6 +79,13 @@ func (s setter) TAILSCALE_ENABLED_TLS(value bool) {
 	env.TAILSCALE_ENABLED_TLS = value
 	return
 }
+func (g getter) TAILSCALE_FUNNEL_ENABLED() bool {
+	return env.TAILSCALE_FUNNEL_ENABLED
+}
+func (s setter) TAILSCALE_FUNNEL_ENABLED(value bool) {
+	env.TAILSCALE_FUNNEL_ENABLED = value
+	return
+}
 func (g getter) TAILSCALE_HOSTNAME() string {
 	return env.TAILSCALE_HOSTNAME
 }
@@ -119,6 +126,7 @@ type environment struct {
 	PORT                     int32
 	TAILSCALE_ENABLED        bool
 	TAILSCALE_ENABLED_TLS    bool
+	TAILSCALE_FUNNEL_ENABLED bool
 	TAILSCALE_HOSTNAME       string
 	TAILSCALE_PORT           int32
 	VOICEVOX_ENDPOINT        string
@@ -172,6 +180,15 @@ func Load() error {
 	} else {
 		return errors.New("TAILSCALE_ENABLED_TLS: " + "cannot use " + TAILSCALE_ENABLED_TLS__S + " as type bool in assignment")
 	}
+	TAILSCALE_FUNNEL_ENABLED := false
+	TAILSCALE_FUNNEL_ENABLED__S := os.Getenv("TAILSCALE_FUNNEL_ENABLED")
+	if strings.ToLower(TAILSCALE_FUNNEL_ENABLED__S) == "true" {
+		TAILSCALE_FUNNEL_ENABLED = true
+	} else if strings.ToLower(TAILSCALE_FUNNEL_ENABLED__S) == "false" {
+		TAILSCALE_FUNNEL_ENABLED = false
+	} else {
+		return errors.New("TAILSCALE_FUNNEL_ENABLED: " + "cannot use " + TAILSCALE_FUNNEL_ENABLED__S + " as type bool in assignment")
+	}
 	TAILSCALE_HOSTNAME := os.Getenv("TAILSCALE_HOSTNAME")
 	TAILSCALE_PORT__S := os.Getenv("TAILSCALE_PORT")
 	TAILSCALE_PORT__64, err := strconv.ParseInt(TAILSCALE_PORT__S, 10, 32)
@@ -197,6 +214,7 @@ func Load() error {
 		PORT:                     PORT,
 		TAILSCALE_ENABLED:        TAILSCALE_ENABLED,
 		TAILSCALE_ENABLED_TLS:    TAILSCALE_ENABLED_TLS,
+		TAILSCALE_FUNNEL_ENABLED: TAILSCALE_FUNNEL_ENABLED,
 		TAILSCALE_HOSTNAME:       TAILSCALE_HOSTNAME,
 		TAILSCALE_PORT:           TAILSCALE_PORT,
 		VOICEVOX_ENDPOINT:        VOICEVOX_ENDPOINT,
@@ -216,6 +234,7 @@ type getterInterface interface {
 	PORT() int32
 	TAILSCALE_ENABLED() bool
 	TAILSCALE_ENABLED_TLS() bool
+	TAILSCALE_FUNNEL_ENABLED() bool
 	TAILSCALE_HOSTNAME() string
 	TAILSCALE_PORT() int32
 	VOICEVOX_ENDPOINT() string
@@ -242,6 +261,7 @@ type setterInterface interface {
 	PORT() int32
 	TAILSCALE_ENABLED() bool
 	TAILSCALE_ENABLED_TLS() bool
+	TAILSCALE_FUNNEL_ENABLED() bool
 	TAILSCALE_HOSTNAME() string
 	TAILSCALE_PORT() int32
 	VOICEVOX_ENDPOINT() string

@@ -53,7 +53,11 @@ func tailscaleSetup() {
 	var err error
 
 	if envgen.Get().TAILSCALE_ENABLED_TLS() {
-		ln, err = s.ListenTLS("tcp", addr)
+		if envgen.Get().TAILSCALE_FUNNEL_ENABLED() {
+			ln, err = s.ListenFunnel("tcp", addr)
+		} else {
+			ln, err = s.ListenTLS("tcp", addr)
+		}
 	} else {
 		ln, err = s.Listen("tcp", addr)
 	}
