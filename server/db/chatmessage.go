@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/potproject/uchinoko-studio/data"
+	"github.com/potproject/uchinoko-studio/envgen"
 	"github.com/sashabaranov/go-openai"
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -13,6 +14,21 @@ import (
 var systemMessage string
 
 func initChatMessage() data.ChatMessage {
+	if envgen.Get().CHAT_SERVICE() == "anthropic" {
+		return data.ChatMessage{
+			Chat: []openai.ChatCompletionMessage{
+				{
+					Role:    openai.ChatMessageRoleUser,
+					Content: systemMessage + "\n以上の内容を確認できれば、「了解しました。」と答え、以降指示に従ってください。",
+				},
+				{
+					Role:    openai.ChatMessageRoleAssistant,
+					Content: "了解しました。",
+				},
+			},
+		}
+	}
+
 	return data.ChatMessage{
 		Chat: []openai.ChatCompletionMessage{
 			{

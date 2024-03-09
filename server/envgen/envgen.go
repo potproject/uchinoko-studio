@@ -37,18 +37,18 @@ func (s setter) CHAT_API_KEY(value string) {
 	env.CHAT_API_KEY = value
 	return
 }
-func (g getter) CHAT_ENDPOINT() string {
-	return env.CHAT_ENDPOINT
-}
-func (s setter) CHAT_ENDPOINT(value string) {
-	env.CHAT_ENDPOINT = value
-	return
-}
 func (g getter) CHAT_MODEL() string {
 	return env.CHAT_MODEL
 }
 func (s setter) CHAT_MODEL(value string) {
 	env.CHAT_MODEL = value
+	return
+}
+func (g getter) CHAT_SERVICE() string {
+	return env.CHAT_SERVICE
+}
+func (s setter) CHAT_SERVICE(value string) {
+	env.CHAT_SERVICE = value
 	return
 }
 func (g getter) DB_FILE_PATH() string {
@@ -127,8 +127,8 @@ type environment struct {
 	BERTVITS2_MODEL_ID       int64
 	BERTVITS2_SPEAKER_ID     int64
 	CHAT_API_KEY             string
-	CHAT_ENDPOINT            string
 	CHAT_MODEL               string
+	CHAT_SERVICE             string
 	DB_FILE_PATH             string
 	PORT                     int32
 	TAILSCALE_ENABLED        bool
@@ -161,8 +161,8 @@ func Load() error {
 	}
 	BERTVITS2_SPEAKER_ID := int64(BERTVITS2_SPEAKER_ID__64)
 	CHAT_API_KEY := os.Getenv("CHAT_API_KEY")
-	CHAT_ENDPOINT := os.Getenv("CHAT_ENDPOINT")
 	CHAT_MODEL := os.Getenv("CHAT_MODEL")
+	CHAT_SERVICE := os.Getenv("CHAT_SERVICE")
 	DB_FILE_PATH := os.Getenv("DB_FILE_PATH")
 	PORT__S := os.Getenv("PORT")
 	PORT__64, err := strconv.ParseInt(PORT__S, 10, 32)
@@ -217,8 +217,8 @@ func Load() error {
 		BERTVITS2_MODEL_ID:       BERTVITS2_MODEL_ID,
 		BERTVITS2_SPEAKER_ID:     BERTVITS2_SPEAKER_ID,
 		CHAT_API_KEY:             CHAT_API_KEY,
-		CHAT_ENDPOINT:            CHAT_ENDPOINT,
 		CHAT_MODEL:               CHAT_MODEL,
+		CHAT_SERVICE:             CHAT_SERVICE,
 		DB_FILE_PATH:             DB_FILE_PATH,
 		PORT:                     PORT,
 		TAILSCALE_ENABLED:        TAILSCALE_ENABLED,
@@ -238,8 +238,8 @@ type getterInterface interface {
 	BERTVITS2_MODEL_ID() int64
 	BERTVITS2_SPEAKER_ID() int64
 	CHAT_API_KEY() string
-	CHAT_ENDPOINT() string
 	CHAT_MODEL() string
+	CHAT_SERVICE() string
 	DB_FILE_PATH() string
 	PORT() int32
 	TAILSCALE_ENABLED() bool
@@ -266,8 +266,8 @@ type setterInterface interface {
 	BERTVITS2_MODEL_ID() int64
 	BERTVITS2_SPEAKER_ID() int64
 	CHAT_API_KEY() string
-	CHAT_ENDPOINT() string
 	CHAT_MODEL() string
+	CHAT_SERVICE() string
 	DB_FILE_PATH() string
 	PORT() int32
 	TAILSCALE_ENABLED() bool

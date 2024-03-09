@@ -11,6 +11,7 @@ import (
 	"github.com/potproject/uchinoko-studio/data"
 	"github.com/potproject/uchinoko-studio/db"
 	"github.com/potproject/uchinoko-studio/envgen"
+	"github.com/sashabaranov/go-openai"
 )
 
 type TextInput struct {
@@ -75,7 +76,7 @@ func WSTalk() fiber.Handler {
 		}
 
 		transcriptionsApiKey := envgen.Get().TRANSCRIPTIONS_API_KEY()
-		chatEndpoint := envgen.Get().CHAT_ENDPOINT()
+		chatService := envgen.Get().CHAT_SERVICE()
 		chatApiKey := envgen.Get().CHAT_API_KEY()
 
 		voicevox := envgen.Get().VOICEVOX_ENDPOINT()
@@ -113,9 +114,17 @@ func WSTalk() fiber.Handler {
 				if err != nil {
 					sendError(c, err)
 				}
-				ncm, err := api.ChatStream(chatEndpoint, chatApiKey, cm.Chat, requestText, chunkMessage, chatDone)
-				if err != nil {
-					sendError(c, err)
+				var ncm []openai.ChatCompletionMessage
+				if chatService == "openai" {
+					ncm, err = api.OpenAIChatStream(chatApiKey, cm.Chat, requestText, chunkMessage, chatDone)
+					if err != nil {
+						sendError(c, err)
+					}
+				} else {
+					ncm, err = api.AnthropicChatStream(chatApiKey, cm.Chat, requestText, chunkMessage, chatDone)
+					if err != nil {
+						sendError(c, err)
+					}
 				}
 				db.PutChatMessage(id, data.ChatMessage{
 					Chat: ncm,
