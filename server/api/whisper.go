@@ -10,7 +10,7 @@ import (
 
 const OpenAIwhisperEndpoint = "https://api.openai.com/v1/audio/transcriptions"
 
-func Whisper(c *OpenAIClientExtend, fileData []byte, extention string) (string, error) {
+func Whisper(apiKey string, fileData []byte, extention string) (string, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	writer.WriteField("model", "whisper-1")
@@ -28,7 +28,7 @@ func Whisper(c *OpenAIClientExtend, fileData []byte, extention string) (string, 
 		return "", err
 	}
 
-	req.Header.Add("Authorization", "Bearer "+c.ApiKey)
+	req.Header.Add("Authorization", "Bearer "+apiKey)
 	req.Header.Add("Content-Type", writer.FormDataContentType())
 
 	client := &http.Client{}

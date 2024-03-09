@@ -31,9 +31,9 @@ const (
 	FinishOutputType            = "finish"
 )
 
-func messageProcess(mt int, msg []byte, fileType string, openai *api.OpenAIClientExtend) (string, error) {
+func messageProcess(mt int, msg []byte, fileType string, apiKey string) (string, error) {
 	if mt == websocket.BinaryMessage {
-		return api.Whisper(openai, msg, fileType)
+		return api.Whisper(apiKey, msg, fileType)
 	}
 	if mt == websocket.TextMessage {
 		textInput := TextInput{}
@@ -74,7 +74,9 @@ func WSTalk() fiber.Handler {
 			return
 		}
 
-		openai := api.OpenAINewClient()
+		transcriptionsApiKey := envgen.Get().TRANSCRIPTIONS_API_KEY()
+		chatEndpoint := envgen.Get().CHAT_ENDPOINT()
+		chatApiKey := envgen.Get().CHAT_API_KEY()
 
 		voicevox := envgen.Get().VOICEVOX_ENDPOINT()
 		voicevoxSpeaker := envgen.Get().VOICEVOX_SPEAKER()
@@ -95,7 +97,7 @@ func WSTalk() fiber.Handler {
 				break
 			}
 
-			requestText, err := messageProcess(mt, msg, fileType, openai)
+			requestText, err := messageProcess(mt, msg, fileType, transcriptionsApiKey)
 
 			wsSendTextMessage(c, ChatRequestOutputType, requestText)
 
@@ -111,7 +113,7 @@ func WSTalk() fiber.Handler {
 				if err != nil {
 					sendError(c, err)
 				}
-				ncm, err := api.ChatStream(openai, cm.Chat, requestText, chunkMessage, chatDone)
+				ncm, err := api.ChatStream(chatEndpoint, chatApiKey, cm.Chat, requestText, chunkMessage, chatDone)
 				if err != nil {
 					sendError(c, err)
 				}

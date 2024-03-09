@@ -30,32 +30,32 @@ func (s setter) BERTVITS2_SPEAKER_ID(value int64) {
 	env.BERTVITS2_SPEAKER_ID = value
 	return
 }
+func (g getter) CHAT_API_KEY() string {
+	return env.CHAT_API_KEY
+}
+func (s setter) CHAT_API_KEY(value string) {
+	env.CHAT_API_KEY = value
+	return
+}
+func (g getter) CHAT_ENDPOINT() string {
+	return env.CHAT_ENDPOINT
+}
+func (s setter) CHAT_ENDPOINT(value string) {
+	env.CHAT_ENDPOINT = value
+	return
+}
+func (g getter) CHAT_MODEL() string {
+	return env.CHAT_MODEL
+}
+func (s setter) CHAT_MODEL(value string) {
+	env.CHAT_MODEL = value
+	return
+}
 func (g getter) DB_FILE_PATH() string {
 	return env.DB_FILE_PATH
 }
 func (s setter) DB_FILE_PATH(value string) {
 	env.DB_FILE_PATH = value
-	return
-}
-func (g getter) OPENAI_API_KEY() string {
-	return env.OPENAI_API_KEY
-}
-func (s setter) OPENAI_API_KEY(value string) {
-	env.OPENAI_API_KEY = value
-	return
-}
-func (g getter) OPENAI_CHAT_MODEL() string {
-	return env.OPENAI_CHAT_MODEL
-}
-func (s setter) OPENAI_CHAT_MODEL(value string) {
-	env.OPENAI_CHAT_MODEL = value
-	return
-}
-func (g getter) OPENAI_ORG_ID() string {
-	return env.OPENAI_ORG_ID
-}
-func (s setter) OPENAI_ORG_ID(value string) {
-	env.OPENAI_ORG_ID = value
 	return
 }
 func (g getter) PORT() int32 {
@@ -100,6 +100,13 @@ func (s setter) TAILSCALE_PORT(value int32) {
 	env.TAILSCALE_PORT = value
 	return
 }
+func (g getter) TRANSCRIPTIONS_API_KEY() string {
+	return env.TRANSCRIPTIONS_API_KEY
+}
+func (s setter) TRANSCRIPTIONS_API_KEY(value string) {
+	env.TRANSCRIPTIONS_API_KEY = value
+	return
+}
 func (g getter) VOICEVOX_ENDPOINT() string {
 	return env.VOICEVOX_ENDPOINT
 }
@@ -119,16 +126,17 @@ type environment struct {
 	BERTVITS2_ENDPOINT       string
 	BERTVITS2_MODEL_ID       int64
 	BERTVITS2_SPEAKER_ID     int64
+	CHAT_API_KEY             string
+	CHAT_ENDPOINT            string
+	CHAT_MODEL               string
 	DB_FILE_PATH             string
-	OPENAI_API_KEY           string
-	OPENAI_CHAT_MODEL        string
-	OPENAI_ORG_ID            string
 	PORT                     int32
 	TAILSCALE_ENABLED        bool
 	TAILSCALE_ENABLED_TLS    bool
 	TAILSCALE_FUNNEL_ENABLED bool
 	TAILSCALE_HOSTNAME       string
 	TAILSCALE_PORT           int32
+	TRANSCRIPTIONS_API_KEY   string
 	VOICEVOX_ENDPOINT        string
 	VOICEVOX_SPEAKER         int64
 }
@@ -152,10 +160,10 @@ func Load() error {
 		return errors.New("BERTVITS2_SPEAKER_ID: " + err.Error())
 	}
 	BERTVITS2_SPEAKER_ID := int64(BERTVITS2_SPEAKER_ID__64)
+	CHAT_API_KEY := os.Getenv("CHAT_API_KEY")
+	CHAT_ENDPOINT := os.Getenv("CHAT_ENDPOINT")
+	CHAT_MODEL := os.Getenv("CHAT_MODEL")
 	DB_FILE_PATH := os.Getenv("DB_FILE_PATH")
-	OPENAI_API_KEY := os.Getenv("OPENAI_API_KEY")
-	OPENAI_CHAT_MODEL := os.Getenv("OPENAI_CHAT_MODEL")
-	OPENAI_ORG_ID := os.Getenv("OPENAI_ORG_ID")
 	PORT__S := os.Getenv("PORT")
 	PORT__64, err := strconv.ParseInt(PORT__S, 10, 32)
 	if err != nil {
@@ -196,6 +204,7 @@ func Load() error {
 		return errors.New("TAILSCALE_PORT: " + err.Error())
 	}
 	TAILSCALE_PORT := int32(TAILSCALE_PORT__64)
+	TRANSCRIPTIONS_API_KEY := os.Getenv("TRANSCRIPTIONS_API_KEY")
 	VOICEVOX_ENDPOINT := os.Getenv("VOICEVOX_ENDPOINT")
 	VOICEVOX_SPEAKER__S := os.Getenv("VOICEVOX_SPEAKER")
 	VOICEVOX_SPEAKER__64, err := strconv.ParseInt(VOICEVOX_SPEAKER__S, 10, 64)
@@ -207,16 +216,17 @@ func Load() error {
 		BERTVITS2_ENDPOINT:       BERTVITS2_ENDPOINT,
 		BERTVITS2_MODEL_ID:       BERTVITS2_MODEL_ID,
 		BERTVITS2_SPEAKER_ID:     BERTVITS2_SPEAKER_ID,
+		CHAT_API_KEY:             CHAT_API_KEY,
+		CHAT_ENDPOINT:            CHAT_ENDPOINT,
+		CHAT_MODEL:               CHAT_MODEL,
 		DB_FILE_PATH:             DB_FILE_PATH,
-		OPENAI_API_KEY:           OPENAI_API_KEY,
-		OPENAI_CHAT_MODEL:        OPENAI_CHAT_MODEL,
-		OPENAI_ORG_ID:            OPENAI_ORG_ID,
 		PORT:                     PORT,
 		TAILSCALE_ENABLED:        TAILSCALE_ENABLED,
 		TAILSCALE_ENABLED_TLS:    TAILSCALE_ENABLED_TLS,
 		TAILSCALE_FUNNEL_ENABLED: TAILSCALE_FUNNEL_ENABLED,
 		TAILSCALE_HOSTNAME:       TAILSCALE_HOSTNAME,
 		TAILSCALE_PORT:           TAILSCALE_PORT,
+		TRANSCRIPTIONS_API_KEY:   TRANSCRIPTIONS_API_KEY,
 		VOICEVOX_ENDPOINT:        VOICEVOX_ENDPOINT,
 		VOICEVOX_SPEAKER:         VOICEVOX_SPEAKER,
 	}
@@ -227,16 +237,17 @@ type getterInterface interface {
 	BERTVITS2_ENDPOINT() string
 	BERTVITS2_MODEL_ID() int64
 	BERTVITS2_SPEAKER_ID() int64
+	CHAT_API_KEY() string
+	CHAT_ENDPOINT() string
+	CHAT_MODEL() string
 	DB_FILE_PATH() string
-	OPENAI_API_KEY() string
-	OPENAI_CHAT_MODEL() string
-	OPENAI_ORG_ID() string
 	PORT() int32
 	TAILSCALE_ENABLED() bool
 	TAILSCALE_ENABLED_TLS() bool
 	TAILSCALE_FUNNEL_ENABLED() bool
 	TAILSCALE_HOSTNAME() string
 	TAILSCALE_PORT() int32
+	TRANSCRIPTIONS_API_KEY() string
 	VOICEVOX_ENDPOINT() string
 	VOICEVOX_SPEAKER() int64
 }
@@ -254,16 +265,17 @@ type setterInterface interface {
 	BERTVITS2_ENDPOINT() string
 	BERTVITS2_MODEL_ID() int64
 	BERTVITS2_SPEAKER_ID() int64
+	CHAT_API_KEY() string
+	CHAT_ENDPOINT() string
+	CHAT_MODEL() string
 	DB_FILE_PATH() string
-	OPENAI_API_KEY() string
-	OPENAI_CHAT_MODEL() string
-	OPENAI_ORG_ID() string
 	PORT() int32
 	TAILSCALE_ENABLED() bool
 	TAILSCALE_ENABLED_TLS() bool
 	TAILSCALE_FUNNEL_ENABLED() bool
 	TAILSCALE_HOSTNAME() string
 	TAILSCALE_PORT() int32
+	TRANSCRIPTIONS_API_KEY() string
 	VOICEVOX_ENDPOINT() string
 	VOICEVOX_SPEAKER() int64
 }

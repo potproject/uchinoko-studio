@@ -14,21 +14,21 @@ import (
 
 const chars = ".,?!;:—-()[]{} 。、？！；：「」（）［］｛｝　\"'"
 
-func ChatStream(c *OpenAIClientExtend, cm []openai.ChatCompletionMessage, text string, chunkMessage chan TextMessage, responseText chan string) ([]openai.ChatCompletionMessage, error) {
+func ChatStream(chatEndpoint string, apiKey string, cm []openai.ChatCompletionMessage, text string, chunkMessage chan TextMessage, responseText chan string) ([]openai.ChatCompletionMessage, error) {
 	ctx := context.Background()
-
+	c := openai.NewClient(apiKey)
 	ncm := append(cm, openai.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleUser,
 		Content: text,
 	})
 
 	req := openai.ChatCompletionRequest{
-		Model:     envgen.Get().OPENAI_CHAT_MODEL(),
+		Model:     envgen.Get().CHAT_MODEL(),
 		MaxTokens: 4096,
 		Messages:  ncm,
 		Stream:    true,
 	}
-	stream, err := c.Client.CreateChatCompletionStream(ctx, req)
+	stream, err := c.CreateChatCompletionStream(ctx, req)
 	if err != nil {
 		log.Printf("ChatCompletionStream error: %v\n", err)
 		return cm, err
