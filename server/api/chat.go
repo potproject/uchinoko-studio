@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/potproject/uchinoko-studio/db"
 	"github.com/potproject/uchinoko-studio/envgen"
 	openai "github.com/sashabaranov/go-openai"
 	"github.com/tmaxmax/go-sse"
@@ -128,17 +129,26 @@ type AnthropicContentBlockDeltaBody struct {
 	} `json:"delta"`
 }
 
+type anthropicChatCompletionRequest struct {
+	openai.ChatCompletionRequest
+	System string `json:"system"`
+}
+
 func AnthropicChatStream(apiKey string, cm []openai.ChatCompletionMessage, text string, chunkMessage chan TextMessage, responseText chan string) ([]openai.ChatCompletionMessage, error) {
 	ncm := append(cm, openai.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleUser,
 		Content: text,
 	})
 
-	body := openai.ChatCompletionRequest{
-		Model:     envgen.Get().CHAT_MODEL(),
-		MaxTokens: 4096,
-		Messages:  ncm,
-		Stream:    true,
+	body := anthropicChatCompletionRequest{
+		ChatCompletionRequest: openai.ChatCompletionRequest{
+
+			Model:     envgen.Get().CHAT_MODEL(),
+			MaxTokens: 4096,
+			Messages:  ncm,
+			Stream:    true,
+		},
+		System: db.SystemMessage,
 	}
 
 	bodyJson, err := json.Marshal(body)

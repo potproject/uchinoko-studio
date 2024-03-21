@@ -11,21 +11,12 @@ import (
 )
 
 //go:embed propmt.txt
-var systemMessage string
+var SystemMessage string
 
 func initChatMessage() data.ChatMessage {
 	if envgen.Get().CHAT_SERVICE() == "anthropic" {
 		return data.ChatMessage{
-			Chat: []openai.ChatCompletionMessage{
-				{
-					Role:    openai.ChatMessageRoleUser,
-					Content: systemMessage + "\n以上の内容を確認できれば、「了解しました。」と答え、以降指示に従ってください。",
-				},
-				{
-					Role:    openai.ChatMessageRoleAssistant,
-					Content: "了解しました。",
-				},
-			},
+			Chat: []openai.ChatCompletionMessage{},
 		}
 	}
 
@@ -33,7 +24,7 @@ func initChatMessage() data.ChatMessage {
 		Chat: []openai.ChatCompletionMessage{
 			{
 				Role:    openai.ChatMessageRoleSystem,
-				Content: systemMessage,
+				Content: SystemMessage,
 			},
 		},
 	}
