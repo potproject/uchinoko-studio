@@ -5,6 +5,7 @@
     import { tick } from "svelte";
     import ChatMyMsg from "./chat-my-msg.svelte";
     import ChatYourMsg from "./chat-your-msg.svelte";
+    import type { CharacterConfig } from "../types/character";
 
     let initLoading = true;
     let stopMic = false;
@@ -17,7 +18,7 @@
     }
 
     export let audio: AudioContext;
-    export let selected: string;
+    export let selectCharacter: CharacterConfig;
     export let id: string;
 
     let timer = 0;
@@ -69,7 +70,7 @@
         const extenstion = MediaRecorder.isTypeSupported('audio/webm') ? 'webm' : 'mp4';
         const mimeType = `audio/${extenstion}`;
 
-        const url = `${wsTLS}://${location.host}/v1/ws/talk/${id}/${selected}/${extenstion}`;
+        const url = `${wsTLS}://${location.host}/v1/ws/talk/${id}/${selectCharacter.general.id}/${extenstion}`;
         socket = new SocketContext(url);
         await new Promise(resolve => {
             socket.onConnected = () => {
@@ -87,11 +88,8 @@
             updateChat();
         }
         socket.onBinary = (data) => {
-            if (selected === 'bertvits2' || selected === 'voicevox') {
-                playing.playWAV(data);
-                return;
-            }
-            playing.playPCM(data);
+            playing.playWAV(data);
+            return;
         }
         socket.onText = (data) => {
             if(data.type === 'finish') {
@@ -271,7 +269,7 @@
 <div>
     <!-- center img circle -->
     <div class="flex justify-center items-center">
-        <img src="default.png" class="rounded-full w-32 h-32 {speaking ? 'animate-pulsate-fwd border-4 border-blue-500' : ''}" alt="ai" />
+        <img src={selectCharacter.general.image} class="rounded-full w-32 h-32 {speaking ? 'animate-pulsate-fwd border-4 border-blue-500' : ''}" alt="ai" />
     </div>
     <!-- Timer -->
     <div class="flex justify-center items-center">
@@ -294,7 +292,7 @@
                     {#if msg.type === 'my'}
                         <ChatMyMsg message={msg.text} loading={msg.loading} speaking={msg.speaking} />
                     {:else if msg.type === 'your'}
-                        <ChatYourMsg message={msg.text} loading={msg.loading} speaking={msg.speaking} />
+                        <ChatYourMsg message={msg.text} loading={msg.loading} speaking={msg.speaking} img={selectCharacter.general.image} />
                     {:else if msg.type === 'error'}
                     <div class="flex justify-center items-center rounded-md bg-red-600 p-2 m-2 text-white">
                         <i class="las text-2xl la-exclamation-circle"></i>{msg.text}

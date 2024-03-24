@@ -1,6 +1,2 @@
 .env
-*.mp3
-!slient.mp3
 server/leveldb
-front/static/default.png
-server/db/propmt.txt

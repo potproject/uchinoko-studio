@@ -6,12 +6,11 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"strconv"
 )
 
 const apiVoiceEndpoint = "voice"
 
-func BertVits2TTSStream(endpoint string, modelId int64, speakerId int64, chunkMessage <-chan TextMessage, outAudio chan []byte, outText chan string) error {
+func BertVits2TTSStream(endpoint string, modelId string, speakerId string, chunkMessage <-chan TextMessage, outAudio chan []byte, outText chan string) error {
 	for {
 		select {
 		case t := <-chunkMessage:
@@ -21,7 +20,7 @@ func BertVits2TTSStream(endpoint string, modelId int64, speakerId int64, chunkMe
 				}
 				continue
 			}
-			bin, err := bertVits2TTS(endpoint, strconv.FormatInt(modelId, 10), strconv.FormatInt(speakerId, 10), t.Text)
+			bin, err := bertVits2TTS(endpoint, modelId, speakerId, t.Text)
 			if err != nil {
 				log.Printf("Error: %s", err.Error())
 				return err

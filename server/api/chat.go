@@ -10,27 +10,31 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/potproject/uchinoko-studio/db"
-	"github.com/potproject/uchinoko-studio/envgen"
 	openai "github.com/sashabaranov/go-openai"
 	"github.com/tmaxmax/go-sse"
 )
 
 const chars = ".,?!;:—-()[]{} 。、？！；：「」（）［］｛｝　\"'"
 
-func OpenAIChatStream(apiKey string, cm []openai.ChatCompletionMessage, text string, chunkMessage chan TextMessage, responseText chan string) ([]openai.ChatCompletionMessage, error) {
+func OpenAIChatStream(apiKey string, chatSystemPropmt string, model string, cm []openai.ChatCompletionMessage, text string, chunkMessage chan TextMessage, responseText chan string) ([]openai.ChatCompletionMessage, error) {
 	ctx := context.Background()
 	c := openai.NewClient(apiKey)
+
 	ncm := append(cm, openai.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleUser,
 		Content: text,
 	})
 
 	req := openai.ChatCompletionRequest{
-		Model:     envgen.Get().CHAT_MODEL(),
+		Model:     model,
 		MaxTokens: 4096,
-		Messages:  ncm,
-		Stream:    true,
+		Messages: append([]openai.ChatCompletionMessage{
+			{
+				Role:    openai.ChatMessageRoleSystem,
+				Content: chatSystemPropmt,
+			},
+		}, cm...),
+		Stream: true,
 	}
 	stream, err := c.CreateChatCompletionStream(ctx, req)
 	if err != nil {
@@ -134,7 +138,7 @@ type anthropicChatCompletionRequest struct {
 	System string `json:"system"`
 }
 
-func AnthropicChatStream(apiKey string, cm []openai.ChatCompletionMessage, text string, chunkMessage chan TextMessage, responseText chan string) ([]openai.ChatCompletionMessage, error) {
+func AnthropicChatStream(apiKey string, chatSystemPropmt string, model string, cm []openai.ChatCompletionMessage, text string, chunkMessage chan TextMessage, responseText chan string) ([]openai.ChatCompletionMessage, error) {
 	ncm := append(cm, openai.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleUser,
 		Content: text,
@@ -143,12 +147,12 @@ func AnthropicChatStream(apiKey string, cm []openai.ChatCompletionMessage, text 
 	body := anthropicChatCompletionRequest{
 		ChatCompletionRequest: openai.ChatCompletionRequest{
 
-			Model:     envgen.Get().CHAT_MODEL(),
+			Model:     model,
 			MaxTokens: 4096,
 			Messages:  ncm,
 			Stream:    true,
 		},
-		System: db.SystemMessage,
+		System: chatSystemPropmt,
 	}
 
 	bodyJson, err := json.Marshal(body)

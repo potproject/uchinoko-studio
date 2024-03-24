@@ -63,28 +63,32 @@ func WSTalk() fiber.Handler {
 	return websocket.New(func(c *websocket.Conn) {
 		id := c.Params("id")
 		fileType := c.Params("fileType")
-		voiceType := c.Params("voiceType")
+		characterId := c.Params("characterId")
 
 		if fileType != "mp4" && fileType != "mp3" && fileType != "wav" && fileType != "webm" {
 			c.Close()
 			return
 		}
 
-		if voiceType != "voicevox" && voiceType != "bertvits2" {
-			c.Close()
+		character, err := db.GetCharacterConfig(characterId)
+		if err != nil {
+			sendError(c, err)
 			return
 		}
 
-		transcriptionsApiKey := envgen.Get().TRANSCRIPTIONS_API_KEY()
-		chatService := envgen.Get().CHAT_SERVICE()
-		chatApiKey := envgen.Get().CHAT_API_KEY()
+		openaiApiKey := envgen.Get().OPENAI_API_KEY()
+		anthropicApiKey := envgen.Get().ANTHROPIC_API_KEY()
 
-		voicevox := envgen.Get().VOICEVOX_ENDPOINT()
-		voicevoxSpeaker := envgen.Get().VOICEVOX_SPEAKER()
+		voicevoxEndpoint := envgen.Get().VOICEVOX_ENDPOINT()
+		bertvits2Endpoint := envgen.Get().BERTVITS2_ENDPOINT()
 
-		bertvits2 := envgen.Get().BERTVITS2_ENDPOINT()
-		bertvits2ModelID := envgen.Get().BERTVITS2_MODEL_ID()
-		bertvits2SpeakerId := envgen.Get().BERTVITS2_SPEAKER_ID()
+		chatType := character.Chat.Type
+		chatModel := character.Chat.Model
+		chatSystemPropmt := character.Chat.SystemPrompt
+
+		voiceType := character.Voice.Type
+		voiceSpeaker := character.Voice.SpeakerID
+		voiceModel := character.Voice.ModelID
 
 		format := "wav"
 
@@ -98,7 +102,7 @@ func WSTalk() fiber.Handler {
 				break
 			}
 
-			requestText, err := messageProcess(mt, msg, fileType, transcriptionsApiKey)
+			requestText, err := messageProcess(mt, msg, fileType, openaiApiKey)
 
 			wsSendTextMessage(c, ChatRequestOutputType, requestText)
 
@@ -115,13 +119,13 @@ func WSTalk() fiber.Handler {
 					sendError(c, err)
 				}
 				var ncm []openai.ChatCompletionMessage
-				if chatService == "openai" {
-					ncm, err = api.OpenAIChatStream(chatApiKey, cm.Chat, requestText, chunkMessage, chatDone)
+				if chatType == "openai" {
+					ncm, err = api.OpenAIChatStream(openaiApiKey, chatSystemPropmt, chatModel, cm.Chat, requestText, chunkMessage, chatDone)
 					if err != nil {
 						sendError(c, err)
 					}
 				} else {
-					ncm, err = api.AnthropicChatStream(chatApiKey, cm.Chat, requestText, chunkMessage, chatDone)
+					ncm, err = api.AnthropicChatStream(anthropicApiKey, chatSystemPropmt, chatModel, cm.Chat, requestText, chunkMessage, chatDone)
 					if err != nil {
 						sendError(c, err)
 					}
@@ -135,7 +139,7 @@ func WSTalk() fiber.Handler {
 			}()
 			if voiceType == "voicevox" {
 				go func() {
-					err = api.VoicevoxTTSStream(voicevox, voicevoxSpeaker, chunkMessage, outAudio, outText)
+					err = api.VoicevoxTTSStream(voicevoxEndpoint, voiceSpeaker, chunkMessage, outAudio, outText)
 					ttsDone <- true
 					if err != nil {
 						sendError(c, err)
@@ -143,7 +147,7 @@ func WSTalk() fiber.Handler {
 				}()
 			} else {
 				go func() {
-					err := api.BertVits2TTSStream(bertvits2, bertvits2ModelID, bertvits2SpeakerId, chunkMessage, outAudio, outText)
+					err := api.BertVits2TTSStream(bertvits2Endpoint, voiceModel, voiceSpeaker, chunkMessage, outAudio, outText)
 					ttsDone <- true
 					if err != nil {
 						sendError(c, err)

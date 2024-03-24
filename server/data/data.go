@@ -2,8 +2,32 @@ package data
 
 import "github.com/sashabaranov/go-openai"
 
-type Config struct {
-	Name string `json:"name"`
+type GeneralConfig struct {
+	Transcription struct {
+		Type string `json:"type"`
+	} `json:"transcription"`
+}
+
+type CharacterConfigList struct {
+	Characters []CharacterConfig `json:"characters"`
+}
+
+type CharacterConfig struct {
+	General struct {
+		ID    string `json:"id"`
+		Name  string `json:"name"`
+		Image string `json:"image"`
+	} `json:"general"`
+	Voice struct {
+		Type      string `json:"type"`
+		ModelID   string `json:"modelId"`
+		SpeakerID string `json:"speakerId"`
+	} `json:"voice"`
+	Chat struct {
+		Type         string `json:"type"`
+		Model        string `json:"model"`
+		SystemPrompt string `json:"systemPrompt"`
+	} `json:"chat"`
 }
 
 type ChatMessage struct {

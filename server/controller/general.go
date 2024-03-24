@@ -6,18 +6,16 @@ import (
 	"github.com/potproject/uchinoko-studio/db"
 )
 
-func postConfig(c *fiber.Ctx) error {
-	id := c.Params("id")
-	config := new(data.Config)
+func PostGeneralConfig(c *fiber.Ctx) error {
+	config := new(data.GeneralConfig)
 	if err := c.BodyParser(config); err != nil {
 		return err
 	}
-	return db.PutConfig(id, *config)
+	return db.PutGeneralConfig(*config)
 }
 
-func getConfig(c *fiber.Ctx) error {
-	id := c.Params("id")
-	config, err := db.GetConfig(id)
+func GetGeneralConfig(c *fiber.Ctx) error {
+	config, err := db.GetGeneralConfig()
 	if err != nil {
 		return err
 	}

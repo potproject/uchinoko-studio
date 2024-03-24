@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"strconv"
 )
 
 const apiAudioQueryEndpoint = "audio_query"
@@ -16,7 +15,7 @@ type Request struct {
 	Text string `json:"text"`
 }
 
-func VoicevoxTTSStream(endpoint string, speaker int64, chunkMessage <-chan TextMessage, outAudio chan []byte, outText chan string) error {
+func VoicevoxTTSStream(endpoint string, speaker string, chunkMessage <-chan TextMessage, outAudio chan []byte, outText chan string) error {
 	for {
 		select {
 		case t := <-chunkMessage:
@@ -26,7 +25,7 @@ func VoicevoxTTSStream(endpoint string, speaker int64, chunkMessage <-chan TextM
 				}
 				continue
 			}
-			bin, err := voicevoxTTS(endpoint, strconv.FormatInt(speaker, 10), t.Text)
+			bin, err := voicevoxTTS(endpoint, speaker, t.Text)
 			if err != nil {
 				log.Printf("Error: %s", err.Error())
 				return err
