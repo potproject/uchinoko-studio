@@ -8,8 +8,8 @@ import (
 	"net/url"
 )
 
-const apiAudioQueryEndpoint = "audio_query"
-const apiSynthesisEndpoint = "synthesis"
+const voicevoxAudioQueryEndpoint = "audio_query"
+const voicevoxSynthesisEndpoint = "synthesis"
 
 type Request struct {
 	Text string `json:"text"`
@@ -41,7 +41,7 @@ func VoicevoxTTSStream(endpoint string, speaker string, chunkMessage <-chan Text
 
 func voicevoxTTS(endpoint string, speaker string, text string) ([]byte, error) {
 	client := new(http.Client)
-	audioQuery := endpoint + apiAudioQueryEndpoint + "?speaker=" + speaker + "&text=" + url.QueryEscape(text)
+	audioQuery := endpoint + voicevoxAudioQueryEndpoint + "?speaker=" + speaker + "&text=" + url.QueryEscape(text)
 
 	queryReq, err := http.NewRequest("POST", audioQuery, nil)
 	if err != nil {
@@ -58,7 +58,7 @@ func voicevoxTTS(endpoint string, speaker string, text string) ([]byte, error) {
 		return nil, err
 	}
 
-	synthesis := endpoint + apiSynthesisEndpoint + "?speaker=" + speaker
+	synthesis := endpoint + voicevoxSynthesisEndpoint + "?speaker=" + speaker
 	synthesisReq, err := http.NewRequest("POST", synthesis, bytes.NewReader(qbin))
 
 	if err != nil {

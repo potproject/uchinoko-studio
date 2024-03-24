@@ -99,11 +99,11 @@
         </h2>
         {#if showVoice}
             <div class="flex items-center px-4 py-2">
-                <!-- 使用する音声設定 Bert-vits2 / VOICEVOX -->
                 <div class="flex-1">
                     <label for="voice" class="text-sm">音声設定</label>
                     <select id="voice" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice.type}>
                         <option value="bertvits2">Bert-VITS2(FastAPI)</option>
+                        <option value="stylebertvits2">Style-Bert-VITS2(FastAPI)</option>
                         <option value="voicevox">VOICEVOX</option>
                     </select>
                 </div>
@@ -123,6 +123,26 @@
                         <input type="text" id="speaker_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice.speakerId} />
                     </div>
                 </div>
+            {/if}
+            {#if data.voice.type === "stylebertvits2"}
+            <div class="flex items-center px-4 py-2">
+                <div class="flex-1">
+                    <label for="model_id" class="text-sm">モデル</label>
+                    <input type="text" id="model_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice.modelId} />
+                </div>
+            </div>
+            <div class="flex items-center px-4 py-2">
+                <div class="flex-1">
+                    <label for="model_file" class="text-sm">モデルファイル</label>
+                    <input type="text" id="model_file" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice.modelFile} />
+                </div>
+            </div>
+            <div class="flex items-center px-4 py-2">
+                <div class="flex-1">
+                    <label for="speaker_id" class="text-sm">話者</label>
+                    <input type="text" id="speaker_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice.speakerId} />
+                </div>
+            </div>
             {/if}
             {#if data.voice.type === "voicevox"}
                 <div class="flex items-center px-4 py-2">

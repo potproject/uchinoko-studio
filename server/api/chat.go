@@ -33,7 +33,7 @@ func OpenAIChatStream(apiKey string, chatSystemPropmt string, model string, cm [
 				Role:    openai.ChatMessageRoleSystem,
 				Content: chatSystemPropmt,
 			},
-		}, cm...),
+		}, ncm...),
 		Stream: true,
 	}
 	stream, err := c.CreateChatCompletionStream(ctx, req)

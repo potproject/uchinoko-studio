@@ -22,9 +22,8 @@
                     class={"w-24 h-24 rounded-full border shadow-sm bg-white cursor-pointer hover:shadow-md border-2 " + (selectCharacterIndex === i ? "border-blue-500 shadow-md" : "border-gray-300")}
                     on:click={() => (dispatch("selectCharacter", { index: i }))}
                 />
-                <!-- delete icon -->
                 <i
-                    on:click={() => (dispatch("deleteCharacter", { character: character }))}
+                    on:click={() => window.confirm("このキャラクターを削除しますか？") && dispatch("deleteCharacter", { character: character })}
                     class="las la-trash-alt text-gray-200 absolute -left-4 -top-1 text-3xl bg-red-500 rounded-full cursor-pointer p-1 hover:bg-red-700 hover:text-white"
                 ></i>
                 <i

@@ -21,6 +21,7 @@ type CharacterConfig struct {
 	Voice struct {
 		Type      string `json:"type"`
 		ModelID   string `json:"modelId"`
+		ModelFile string `json:"modelFile"`
 		SpeakerID string `json:"speakerId"`
 	} `json:"voice"`
 	Chat struct {

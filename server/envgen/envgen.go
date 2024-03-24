@@ -44,6 +44,13 @@ func (s setter) PORT(value int32) {
 	env.PORT = value
 	return
 }
+func (g getter) STYLEBERTVIT2_ENDPOINT() string {
+	return env.STYLEBERTVIT2_ENDPOINT
+}
+func (s setter) STYLEBERTVIT2_ENDPOINT(value string) {
+	env.STYLEBERTVIT2_ENDPOINT = value
+	return
+}
 func (g getter) TAILSCALE_ENABLED() bool {
 	return env.TAILSCALE_ENABLED
 }
@@ -93,6 +100,7 @@ type environment struct {
 	DB_FILE_PATH             string
 	OPENAI_API_KEY           string
 	PORT                     int32
+	STYLEBERTVIT2_ENDPOINT   string
 	TAILSCALE_ENABLED        bool
 	TAILSCALE_ENABLED_TLS    bool
 	TAILSCALE_FUNNEL_ENABLED bool
@@ -117,6 +125,7 @@ func Load() error {
 		return errors.New("PORT: " + err.Error())
 	}
 	PORT := int32(PORT__64)
+	STYLEBERTVIT2_ENDPOINT := os.Getenv("STYLEBERTVIT2_ENDPOINT")
 	TAILSCALE_ENABLED := false
 	TAILSCALE_ENABLED__S := os.Getenv("TAILSCALE_ENABLED")
 	if strings.ToLower(TAILSCALE_ENABLED__S) == "true" {
@@ -158,6 +167,7 @@ func Load() error {
 		DB_FILE_PATH:             DB_FILE_PATH,
 		OPENAI_API_KEY:           OPENAI_API_KEY,
 		PORT:                     PORT,
+		STYLEBERTVIT2_ENDPOINT:   STYLEBERTVIT2_ENDPOINT,
 		TAILSCALE_ENABLED:        TAILSCALE_ENABLED,
 		TAILSCALE_ENABLED_TLS:    TAILSCALE_ENABLED_TLS,
 		TAILSCALE_FUNNEL_ENABLED: TAILSCALE_FUNNEL_ENABLED,
@@ -174,6 +184,7 @@ type getterInterface interface {
 	DB_FILE_PATH() string
 	OPENAI_API_KEY() string
 	PORT() int32
+	STYLEBERTVIT2_ENDPOINT() string
 	TAILSCALE_ENABLED() bool
 	TAILSCALE_ENABLED_TLS() bool
 	TAILSCALE_FUNNEL_ENABLED() bool
@@ -197,6 +208,7 @@ type setterInterface interface {
 	DB_FILE_PATH() string
 	OPENAI_API_KEY() string
 	PORT() int32
+	STYLEBERTVIT2_ENDPOINT() string
 	TAILSCALE_ENABLED() bool
 	TAILSCALE_ENABLED_TLS() bool
 	TAILSCALE_FUNNEL_ENABLED() bool

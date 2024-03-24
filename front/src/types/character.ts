@@ -7,6 +7,7 @@ export type CharacterConfig = {
     voice: {
         type: string;
         modelId: string;
+        modelFile: string;
         speakerId: string;
     };
     chat: {

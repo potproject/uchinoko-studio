@@ -81,6 +81,7 @@ func WSTalk() fiber.Handler {
 
 		voicevoxEndpoint := envgen.Get().VOICEVOX_ENDPOINT()
 		bertvits2Endpoint := envgen.Get().BERTVITS2_ENDPOINT()
+		styleBertvits2Endpoint := envgen.Get().STYLEBERTVIT2_ENDPOINT()
 
 		chatType := character.Chat.Type
 		chatModel := character.Chat.Model
@@ -89,6 +90,7 @@ func WSTalk() fiber.Handler {
 		voiceType := character.Voice.Type
 		voiceSpeaker := character.Voice.SpeakerID
 		voiceModel := character.Voice.ModelID
+		voiceModelFile := character.Voice.ModelFile
 
 		format := "wav"
 
@@ -145,7 +147,17 @@ func WSTalk() fiber.Handler {
 						sendError(c, err)
 					}
 				}()
-			} else {
+			}
+			if voiceType == "stylebertvits2" {
+				go func() {
+					err = api.StyleBertVits2TTSStream(styleBertvits2Endpoint, voiceModel, voiceModelFile, voiceSpeaker, chunkMessage, outAudio, outText)
+					ttsDone <- true
+					if err != nil {
+						sendError(c, err)
+					}
+				}()
+			}
+			if voiceType == "bertvits2" {
 				go func() {
 					err := api.BertVits2TTSStream(bertvits2Endpoint, voiceModel, voiceSpeaker, chunkMessage, outAudio, outText)
 					ttsDone <- true

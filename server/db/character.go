@@ -22,10 +22,12 @@ func CharacterInitConfig() data.CharacterConfig {
 		Voice: struct {
 			Type      string `json:"type"`
 			ModelID   string `json:"modelId"`
+			ModelFile string `json:"modelFile"`
 			SpeakerID string `json:"speakerId"`
 		}{
 			Type:      "bertvits2",
 			ModelID:   "0",
+			ModelFile: "",
 			SpeakerID: "0",
 		},
 		Chat: struct {
