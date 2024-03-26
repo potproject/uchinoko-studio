@@ -16,7 +16,7 @@ import (
 
 const chars = ".,?!;:—-()[]{} 。、？！；：「」（）［］｛｝　\"'"
 
-func OpenAIChatStream(apiKey string, chatSystemPropmt string, model string, cm []openai.ChatCompletionMessage, text string, chunkMessage chan TextMessage, responseText chan string) ([]openai.ChatCompletionMessage, error) {
+func OpenAIChatStream(apiKey string, chatSystemPropmt string, model string, cm []openai.ChatCompletionMessage, text string, chunkMessage chan TextMessage) ([]openai.ChatCompletionMessage, error) {
 	ctx := context.Background()
 	c := openai.NewClient(apiKey)
 
@@ -45,14 +45,11 @@ func OpenAIChatStream(apiKey string, chatSystemPropmt string, model string, cm [
 
 	allText := ""
 	bufferText := ""
-	firstSend := true
 	for {
 		response, err := stream.Recv()
 		if errors.Is(err, io.EOF) {
-			responseText <- allText
 			chunkMessage <- TextMessage{
 				Text:    bufferText,
-				IsFirst: firstSend,
 				IsFinal: true,
 			}
 			return append(
@@ -80,20 +77,16 @@ func OpenAIChatStream(apiKey string, chatSystemPropmt string, model string, cm [
 		if chunked {
 			chunkMessage <- TextMessage{
 				Text:    bufferText + content,
-				IsFirst: firstSend,
 				IsFinal: false,
 			}
-			firstSend = false
 			bufferText = ""
 		} else {
 			bufferText += content
 		}
 
 		if response.Choices[0].FinishReason == "stop" {
-			responseText <- allText
 			chunkMessage <- TextMessage{
 				Text:    bufferText,
-				IsFirst: firstSend,
 				IsFinal: true,
 			}
 			return append(
@@ -138,7 +131,7 @@ type anthropicChatCompletionRequest struct {
 	System string `json:"system"`
 }
 
-func AnthropicChatStream(apiKey string, chatSystemPropmt string, model string, cm []openai.ChatCompletionMessage, text string, chunkMessage chan TextMessage, responseText chan string) ([]openai.ChatCompletionMessage, error) {
+func AnthropicChatStream(apiKey string, chatSystemPropmt string, model string, cm []openai.ChatCompletionMessage, text string, chunkMessage chan TextMessage) ([]openai.ChatCompletionMessage, error) {
 	ncm := append(cm, openai.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleUser,
 		Content: text,
@@ -176,7 +169,6 @@ func AnthropicChatStream(apiKey string, chatSystemPropmt string, model string, c
 
 	allText := ""
 	bufferText := ""
-	firstSend := true
 	unsubscribe := conn.SubscribeEvent(AnthropicChatResponseTypeContentBlockDelta, func(event sse.Event) {
 		var body AnthropicContentBlockDeltaBody
 		if err := json.Unmarshal([]byte(event.Data), &body); err != nil {
@@ -195,10 +187,8 @@ func AnthropicChatStream(apiKey string, chatSystemPropmt string, model string, c
 		if chunked {
 			chunkMessage <- TextMessage{
 				Text:    bufferText + content,
-				IsFirst: firstSend,
 				IsFinal: false,
 			}
-			firstSend = false
 			bufferText = ""
 		} else {
 			bufferText += content
@@ -208,10 +198,8 @@ func AnthropicChatStream(apiKey string, chatSystemPropmt string, model string, c
 		return cm, err
 	}
 	defer unsubscribe()
-	responseText <- allText
 	chunkMessage <- TextMessage{
 		Text:    bufferText,
-		IsFirst: firstSend,
 		IsFinal: true,
 	}
 	return append(

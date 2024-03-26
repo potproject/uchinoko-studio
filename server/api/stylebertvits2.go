@@ -11,12 +11,17 @@ import (
 const styleBertVits2G2pEndpoint = "api/g2p"
 const styleBertVits2SynthesisEndpoint = "api/synthesis"
 
-func StyleBertVits2TTSStream(endpoint string, model string, modelFile string, speaker string, chunkMessage <-chan TextMessage, outAudio chan []byte, outText chan string) error {
+func StyleBertVits2TTSStream(endpoint string, model string, modelFile string, speaker string, chunkMessage <-chan TextMessage, outAudioMessage chan AudioMessage) error {
 	for {
 		select {
 		case t := <-chunkMessage:
 			if len(t.Text) == 0 {
 				if t.IsFinal {
+					outAudioMessage <- AudioMessage{
+						Audio:   []byte{},
+						Text:    "",
+						IsFinal: true,
+					}
 					return nil
 				}
 				continue
@@ -26,8 +31,11 @@ func StyleBertVits2TTSStream(endpoint string, model string, modelFile string, sp
 				log.Printf("Error: %s", err.Error())
 				return err
 			}
-			outText <- t.Text
-			outAudio <- bin
+			outAudioMessage <- AudioMessage{
+				Audio:   bin,
+				Text:    t.Text,
+				IsFinal: t.IsFinal,
+			}
 			if t.IsFinal {
 				return nil
 			}

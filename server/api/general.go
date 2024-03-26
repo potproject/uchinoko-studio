@@ -2,6 +2,11 @@ package api
 
 type TextMessage struct {
 	Text    string
-	IsFirst bool
+	IsFinal bool
+}
+
+type AudioMessage struct {
+	Audio   []byte
+	Text    string
 	IsFinal bool
 }
