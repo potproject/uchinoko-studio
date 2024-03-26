@@ -1,12 +1,10 @@
 package api
 
 type TextMessage struct {
-	Text    string
-	IsFinal bool
+	Text string
 }
 
 type AudioMessage struct {
-	Audio   []byte
-	Text    string
-	IsFinal bool
+	Audio []byte
+	Text  string
 }

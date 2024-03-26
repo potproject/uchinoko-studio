@@ -115,6 +115,9 @@ func WSTalk() fiber.Handler {
 			chunkMessage := make(chan api.TextMessage)
 			chunkAudio := make(chan api.AudioMessage)
 
+			chatDone := make(chan bool)
+			ttsDone := make(chan bool)
+
 			// Chat処理
 			wg.Add(1)
 			go func() {
@@ -123,6 +126,7 @@ func WSTalk() fiber.Handler {
 					apiKey = anthropicApiKey
 				}
 				runChatStream(id, requestText, chatType, apiKey, chatSystemPropmt, chatModel, chunkMessage)
+				chatDone <- true
 				wg.Done()
 			}()
 
@@ -136,17 +140,18 @@ func WSTalk() fiber.Handler {
 				if voiceType == "bertvits2" {
 					endpoint = bertvits2Endpoint
 				}
-				err := runTTSStream(voiceType, endpoint, voiceSpeaker, voiceModel, voiceModelFile, chunkMessage, chunkAudio)
+				err := runTTSStream(voiceType, endpoint, voiceSpeaker, voiceModel, voiceModelFile, chunkMessage, chunkAudio, chatDone)
 				if err != nil {
 					sendError(c, err)
 				}
+				ttsDone <- true
 				wg.Done()
 			}()
 
 			// WebSocketへの出力
 			wg.Add(1)
 			go func() {
-				runWSSend(c, chunkAudio)
+				runWSSend(c, chunkAudio, ttsDone)
 				wg.Done()
 			}()
 			wg.Wait()
@@ -155,44 +160,40 @@ func WSTalk() fiber.Handler {
 
 			close(chunkMessage)
 			close(chunkAudio)
+			close(chatDone)
+			close(ttsDone)
 		}
 	})
 }
 
-func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage) {
+func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, ttsDone chan bool) {
 	text := ""
 	for {
 		select {
 		case a := <-outAudioMessage:
 			if len(a.Audio) == 0 {
-				if a.IsFinal {
-
-					wsSendTextMessage(c, ChatResponseOutputType, text)
-					return
-				}
 				continue
 			}
 			wsSendTextMessage(c, ChatResponseChunkOutputType, a.Text)
 			text += a.Text
 			wsSendBinaryMessage(c, a.Audio)
-			if a.IsFinal {
-				wsSendTextMessage(c, ChatResponseOutputType, text)
-				return
-			}
+		case <-ttsDone:
+			wsSendTextMessage(c, ChatResponseOutputType, text)
+			return
 		}
 	}
 }
 
-func runTTSStream(voiceType string, endpoint string, voiceSpeaker string, voiceModel string, voiceModelFile string, chunkMessage chan api.TextMessage, outAudioMessage chan api.AudioMessage) error {
+func runTTSStream(voiceType string, endpoint string, voiceSpeaker string, voiceModel string, voiceModelFile string, chunkMessage chan api.TextMessage, outAudioMessage chan api.AudioMessage, chatDone chan bool) error {
 	var err error
 	if voiceType == "voicevox" {
-		err = api.VoicevoxTTSStream(endpoint, voiceSpeaker, chunkMessage, outAudioMessage)
+		err = api.VoicevoxTTSStream(endpoint, voiceSpeaker, chunkMessage, outAudioMessage, chatDone)
 	}
 	if voiceType == "stylebertvits2" {
-		err = api.StyleBertVits2TTSStream(endpoint, voiceModel, voiceModelFile, voiceSpeaker, chunkMessage, outAudioMessage)
+		err = api.StyleBertVits2TTSStream(endpoint, voiceModel, voiceModelFile, voiceSpeaker, chunkMessage, outAudioMessage, chatDone)
 	}
 	if voiceType == "bertvits2" {
-		err = api.BertVits2TTSStream(endpoint, voiceModel, voiceSpeaker, chunkMessage, outAudioMessage)
+		err = api.BertVits2TTSStream(endpoint, voiceModel, voiceSpeaker, chunkMessage, outAudioMessage, chatDone)
 	}
 	if err != nil {
 		return err

@@ -49,8 +49,7 @@ func OpenAIChatStream(apiKey string, chatSystemPropmt string, model string, cm [
 		response, err := stream.Recv()
 		if errors.Is(err, io.EOF) {
 			chunkMessage <- TextMessage{
-				Text:    bufferText,
-				IsFinal: true,
+				Text: bufferText,
 			}
 			return append(
 				ncm,
@@ -76,8 +75,7 @@ func OpenAIChatStream(apiKey string, chatSystemPropmt string, model string, cm [
 		}
 		if chunked {
 			chunkMessage <- TextMessage{
-				Text:    bufferText + content,
-				IsFinal: false,
+				Text: bufferText + content,
 			}
 			bufferText = ""
 		} else {
@@ -86,8 +84,7 @@ func OpenAIChatStream(apiKey string, chatSystemPropmt string, model string, cm [
 
 		if response.Choices[0].FinishReason == "stop" {
 			chunkMessage <- TextMessage{
-				Text:    bufferText,
-				IsFinal: true,
+				Text: bufferText,
 			}
 			return append(
 				ncm,
@@ -186,8 +183,7 @@ func AnthropicChatStream(apiKey string, chatSystemPropmt string, model string, c
 		}
 		if chunked {
 			chunkMessage <- TextMessage{
-				Text:    bufferText + content,
-				IsFinal: false,
+				Text: bufferText + content,
 			}
 			bufferText = ""
 		} else {
@@ -199,8 +195,7 @@ func AnthropicChatStream(apiKey string, chatSystemPropmt string, model string, c
 	}
 	defer unsubscribe()
 	chunkMessage <- TextMessage{
-		Text:    bufferText,
-		IsFinal: true,
+		Text: bufferText,
 	}
 	return append(
 		ncm,

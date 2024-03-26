@@ -10,19 +10,11 @@ import (
 
 const bertvits2VoiceEndpoint = "voice"
 
-func BertVits2TTSStream(endpoint string, modelId string, speakerId string, chunkMessage <-chan TextMessage, outAudioMessage chan AudioMessage) error {
+func BertVits2TTSStream(endpoint string, modelId string, speakerId string, chunkMessage <-chan TextMessage, outAudioMessage chan AudioMessage, chatDone chan bool) error {
 	for {
 		select {
 		case t := <-chunkMessage:
 			if len(t.Text) == 0 {
-				if t.IsFinal {
-					outAudioMessage <- AudioMessage{
-						Audio:   []byte{},
-						Text:    "",
-						IsFinal: true,
-					}
-					return nil
-				}
 				continue
 			}
 			bin, err := bertVits2TTS(endpoint, modelId, speakerId, t.Text)
@@ -31,13 +23,11 @@ func BertVits2TTSStream(endpoint string, modelId string, speakerId string, chunk
 				return err
 			}
 			outAudioMessage <- AudioMessage{
-				Audio:   bin,
-				Text:    t.Text,
-				IsFinal: t.IsFinal,
+				Audio: bin,
+				Text:  t.Text,
 			}
-			if t.IsFinal {
-				return nil
-			}
+		case <-chatDone:
+			return nil
 		}
 	}
 }
