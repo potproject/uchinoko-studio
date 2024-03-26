@@ -87,10 +87,10 @@ func WSTalk() fiber.Handler {
 		chatModel := character.Chat.Model
 		chatSystemPropmt := character.Chat.SystemPrompt
 
-		voiceType := character.Voice.Type
-		voiceSpeaker := character.Voice.SpeakerID
-		voiceModel := character.Voice.ModelID
-		voiceModelFile := character.Voice.ModelFile
+		voiceType := character.Voice[0].Type
+		voiceSpeaker := character.Voice[0].SpeakerID
+		voiceModel := character.Voice[0].ModelID
+		voiceModelFile := character.Voice[0].ModelFile
 
 		format := "wav"
 

@@ -98,59 +98,101 @@
             <i class={"las text-2xl ml-auto" + (showVoice ? " la-angle-up" : " la-angle-down")} on:click={() => (showVoice = !showVoice)}></i>
         </h2>
         {#if showVoice}
-            <div class="flex items-center px-4 py-2">
-                <div class="flex-1">
-                    <label for="voice" class="text-sm">音声設定</label>
-                    <select id="voice" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice.type}>
-                        <option value="bertvits2">Bert-VITS2(FastAPI)</option>
-                        <option value="stylebertvits2">Style-Bert-VITS2(FastAPI)</option>
-                        <option value="voicevox">VOICEVOX</option>
-                    </select>
+            <!-- 複数音声を有効化 -->
+            <div class="flex items-center px-4 py-2 justify-between">
+                <div class="flex-1 items-center justify-between">
+                    <input type="checkbox" id="multi_voice" class="mr-2" bind:checked={data.multiVoice} on:change={
+                        () => {
+                            // 複数音声を無効化した場合、最初の音声設定のみ残す
+                            if(!data.multiVoice){
+                                data.voice = [data.voice[0]];
+                            }
+                        }
+                    } />
+                    <label for="multi_voice" class="text-sm">複数音声を有効化</label>
                 </div>
-            </div>
-
-            <!-- bertvits 設定 -->
-            {#if data.voice.type === "bertvits2"}
-                <div class="flex items-center px-4 py-2">
-                    <div class="flex-1">
-                        <label for="model_id" class="text-sm">モデルID</label>
-                        <input type="text" id="model_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice.modelId} />
+            </div>  
+            {#each data.voice as _, index}
+                <div class="border border-gray-300 rounded p-2 m-2">
+                    <div class="flex items-center px-4 py-2">
+                        <div class="flex-1">
+                            <label for="voice" class="text-sm">音声設定</label>
+                            <select id="voice" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].type}>
+                                <option value="bertvits2">Bert-VITS2(FastAPI)</option>
+                                <option value="stylebertvits2">Style-Bert-VITS2(FastAPI)</option>
+                                <option value="voicevox">VOICEVOX</option>
+                            </select>
+                        </div>
                     </div>
-                </div>
-                <div class="flex items-center px-4 py-2">
-                    <div class="flex-1">
-                        <label for="speaker_id" class="text-sm">スピーカーID</label>
-                        <input type="text" id="speaker_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice.speakerId} />
+                    {#if data.multiVoice}
+                        <div class="flex items-center px-4 py-2">
+                            <div class="flex-1">
+                                <label for="model_id" class="text-sm">キャラクター識別子</label>
+                                <input type="text" id="model_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].identification} />
+                            </div>
+                        </div>
+                    {/if}
+                    {#if data.voice[index].type === "bertvits2"}
+                        <div class="flex items-center px-4 py-2">
+                            <div class="flex-1">
+                                <label for="model_id" class="text-sm">モデルID</label>
+                                <input type="text" id="model_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].modelId} />
+                            </div>
+                        </div>
+                        <div class="flex items-center px-4 py-2">
+                            <div class="flex-1">
+                                <label for="speaker_id" class="text-sm">スピーカーID</label>
+                                <input type="text" id="speaker_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].speakerId} />
+                            </div>
+                        </div>
+                    {/if}
+                    {#if data.voice[index].type === "stylebertvits2"}
+                    <div class="flex items-center px-4 py-2">
+                        <div class="flex-1">
+                            <label for="model_id" class="text-sm">モデル</label>
+                            <input type="text" id="model_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].modelId} />
+                        </div>
                     </div>
-                </div>
-            {/if}
-            {#if data.voice.type === "stylebertvits2"}
-            <div class="flex items-center px-4 py-2">
-                <div class="flex-1">
-                    <label for="model_id" class="text-sm">モデル</label>
-                    <input type="text" id="model_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice.modelId} />
-                </div>
-            </div>
-            <div class="flex items-center px-4 py-2">
-                <div class="flex-1">
-                    <label for="model_file" class="text-sm">モデルファイル</label>
-                    <input type="text" id="model_file" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice.modelFile} />
-                </div>
-            </div>
-            <div class="flex items-center px-4 py-2">
-                <div class="flex-1">
-                    <label for="speaker_id" class="text-sm">話者</label>
-                    <input type="text" id="speaker_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice.speakerId} />
-                </div>
-            </div>
-            {/if}
-            {#if data.voice.type === "voicevox"}
-                <div class="flex items-center px-4 py-2">
-                    <div class="flex-1">
-                        <label for="speaker_id" class="text-sm">スピーカーID</label>
-                        <input type="text" id="speaker_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice.speakerId} />
+                    <div class="flex items-center px-4 py-2">
+                        <div class="flex-1">
+                            <label for="model_file" class="text-sm">モデルファイル</label>
+                            <input type="text" id="model_file" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].modelFile} />
+                        </div>
                     </div>
+                    <div class="flex items-center px-4 py-2">
+                        <div class="flex-1">
+                            <label for="speaker_id" class="text-sm">話者</label>
+                            <input type="text" id="speaker_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].speakerId} />
+                        </div>
+                    </div>
+                    {/if}
+                    {#if data.voice[index].type === "voicevox"}
+                        <div class="flex items-center px-4 py-2">
+                            <div class="flex-1">
+                                <label for="speaker_id" class="text-sm">スピーカーID</label>
+                                <input type="text" id="speaker_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].speakerId} />
+                            </div>
+                        </div>
+                    {/if}
+                    {#if index > 0}
+                        <div class="flex justify-between items-center p-4">
+                            <button class="border border-red-500 text-red-500 bg-white rounded-md px-4 py-2 hover:bg-red-500 hover:text-white" on:click={() =>
+                                data.voice = data.voice.filter((_, i) => i !== index)
+                            }>
+                                <i class="las la-trash"></i> 削除
+                            </button>
+                        </div>
+                    {/if}
                 </div>
+            {/each}
+            {#if data.multiVoice}
+            <div class="flex justify-between items-center p-4">
+                <button class="border border-blue-500 text-blue-500 bg-white rounded-md px-4 py-2 hover:bg-blue-500 hover:text-white" on:click={() => 
+                    data.voice = [...data.voice, { type: "bertvits2", modelId: "", speakerId: "", identification: "", modelFile: "" }]
+                }>
+                    <i class="las la-plus"></i> 追加
+                </button>
+            </div>
             {/if}
         {/if}
 

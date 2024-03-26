@@ -18,11 +18,13 @@ type CharacterConfig struct {
 		Name  string `json:"name"`
 		Image string `json:"image"`
 	} `json:"general"`
-	Voice struct {
-		Type      string `json:"type"`
-		ModelID   string `json:"modelId"`
-		ModelFile string `json:"modelFile"`
-		SpeakerID string `json:"speakerId"`
+	MultiVoice bool `json:"multiVoice"`
+	Voice      []struct {
+		Type           string `json:"type"`
+		Identification string `json:"identification"`
+		ModelID        string `json:"modelId"`
+		ModelFile      string `json:"modelFile"`
+		SpeakerID      string `json:"speakerId"`
 	} `json:"voice"`
 	Chat struct {
 		Type         string `json:"type"`

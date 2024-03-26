@@ -19,16 +19,20 @@ func CharacterInitConfig() data.CharacterConfig {
 			Name:  "Default",
 			Image: "default.png",
 		},
-		Voice: struct {
-			Type      string `json:"type"`
-			ModelID   string `json:"modelId"`
-			ModelFile string `json:"modelFile"`
-			SpeakerID string `json:"speakerId"`
+		MultiVoice: false,
+		Voice: []struct {
+			Type           string `json:"type"`
+			Identification string `json:"identification"`
+			ModelID        string `json:"modelId"`
+			ModelFile      string `json:"modelFile"`
+			SpeakerID      string `json:"speakerId"`
 		}{
-			Type:      "bertvits2",
-			ModelID:   "0",
-			ModelFile: "",
-			SpeakerID: "0",
+			{
+				Type:      "bertvits2",
+				ModelID:   "0",
+				ModelFile: "",
+				SpeakerID: "0",
+			},
 		},
 		Chat: struct {
 			Type         string `json:"type"`

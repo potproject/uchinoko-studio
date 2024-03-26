@@ -4,12 +4,14 @@ export type CharacterConfig = {
         name: string;
         image: string;
     };
+    multiVoice: boolean;
     voice: {
         type: string;
+        identification: string;
         modelId: string;
         modelFile: string;
         speakerId: string;
-    };
+    }[];
     chat: {
         type: string;
         model: string;
