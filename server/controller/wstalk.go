@@ -58,6 +58,33 @@ func wsSendBinaryMessage(c *websocket.Conn, data []byte) error {
 	return c.WriteMessage(websocket.BinaryMessage, data)
 }
 
+func getTranscriptionApiKey() string {
+	return envgen.Get().OPENAI_API_KEY()
+}
+
+func getChatApiKey(chatType string) string {
+	if chatType == "openai" {
+		return envgen.Get().OPENAI_API_KEY()
+	}
+	if chatType == "anthropic" {
+		return envgen.Get().ANTHROPIC_API_KEY()
+	}
+	return ""
+}
+
+func getVoiceEndpoint(voiceType string) string {
+	if voiceType == "voicevox" {
+		return envgen.Get().VOICEVOX_ENDPOINT()
+	}
+	if voiceType == "bertvits2" {
+		return envgen.Get().BERTVITS2_ENDPOINT()
+	}
+	if voiceType == "stylebertvits2" {
+		return envgen.Get().STYLEBERTVIT2_ENDPOINT()
+	}
+	return ""
+}
+
 func WSTalk() fiber.Handler {
 	return websocket.New(func(c *websocket.Conn) {
 		id := c.Params("id")
@@ -75,21 +102,11 @@ func WSTalk() fiber.Handler {
 			return
 		}
 
-		openaiApiKey := envgen.Get().OPENAI_API_KEY()
-		anthropicApiKey := envgen.Get().ANTHROPIC_API_KEY()
-
-		voicevoxEndpoint := envgen.Get().VOICEVOX_ENDPOINT()
-		bertvits2Endpoint := envgen.Get().BERTVITS2_ENDPOINT()
-		styleBertvits2Endpoint := envgen.Get().STYLEBERTVIT2_ENDPOINT()
-
 		chatType := character.Chat.Type
 		chatModel := character.Chat.Model
 		chatSystemPropmt := character.Chat.SystemPrompt
 
-		voiceType := character.Voice[0].Type
-		voiceSpeaker := character.Voice[0].SpeakerID
-		voiceModel := character.Voice[0].ModelID
-		voiceModelFile := character.Voice[0].ModelFile
+		voice := character.Voice[0]
 
 		format := "wav"
 
@@ -103,7 +120,7 @@ func WSTalk() fiber.Handler {
 				break
 			}
 
-			requestText, err := messageProcess(mt, msg, fileType, openaiApiKey)
+			requestText, err := messageProcess(mt, msg, fileType, getTranscriptionApiKey())
 			if err != nil {
 				sendError(c, err)
 				break
@@ -121,11 +138,10 @@ func WSTalk() fiber.Handler {
 			// Chat処理
 			wg.Add(1)
 			go func() {
-				apiKey := openaiApiKey
-				if chatType == "anthropic" {
-					apiKey = anthropicApiKey
+				err := runChatStream(id, requestText, chatType, getChatApiKey(chatType), chatSystemPropmt, chatModel, chunkMessage)
+				if err != nil {
+					sendError(c, err)
 				}
-				runChatStream(id, requestText, chatType, apiKey, chatSystemPropmt, chatModel, chunkMessage)
 				chatDone <- true
 				wg.Done()
 			}()
@@ -133,14 +149,7 @@ func WSTalk() fiber.Handler {
 			// TTS処理
 			wg.Add(1)
 			go func() {
-				endpoint := voicevoxEndpoint
-				if voiceType == "stylebertvits2" {
-					endpoint = styleBertvits2Endpoint
-				}
-				if voiceType == "bertvits2" {
-					endpoint = bertvits2Endpoint
-				}
-				err := runTTSStream(voiceType, endpoint, voiceSpeaker, voiceModel, voiceModelFile, chunkMessage, chunkAudio, chatDone)
+				err := runTTSStream(voice.Type, getVoiceEndpoint(voice.Type), voice.SpeakerID, voice.ModelID, voice.ModelFile, chunkMessage, chunkAudio, chatDone)
 				if err != nil {
 					sendError(c, err)
 				}

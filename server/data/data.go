@@ -13,24 +13,30 @@ type CharacterConfigList struct {
 }
 
 type CharacterConfig struct {
-	General struct {
-		ID    string `json:"id"`
-		Name  string `json:"name"`
-		Image string `json:"image"`
-	} `json:"general"`
-	MultiVoice bool `json:"multiVoice"`
-	Voice      []struct {
-		Type           string `json:"type"`
-		Identification string `json:"identification"`
-		ModelID        string `json:"modelId"`
-		ModelFile      string `json:"modelFile"`
-		SpeakerID      string `json:"speakerId"`
-	} `json:"voice"`
-	Chat struct {
-		Type         string `json:"type"`
-		Model        string `json:"model"`
-		SystemPrompt string `json:"systemPrompt"`
-	} `json:"chat"`
+	General    CharacterConfigGeneral `json:"general"`
+	MultiVoice bool                   `json:"multiVoice"`
+	Voice      []CharacterConfigVoice `json:"voice"`
+	Chat       CharacterConfigChat    `json:"chat"`
+}
+
+type CharacterConfigGeneral struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Image string `json:"image"`
+}
+
+type CharacterConfigVoice struct {
+	Type           string `json:"type"`
+	Identification string `json:"identification"`
+	ModelID        string `json:"modelId"`
+	ModelFile      string `json:"modelFile"`
+	SpeakerID      string `json:"speakerId"`
+}
+
+type CharacterConfigChat struct {
+	Type         string `json:"type"`
+	Model        string `json:"model"`
+	SystemPrompt string `json:"systemPrompt"`
 }
 
 type ChatMessage struct {

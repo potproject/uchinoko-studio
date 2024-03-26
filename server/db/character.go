@@ -10,35 +10,22 @@ import (
 
 func CharacterInitConfig() data.CharacterConfig {
 	return data.CharacterConfig{
-		General: struct {
-			ID    string `json:"id"`
-			Name  string `json:"name"`
-			Image string `json:"image"`
-		}{
+		General: data.CharacterConfigGeneral{
 			ID:    uuid.New().String(),
 			Name:  "Default",
 			Image: "default.png",
 		},
 		MultiVoice: false,
-		Voice: []struct {
-			Type           string `json:"type"`
-			Identification string `json:"identification"`
-			ModelID        string `json:"modelId"`
-			ModelFile      string `json:"modelFile"`
-			SpeakerID      string `json:"speakerId"`
-		}{
+		Voice: []data.CharacterConfigVoice{
 			{
-				Type:      "bertvits2",
-				ModelID:   "0",
-				ModelFile: "",
-				SpeakerID: "0",
+				Type:           "bertvits2",
+				Identification: "",
+				ModelID:        "0",
+				ModelFile:      "",
+				SpeakerID:      "0",
 			},
 		},
-		Chat: struct {
-			Type         string `json:"type"`
-			Model        string `json:"model"`
-			SystemPrompt string `json:"systemPrompt"`
-		}{
+		Chat: data.CharacterConfigChat{
 			Type:         "openai",
 			Model:        "gpt-3.5-turbo",
 			SystemPrompt: "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly.",
