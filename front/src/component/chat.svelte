@@ -120,6 +120,27 @@
                 return;
             }
 
+            if(data.type === 'chat-response-change-character') {
+                // 1つ前がyourの場合は、そのメッセージを更新
+                if (messages[messages.length - 1].chunk && messages[messages.length - 1].type === 'your') {
+                    messages = [...messages.slice(0, messages.length - 1), {
+                        type: 'your',
+                        text: messages[messages.length - 1].text,
+                        loading: false,
+                        speaking: false,
+                        chunk: false
+                    }];
+                }
+                messages = [...messages, {
+                    type: 'your',
+                    text: data.text.replace(/<("[^"]*"|'[^']*'|[^'">])*>/g, ''),
+                    loading: true,
+                    speaking: true,
+                    chunk: true
+                }];
+                return;
+            }
+
             if(data.type === 'chat-response-chunk') {
                 if (messages[messages.length - 1].chunk) {
                     messages = [...messages.slice(0, messages.length - 1), {

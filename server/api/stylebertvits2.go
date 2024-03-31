@@ -4,34 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"log"
 	"net/http"
 )
 
 const styleBertVits2G2pEndpoint = "api/g2p"
 const styleBertVits2SynthesisEndpoint = "api/synthesis"
-
-func StyleBertVits2TTSStream(endpoint string, model string, modelFile string, speaker string, chunkMessage <-chan TextMessage, outAudioMessage chan AudioMessage, chatDone chan bool) error {
-	for {
-		select {
-		case t := <-chunkMessage:
-			if len(t.Text) == 0 {
-				continue
-			}
-			bin, err := stylebertVits2TTS(endpoint, model, modelFile, speaker, t.Text)
-			if err != nil {
-				log.Printf("Error: %s", err.Error())
-				return err
-			}
-			outAudioMessage <- AudioMessage{
-				Audio: bin,
-				Text:  t.Text,
-			}
-		case <-chatDone:
-			return nil
-		}
-	}
-}
 
 type styleBertVits2G2pRequestBody struct {
 	Text string `json:"text"`
@@ -55,7 +32,7 @@ type styleBertVits2SynthesisRequestBody struct {
 	SilenceAfter    float64         `json:"silenceAfter,omitempty"`
 }
 
-func stylebertVits2TTS(endpoint string, model string, modelFile string, speaker string, text string) ([]byte, error) {
+func styleBertVits2TTS(endpoint string, model string, modelFile string, speaker string, text string) ([]byte, error) {
 	client := new(http.Client)
 	g2pQuery := endpoint + styleBertVits2G2pEndpoint
 	g2pReqBody := styleBertVits2G2pRequestBody{Text: text}

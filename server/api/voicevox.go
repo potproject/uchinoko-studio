@@ -3,7 +3,6 @@ package api
 import (
 	"bytes"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 )
@@ -13,28 +12,6 @@ const voicevoxSynthesisEndpoint = "synthesis"
 
 type Request struct {
 	Text string `json:"text"`
-}
-
-func VoicevoxTTSStream(endpoint string, speaker string, chunkMessage <-chan TextMessage, outAudioMessage chan AudioMessage, chatDone chan bool) error {
-	for {
-		select {
-		case t := <-chunkMessage:
-			if len(t.Text) == 0 {
-				continue
-			}
-			bin, err := voicevoxTTS(endpoint, speaker, t.Text)
-			if err != nil {
-				log.Printf("Error: %s", err.Error())
-				return err
-			}
-			outAudioMessage <- AudioMessage{
-				Audio: bin,
-				Text:  t.Text,
-			}
-		case <-chatDone:
-			return nil
-		}
-	}
 }
 
 func voicevoxTTS(endpoint string, speaker string, text string) ([]byte, error) {

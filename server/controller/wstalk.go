@@ -26,6 +26,7 @@ const (
 	ConnectionOutputType        = "connection"
 	ChatRequestOutputType       = "chat-request"
 	ChatResponseOutputType      = "chat-response"
+	ChatResponseChangeCharacter = "chat-response-change-character"
 	ChatResponseChunkOutputType = "chat-response-chunk"
 	ErrorOutputType             = "error"
 	FinishOutputType            = "finish"
@@ -72,19 +73,6 @@ func getChatApiKey(chatType string) string {
 	return ""
 }
 
-func getVoiceEndpoint(voiceType string) string {
-	if voiceType == "voicevox" {
-		return envgen.Get().VOICEVOX_ENDPOINT()
-	}
-	if voiceType == "bertvits2" {
-		return envgen.Get().BERTVITS2_ENDPOINT()
-	}
-	if voiceType == "stylebertvits2" {
-		return envgen.Get().STYLEBERTVIT2_ENDPOINT()
-	}
-	return ""
-}
-
 func WSTalk() fiber.Handler {
 	return websocket.New(func(c *websocket.Conn) {
 		id := c.Params("id")
@@ -106,7 +94,7 @@ func WSTalk() fiber.Handler {
 		chatModel := character.Chat.Model
 		chatSystemPropmt := character.Chat.SystemPrompt
 
-		voice := character.Voice[0]
+		voices := character.Voice
 
 		format := "wav"
 
@@ -131,6 +119,7 @@ func WSTalk() fiber.Handler {
 			var wg sync.WaitGroup
 			chunkMessage := make(chan api.TextMessage)
 			chunkAudio := make(chan api.AudioMessage)
+			changeVoice := make(chan data.CharacterConfigVoice)
 
 			chatDone := make(chan bool)
 			ttsDone := make(chan bool)
@@ -138,7 +127,7 @@ func WSTalk() fiber.Handler {
 			// Chat処理
 			wg.Add(1)
 			go func() {
-				err := runChatStream(id, requestText, chatType, getChatApiKey(chatType), chatSystemPropmt, chatModel, chunkMessage)
+				err := runChatStream(id, voices, character.MultiVoice, requestText, chatType, getChatApiKey(chatType), chatSystemPropmt, chatModel, chunkMessage)
 				if err != nil {
 					sendError(c, err)
 				}
@@ -149,7 +138,7 @@ func WSTalk() fiber.Handler {
 			// TTS処理
 			wg.Add(1)
 			go func() {
-				err := runTTSStream(voice.Type, getVoiceEndpoint(voice.Type), voice.SpeakerID, voice.ModelID, voice.ModelFile, chunkMessage, chunkAudio, chatDone)
+				err := runTTSStream(chunkMessage, changeVoice, chunkAudio, chatDone)
 				if err != nil {
 					sendError(c, err)
 				}
@@ -160,7 +149,7 @@ func WSTalk() fiber.Handler {
 			// WebSocketへの出力
 			wg.Add(1)
 			go func() {
-				runWSSend(c, chunkAudio, ttsDone)
+				runWSSend(c, chunkAudio, changeVoice, ttsDone)
 				wg.Done()
 			}()
 			wg.Wait()
@@ -175,17 +164,21 @@ func WSTalk() fiber.Handler {
 	})
 }
 
-func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, ttsDone chan bool) {
+func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, changeVoice chan data.CharacterConfigVoice, ttsDone chan bool) {
 	text := ""
 	for {
 		select {
 		case a := <-outAudioMessage:
-			if len(a.Audio) == 0 {
+			if len(a.Text) == 0 {
 				continue
 			}
 			wsSendTextMessage(c, ChatResponseChunkOutputType, a.Text)
 			text += a.Text
-			wsSendBinaryMessage(c, a.Audio)
+			if a.Audio != nil {
+				wsSendBinaryMessage(c, *a.Audio)
+			}
+		case v := <-changeVoice:
+			wsSendTextMessage(c, ChatResponseChangeCharacter, v.Identification)
 		case <-ttsDone:
 			wsSendTextMessage(c, ChatResponseOutputType, text)
 			return
@@ -193,24 +186,16 @@ func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, ttsDone
 	}
 }
 
-func runTTSStream(voiceType string, endpoint string, voiceSpeaker string, voiceModel string, voiceModelFile string, chunkMessage chan api.TextMessage, outAudioMessage chan api.AudioMessage, chatDone chan bool) error {
-	var err error
-	if voiceType == "voicevox" {
-		err = api.VoicevoxTTSStream(endpoint, voiceSpeaker, chunkMessage, outAudioMessage, chatDone)
-	}
-	if voiceType == "stylebertvits2" {
-		err = api.StyleBertVits2TTSStream(endpoint, voiceModel, voiceModelFile, voiceSpeaker, chunkMessage, outAudioMessage, chatDone)
-	}
-	if voiceType == "bertvits2" {
-		err = api.BertVits2TTSStream(endpoint, voiceModel, voiceSpeaker, chunkMessage, outAudioMessage, chatDone)
-	}
+func runTTSStream(chunkMessage chan api.TextMessage, changeVoice chan data.CharacterConfigVoice,
+	outAudioMessage chan api.AudioMessage, chatDone chan bool) error {
+	err := api.TTSStream(chunkMessage, changeVoice, outAudioMessage, chatDone)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func runChatStream(id string, requestText string, chatType string, apiKey string, chatSystemPropmt string, chatModel string, chunkMessage chan api.TextMessage) error {
+func runChatStream(id string, voices []data.CharacterConfigVoice, multi bool, requestText string, chatType string, apiKey string, chatSystemPropmt string, chatModel string, chunkMessage chan api.TextMessage) error {
 	cm, _, err := db.GetChatMessage(id)
 	if err != nil {
 		return err
@@ -218,10 +203,10 @@ func runChatStream(id string, requestText string, chatType string, apiKey string
 	var ncm []openai.ChatCompletionMessage
 
 	if chatType == "openai" {
-		ncm, err = api.OpenAIChatStream(apiKey, chatSystemPropmt, chatModel, cm.Chat, requestText, chunkMessage)
+		ncm, err = api.OpenAIChatStream(apiKey, voices, multi, chatSystemPropmt, chatModel, cm.Chat, requestText, chunkMessage)
 	}
 	if chatType == "anthropic" {
-		ncm, err = api.AnthropicChatStream(apiKey, chatSystemPropmt, chatModel, cm.Chat, requestText, chunkMessage)
+		ncm, err = api.AnthropicChatStream(apiKey, voices, multi, chatSystemPropmt, chatModel, cm.Chat, requestText, chunkMessage)
 	}
 
 	if err != nil {

@@ -1,10 +1,14 @@
 package api
 
+import "github.com/potproject/uchinoko-studio/data"
+
 type TextMessage struct {
-	Text string
+	Text  string
+	Voice data.CharacterConfigVoice
 }
 
 type AudioMessage struct {
-	Audio []byte
+	Audio *[]byte
 	Text  string
+	Voice data.CharacterConfigVoice
 }
