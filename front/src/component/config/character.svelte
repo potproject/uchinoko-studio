@@ -219,8 +219,10 @@
                     <input type="text" id="model" class="w-full border border-gray-300 rounded p-1" list="model_list" bind:value={data.chat.model} />
                     <datalist id="model_list">
                         {#if data.chat.type === "openai"}
-                            <option value="gpt-4-0125-preview">GPT-4 Turbo(0125-preview)</option>
+                            <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                            <option value="gpt-4-turbo-2024-04-09">GPT-4 Turbo(2024-04-09)</option>
                             <option value="gpt-4-turbo-preview">GPT-4 Turbo Preview</option>
+                            <option value="gpt-4-0125-preview">GPT-4 Turbo(0125-preview)</option>
                             <option value="gpt-4-1106-preview">GPT-4 Turbo(1106-preview)</option>
                             <option value="gpt-4">GPT-4</option>
                             <option value="gpt-4-32k">GPT-4 32k</option>
