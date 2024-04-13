@@ -30,6 +30,13 @@ func (s setter) DB_FILE_PATH(value string) {
 	env.DB_FILE_PATH = value
 	return
 }
+func (g getter) HOST() string {
+	return env.HOST
+}
+func (s setter) HOST(value string) {
+	env.HOST = value
+	return
+}
 func (g getter) OPENAI_API_KEY() string {
 	return env.OPENAI_API_KEY
 }
@@ -98,6 +105,7 @@ type environment struct {
 	ANTHROPIC_API_KEY        string
 	BERTVITS2_ENDPOINT       string
 	DB_FILE_PATH             string
+	HOST                     string
 	OPENAI_API_KEY           string
 	PORT                     int32
 	STYLEBERTVIT2_ENDPOINT   string
@@ -118,6 +126,7 @@ func Load() error {
 	ANTHROPIC_API_KEY := os.Getenv("ANTHROPIC_API_KEY")
 	BERTVITS2_ENDPOINT := os.Getenv("BERTVITS2_ENDPOINT")
 	DB_FILE_PATH := os.Getenv("DB_FILE_PATH")
+	HOST := os.Getenv("HOST")
 	OPENAI_API_KEY := os.Getenv("OPENAI_API_KEY")
 	PORT__S := os.Getenv("PORT")
 	PORT__64, err := strconv.ParseInt(PORT__S, 10, 32)
@@ -165,6 +174,7 @@ func Load() error {
 		ANTHROPIC_API_KEY:        ANTHROPIC_API_KEY,
 		BERTVITS2_ENDPOINT:       BERTVITS2_ENDPOINT,
 		DB_FILE_PATH:             DB_FILE_PATH,
+		HOST:                     HOST,
 		OPENAI_API_KEY:           OPENAI_API_KEY,
 		PORT:                     PORT,
 		STYLEBERTVIT2_ENDPOINT:   STYLEBERTVIT2_ENDPOINT,
@@ -182,6 +192,7 @@ type getterInterface interface {
 	ANTHROPIC_API_KEY() string
 	BERTVITS2_ENDPOINT() string
 	DB_FILE_PATH() string
+	HOST() string
 	OPENAI_API_KEY() string
 	PORT() int32
 	STYLEBERTVIT2_ENDPOINT() string
@@ -206,6 +217,7 @@ type setterInterface interface {
 	ANTHROPIC_API_KEY() string
 	BERTVITS2_ENDPOINT() string
 	DB_FILE_PATH() string
+	HOST() string
 	OPENAI_API_KEY() string
 	PORT() int32
 	STYLEBERTVIT2_ENDPOINT() string

@@ -1,8 +1,0 @@
-version: "2"
-services:
-  voicevox_engine:
-    image: voicevox/voicevox_engine:cpu-ubuntu20.04-latest
-    # image: voicevox/voicevox_engine:nvidia-ubuntu20.04-latest
-    ports:
-      - "0.0.0.0:50021:50021"
-    tty: true
