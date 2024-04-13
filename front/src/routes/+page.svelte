@@ -3,10 +3,11 @@
     import Start from "../component/start.svelte";
     import Chat from "../component/chat.svelte";
     import { onMount } from 'svelte';
+    import type { CharacterConfig } from "../types/character";
 
     let route: "start" | "chat" = "start";
     let audio: AudioContext;
-    let selected = "bertvits2";
+    let selectCharacter: CharacterConfig;
     
     let id:string;
 
@@ -25,9 +26,9 @@
         route = newRoute;
     }
 
-    const onStart = (e: CustomEvent<{ audio: AudioContext, selected: string }>) => {
+    const onStart = (e: CustomEvent<{ audio: AudioContext, selectCharacter: CharacterConfig }>) => {
         audio = e.detail.audio;
-        selected = e.detail.selected;
+        selectCharacter = e.detail.selectCharacter;
         changeRoute("chat");
     }
 </script>
@@ -37,6 +38,6 @@
     <Start on:start={onStart} id={id} />
     {/if}
     {#if route === "chat"}
-    <Chat audio={audio} selected={selected} id={id} />
+    <Chat audio={audio} selectCharacter={selectCharacter} id={id} />
     {/if}
 </main>

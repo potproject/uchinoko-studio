@@ -3,6 +3,12 @@ export default {
   content: ['./src/**/*.{html,js,svelte,ts}'],
   theme: {
     extend: {
+        spacing: {
+            '128': '32rem',
+            '144': '36rem',
+            '160': '40rem',
+            '192': '48rem',
+        },
         rotate: {
           '135': '135deg',
         },

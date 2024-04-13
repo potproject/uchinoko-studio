@@ -1,5 +1,5 @@
 type TextMessage = {
-    type: 'connection' | 'chat-response' | 'chat-request' | 'chat-response-chunk' | 'finish' | 'error';
+    type: 'connection' | 'chat-response' | 'chat-request' | 'chat-response-change-character' | 'chat-response-chunk' | 'finish' | 'error';
     text: string;
 };
 
@@ -29,6 +29,8 @@ export class SocketContext{
                 console.log('chat-response', data.text);
             } else if (data.type === 'chat-request') {
                 console.log('chat-request', data.text);
+            } else if (data.type === 'chat-response-change-character') {
+                console.log('chat-response-change-character', data.text);
             } else if (data.type === 'chat-response-chunk') {
                 console.log('chat-response-chunk', data.text);
             } else if (data.type === 'finish') {

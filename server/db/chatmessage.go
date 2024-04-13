@@ -5,28 +5,13 @@ import (
 	"encoding/json"
 
 	"github.com/potproject/uchinoko-studio/data"
-	"github.com/potproject/uchinoko-studio/envgen"
 	"github.com/sashabaranov/go-openai"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
-//go:embed propmt.txt
-var SystemMessage string
-
 func initChatMessage() data.ChatMessage {
-	if envgen.Get().CHAT_SERVICE() == "anthropic" {
-		return data.ChatMessage{
-			Chat: []openai.ChatCompletionMessage{},
-		}
-	}
-
 	return data.ChatMessage{
-		Chat: []openai.ChatCompletionMessage{
-			{
-				Role:    openai.ChatMessageRoleSystem,
-				Content: SystemMessage,
-			},
-		},
+		Chat: []openai.ChatCompletionMessage{},
 	}
 }
 

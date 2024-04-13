@@ -9,6 +9,7 @@ export class PlayingContext {
 
     public onSpeakingStart: () => void = () => {};
     public onSpeakingEnd: () => void = () => {};
+    public onSpeackingChunkStart: () => void = () => {};
 
     constructor(AudioContext: AudioContext) {
         this.audioContext = AudioContext;
@@ -61,6 +62,10 @@ export class PlayingContext {
             }
 
             source.start(this.nextTime);
+
+            setTimeout(() => {
+                this.onSpeackingChunkStart();
+            }, (this.nextTime - this.audioContext.currentTime) * 1000);
             this.nextTime += (audioBuffer.duration + bufferSeconds);
             this.latestAudioBufferSourceNode = source;
         });
