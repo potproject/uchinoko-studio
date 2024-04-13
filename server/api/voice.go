@@ -32,10 +32,6 @@ func TTSStream(chunkMessage <-chan TextMessage, changeVoice chan<- data.Characte
 		case t := <-chunkMessage:
 			escapeText := removeNewLineAndSpace(t.Text)
 			if len(escapeText) == 0 {
-				outAudioMessage <- AudioMessage{
-					Audio: nil,
-					Text:  t.Text,
-				}
 				continue
 			}
 			if beforeVoiceIdentification != t.Voice.Identification {
