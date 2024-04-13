@@ -11,9 +11,8 @@ import (
 func CharacterInitConfig() data.CharacterConfig {
 	return data.CharacterConfig{
 		General: data.CharacterConfigGeneral{
-			ID:    uuid.New().String(),
-			Name:  "Default",
-			Image: "default.png",
+			ID:   uuid.New().String(),
+			Name: "Default",
 		},
 		MultiVoice: false,
 		Voice: []data.CharacterConfigVoice{
@@ -23,6 +22,7 @@ func CharacterInitConfig() data.CharacterConfig {
 				ModelID:        "0",
 				ModelFile:      "",
 				SpeakerID:      "0",
+				Image:          "default.png",
 			},
 		},
 		Chat: data.CharacterConfigChat{

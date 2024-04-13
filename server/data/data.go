@@ -31,6 +31,7 @@ type CharacterConfigVoice struct {
 	ModelID        string `json:"modelId"`
 	ModelFile      string `json:"modelFile"`
 	SpeakerID      string `json:"speakerId"`
+	Image          string `json:"image"`
 }
 
 type CharacterConfigChat struct {

@@ -2,11 +2,11 @@ export type CharacterConfig = {
     general: {
         id: string;
         name: string;
-        image: string;
     };
     multiVoice: boolean;
     voice: {
         type: string;
+        image: string;
         identification: string;
         modelId: string;
         modelFile: string;
