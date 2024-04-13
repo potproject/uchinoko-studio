@@ -3,36 +3,11 @@ package api
 import (
 	"bytes"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 )
 
 const bertvits2VoiceEndpoint = "voice"
-
-func BertVits2TTSStream(endpoint string, modelId string, speakerId string, chunkMessage <-chan TextMessage, outAudio chan []byte, outText chan string) error {
-	for {
-		select {
-		case t := <-chunkMessage:
-			if len(t.Text) == 0 {
-				if t.IsFinal {
-					return nil
-				}
-				continue
-			}
-			bin, err := bertVits2TTS(endpoint, modelId, speakerId, t.Text)
-			if err != nil {
-				log.Printf("Error: %s", err.Error())
-				return err
-			}
-			outText <- t.Text
-			outAudio <- bin
-			if t.IsFinal {
-				return nil
-			}
-		}
-	}
-}
 
 func bertVits2TTS(endpoint string, modelId string, speakerId string, text string) ([]byte, error) {
 	client := new(http.Client)

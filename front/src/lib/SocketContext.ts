@@ -1,5 +1,5 @@
 type TextMessage = {
-    type: 'connection' | 'chat-response' | 'chat-request' | 'chat-response-chunk' | 'finish' | 'error';
+    type: 'connection' | 'chat-response' | 'chat-request' | 'chat-response-change-character' | 'chat-response-chunk' | 'finish' | 'error';
     text: string;
 };
 

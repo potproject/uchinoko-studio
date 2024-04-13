@@ -10,15 +10,24 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/potproject/uchinoko-studio/data"
 	openai "github.com/sashabaranov/go-openai"
 	"github.com/tmaxmax/go-sse"
 )
 
 const chars = ".,?!;:—-()[]{} 。、？！；：「」（）［］｛｝　\"'"
 
-func OpenAIChatStream(apiKey string, chatSystemPropmt string, model string, cm []openai.ChatCompletionMessage, text string, chunkMessage chan TextMessage, responseText chan string) ([]openai.ChatCompletionMessage, error) {
+func OpenAIChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []openai.ChatCompletionMessage, text string, chunkMessage chan TextMessage) ([]openai.ChatCompletionMessage, error) {
 	ctx := context.Background()
 	c := openai.NewClient(apiKey)
+
+	voice := voices[0]
+	voiceIndentifications := make([]string, len(voices))
+	if multi {
+		for i, v := range voices {
+			voiceIndentifications[i] = v.Identification
+		}
+	}
 
 	ncm := append(cm, openai.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleUser,
@@ -45,15 +54,12 @@ func OpenAIChatStream(apiKey string, chatSystemPropmt string, model string, cm [
 
 	allText := ""
 	bufferText := ""
-	firstSend := true
 	for {
 		response, err := stream.Recv()
 		if errors.Is(err, io.EOF) {
-			responseText <- allText
 			chunkMessage <- TextMessage{
-				Text:    bufferText,
-				IsFirst: firstSend,
-				IsFinal: true,
+				Text:  bufferText,
+				Voice: voice,
 			}
 			return append(
 				ncm,
@@ -79,22 +85,34 @@ func OpenAIChatStream(apiKey string, chatSystemPropmt string, model string, cm [
 		}
 		if chunked {
 			chunkMessage <- TextMessage{
-				Text:    bufferText + content,
-				IsFirst: firstSend,
-				IsFinal: false,
+				Text:  bufferText + content,
+				Voice: voice,
 			}
-			firstSend = false
 			bufferText = ""
 		} else {
 			bufferText += content
 		}
 
+		// bufferTextに voiceIndentifications が含まれている場合
+		if multi {
+			for i, v := range voiceIndentifications {
+				if strings.Contains(bufferText, v) {
+					bufferText = strings.Replace(bufferText, v, "", -1)
+					chunkMessage <- TextMessage{
+						Text:  bufferText,
+						Voice: voice,
+					}
+					bufferText = ""
+					voice = voices[i]
+					break
+				}
+			}
+		}
+
 		if response.Choices[0].FinishReason == "stop" {
-			responseText <- allText
 			chunkMessage <- TextMessage{
-				Text:    bufferText,
-				IsFirst: firstSend,
-				IsFinal: true,
+				Text:  bufferText,
+				Voice: voice,
 			}
 			return append(
 				ncm,
@@ -138,11 +156,19 @@ type anthropicChatCompletionRequest struct {
 	System string `json:"system"`
 }
 
-func AnthropicChatStream(apiKey string, chatSystemPropmt string, model string, cm []openai.ChatCompletionMessage, text string, chunkMessage chan TextMessage, responseText chan string) ([]openai.ChatCompletionMessage, error) {
+func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []openai.ChatCompletionMessage, text string, chunkMessage chan TextMessage) ([]openai.ChatCompletionMessage, error) {
 	ncm := append(cm, openai.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleUser,
 		Content: text,
 	})
+
+	voice := voices[0]
+	voiceIndentifications := make([]string, len(voices))
+	if multi {
+		for i, v := range voices {
+			voiceIndentifications[i] = v.Identification
+		}
+	}
 
 	body := anthropicChatCompletionRequest{
 		ChatCompletionRequest: openai.ChatCompletionRequest{
@@ -176,7 +202,6 @@ func AnthropicChatStream(apiKey string, chatSystemPropmt string, model string, c
 
 	allText := ""
 	bufferText := ""
-	firstSend := true
 	unsubscribe := conn.SubscribeEvent(AnthropicChatResponseTypeContentBlockDelta, func(event sse.Event) {
 		var body AnthropicContentBlockDeltaBody
 		if err := json.Unmarshal([]byte(event.Data), &body); err != nil {
@@ -194,25 +219,37 @@ func AnthropicChatStream(apiKey string, chatSystemPropmt string, model string, c
 		}
 		if chunked {
 			chunkMessage <- TextMessage{
-				Text:    bufferText + content,
-				IsFirst: firstSend,
-				IsFinal: false,
+				Text:  bufferText + content,
+				Voice: voice,
 			}
-			firstSend = false
 			bufferText = ""
 		} else {
 			bufferText += content
+		}
+
+		if multi {
+			// bufferTextに voiceIndentifications が含まれている場合
+			for i, v := range voiceIndentifications {
+				if strings.Contains(bufferText, v) {
+					bufferText = strings.ReplaceAll(bufferText, v, "")
+					chunkMessage <- TextMessage{
+						Text:  bufferText,
+						Voice: voice,
+					}
+					bufferText = ""
+					voice = voices[i]
+					break
+				}
+			}
 		}
 	})
 	if err := conn.Connect(); !errors.Is(err, io.EOF) {
 		return cm, err
 	}
 	defer unsubscribe()
-	responseText <- allText
 	chunkMessage <- TextMessage{
-		Text:    bufferText,
-		IsFirst: firstSend,
-		IsFinal: true,
+		Text:  bufferText,
+		Voice: voice,
 	}
 	return append(
 		ncm,

@@ -29,7 +29,9 @@
 
     type Message = {
         type: 'my' | 'your' | 'error';
+        voiceIndex: number|null;
         text: string;
+        textChunk: string[];
         loading: boolean;
         speaking: boolean;
         chunk: boolean;
@@ -81,9 +83,11 @@
             messages = [...messages, {
                 type: 'error',
                 text: '接続が切断されました。再度ページを読み込んでください。',
+                textChunk: [],
                 loading: false,
                 speaking: false,
-                chunk: false
+                chunk: false,
+                voiceIndex: null
             }];
             updateChat();
         }
@@ -96,10 +100,12 @@
                 if (messages[messages.length - 1].chunk) {
                     messages = [...messages.slice(0, messages.length - 1), {
                         type: 'your',
-                        text: messages[messages.length - 1].text,
+                        text: messages[messages.length - 1].text.trim(),
+                        textChunk: messages[messages.length - 1].textChunk,
                         loading: false,
                         speaking: true,
-                        chunk: false
+                        chunk: false,
+                        voiceIndex: messages[messages.length - 1].voiceIndex
                     }];
                     updateChat();
                 }
@@ -111,12 +117,39 @@
             if(data.type === 'chat-request') {
                 messages = [...messages.slice(0, messages.length - 1), {
                     type: 'my',
-                    text: data.text,
+                    text: data.text.trim(),
+                    textChunk: [data.text.trim()],
                     loading: false,
                     speaking: false,
-                    chunk: false
+                    chunk: false,
+                    voiceIndex: null,
                 }];
                 updateChat();
+                return;
+            }
+
+            if(data.type === 'chat-response-change-character') {
+                // 1つ前がyourの場合は、そのメッセージを更新
+                if (messages[messages.length - 1].chunk && messages[messages.length - 1].type === 'your') {
+                    messages = [...messages.slice(0, messages.length - 1), {
+                        type: 'your',
+                        text: messages[messages.length - 1].text.trim(),
+                        textChunk: messages[messages.length - 1].textChunk,
+                        loading: false,
+                        speaking: false,
+                        chunk: false,
+                        voiceIndex: messages[messages.length - 1].voiceIndex
+                    }];
+                }
+                messages = [...messages, {
+                    type: 'your',
+                    text: '',
+                    textChunk: [],
+                    loading: true,
+                    speaking: true,
+                    chunk: true,
+                    voiceIndex: selectCharacter.voice.findIndex((v) => v.identification === data.text)
+                }];
                 return;
             }
 
@@ -124,20 +157,24 @@
                 if (messages[messages.length - 1].chunk) {
                     messages = [...messages.slice(0, messages.length - 1), {
                         type: 'your',
-                        text: messages[messages.length - 1].text + data.text,
+                        text: (messages[messages.length - 1].text + data.text).trim(),
+                        textChunk: [...messages[messages.length - 1].textChunk, data.text],
                         loading: true,
                         speaking: true,
-                        chunk: true
+                        chunk: true,
+                        voiceIndex: messages[messages.length - 1].voiceIndex
                     }];
                     updateChat();
                     return;
                 }
                 messages = [...messages, {
                     type: 'your',
-                    text: data.text,
+                    text: data.text.trim(),
+                    textChunk: [data.text.trim()],
                     loading: true,
                     speaking: true,
-                    chunk: true
+                    chunk: true,
+                    voiceIndex: 0,
                 }];
                 updateChat();
                 return;
@@ -169,9 +206,11 @@
                 messages = [...messages, {
                     type: 'error',
                     text: data.text,
+                    textChunk: [],
                     loading: false,
                     speaking: false,
-                    chunk: false
+                    chunk: false,
+                    voiceIndex: null
                 }];
                 updateChat();
                 return;
@@ -189,9 +228,11 @@
                 messages = [...messages.slice(0, messages.length - 1), {
                     type: 'your',
                     text: messages[messages.length - 1].text,
+                    textChunk: messages[messages.length - 1].textChunk,
                     loading: false,
                     speaking: false,
-                    chunk: false
+                    chunk: false,
+                    voiceIndex: messages[messages.length - 1].voiceIndex
                 }];
                 updateChat();
             }
@@ -206,9 +247,11 @@
             messages = [...messages, {
                 type: 'my',
                 text: '...',
+                textChunk: [],
                 loading: false,
                 speaking: true,
-                chunk: false
+                chunk: false,
+                voiceIndex: null
             }];
             updateChat();
             return;
@@ -223,9 +266,11 @@
             messages = [...messages.slice(0, messages.length - 1), {
                 type: 'my',
                 text: 'Loading...',
+                textChunk: [],
                 loading: true,
                 speaking: false,
-                chunk: false
+                chunk: false,
+                voiceIndex: null
             }];
             updateChat();
             speakDisabled(true);
@@ -254,9 +299,11 @@
                 newmessages.push({
                     type: msg.role === 'user' ? 'my' : 'your',
                     text: msg.content,
+                    textChunk: [msg.content],
                     loading: false,
                     speaking: false,
-                    chunk: false
+                    chunk: false,
+                    voiceIndex: null
                 });
             }
         }
@@ -268,9 +315,9 @@
 
 <div>
     <!-- center img circle -->
-    <div class="flex justify-center items-center">
+    <!--<div class="flex justify-center items-center">
         <img src={selectCharacter.general.image} class="rounded-full w-32 h-32 {speaking ? 'animate-pulsate-fwd border-4 border-blue-500' : ''}" alt="ai" />
-    </div>
+    </div>-->
     <!-- Timer -->
     <div class="flex justify-center items-center">
         <p class="text-white rounded-md px-2 py-1 m-2 {!stopMic ? 'bg-blue-600' : 'bg-red-600'}">
@@ -292,7 +339,7 @@
                     {#if msg.type === 'my'}
                         <ChatMyMsg message={msg.text} loading={msg.loading} speaking={msg.speaking} />
                     {:else if msg.type === 'your'}
-                        <ChatYourMsg message={msg.text} loading={msg.loading} speaking={msg.speaking} img={selectCharacter.general.image} />
+                        <ChatYourMsg message={msg.text} loading={msg.loading} speaking={msg.speaking} img={msg.voiceIndex === null ? null : selectCharacter.voice[msg.voiceIndex].image} />
                     {:else if msg.type === 'error'}
                     <div class="flex justify-center items-center rounded-md bg-red-600 p-2 m-2 text-white">
                         <i class="las text-2xl la-exclamation-circle"></i>{msg.text}
