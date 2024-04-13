@@ -102,7 +102,7 @@
                             }
                         }
                     } />
-                    <label for="multi_voice" class="text-sm">複数音声を有効化</label>
+                    <label for="multi_voice" class="text-sm">複数音声を有効化(実験的機能)</label>
                 </div>
             </div>  
             {#each data.voice as _, index}
