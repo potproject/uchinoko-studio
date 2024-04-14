@@ -10,7 +10,6 @@ import (
 	"github.com/potproject/uchinoko-studio/data"
 	"github.com/potproject/uchinoko-studio/db"
 	"github.com/potproject/uchinoko-studio/envgen"
-	"github.com/sashabaranov/go-openai"
 )
 
 type TextInput struct {
@@ -200,7 +199,7 @@ func runChatStream(id string, voices []data.CharacterConfigVoice, multi bool, re
 	if err != nil {
 		return err
 	}
-	var ncm []openai.ChatCompletionMessage
+	var ncm []data.ChatCompletionMessage
 
 	if chatType == "openai" {
 		ncm, err = api.OpenAIChatStream(apiKey, voices, multi, chatSystemPropmt, chatModel, cm.Chat, requestText, chunkMessage)

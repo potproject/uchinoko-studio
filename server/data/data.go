@@ -1,7 +1,5 @@
 package data
 
-import "github.com/sashabaranov/go-openai"
-
 type GeneralConfig struct {
 	Transcription struct {
 		Type string `json:"type"`
@@ -41,5 +39,10 @@ type CharacterConfigChat struct {
 }
 
 type ChatMessage struct {
-	Chat []openai.ChatCompletionMessage
+	Chat []ChatCompletionMessage
+}
+
+type ChatCompletionMessage struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
 }

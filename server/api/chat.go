@@ -2,22 +2,20 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log"
-	"net/http"
 	"strings"
 
+	claude "github.com/potproject/claude-sdk-go"
 	"github.com/potproject/uchinoko-studio/data"
 	openai "github.com/sashabaranov/go-openai"
-	"github.com/tmaxmax/go-sse"
 )
 
 const chars = ".,?!;:—-()[]{} 。、？！；：「」（）［］｛｝　\"'"
 
-func OpenAIChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []openai.ChatCompletionMessage, text string, chunkMessage chan TextMessage) ([]openai.ChatCompletionMessage, error) {
+func OpenAIChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, chunkMessage chan TextMessage) ([]data.ChatCompletionMessage, error) {
 	ctx := context.Background()
 	c := openai.NewClient(apiKey)
 
@@ -29,10 +27,17 @@ func OpenAIChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 		}
 	}
 
-	ncm := append(cm, openai.ChatCompletionMessage{
+	ncm := append(cm, data.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleUser,
 		Content: text,
 	})
+	openaiChatMessages := make([]openai.ChatCompletionMessage, len(ncm))
+	for i, v := range ncm {
+		openaiChatMessages[i] = openai.ChatCompletionMessage{
+			Role:    v.Role,
+			Content: v.Content,
+		}
+	}
 
 	req := openai.ChatCompletionRequest{
 		Model:     model,
@@ -42,7 +47,7 @@ func OpenAIChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 				Role:    openai.ChatMessageRoleSystem,
 				Content: chatSystemPropmt,
 			},
-		}, ncm...),
+		}, openaiChatMessages...),
 		Stream: true,
 	}
 	stream, err := c.CreateChatCompletionStream(ctx, req)
@@ -63,7 +68,7 @@ func OpenAIChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 			}
 			return append(
 				ncm,
-				openai.ChatCompletionMessage{
+				data.ChatCompletionMessage{
 					Role:    openai.ChatMessageRoleAssistant,
 					Content: allText,
 				},
@@ -116,7 +121,7 @@ func OpenAIChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 			}
 			return append(
 				ncm,
-				openai.ChatCompletionMessage{
+				data.ChatCompletionMessage{
 					Role:    openai.ChatMessageRoleAssistant,
 					Content: allText,
 				},
@@ -125,39 +130,10 @@ func OpenAIChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 	}
 }
 
-type AnthropicChatResponse struct {
-	Type string `json:"type"`
-}
-
-const AntrhopicChatAPIEndpoint = "https://api.anthropic.com/v1/messages"
-
-const (
-	AnthropicChatResponseTypeMessageStart      = "message_start"
-	AnthropicChatResponseTypeContentBlockStart = "content_block_start"
-	AthropicChatResponseTypePing               = "ping"
-	AnthropicChatResponseTypeContentBlockDelta = "content_block_delta"
-	AnthropicChatResponseTypeContentBlockStop  = "content_block_stop"
-	AnthropicChatResponseTypeMessageSDelta     = "message_delta"
-	AnthropicChatResponseTypeMessageStop       = "message_stop"
-	AnthropicChatResponseTypeError             = "error"
-)
-
-type AnthropicContentBlockDeltaBody struct {
-	Type  string `json:"type"`
-	Index int    `json:"index"`
-	Delta struct {
-		Type string `json:"type"`
-		Text string `json:"text"`
-	} `json:"delta"`
-}
-
-type anthropicChatCompletionRequest struct {
-	openai.ChatCompletionRequest
-	System string `json:"system"`
-}
-
-func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []openai.ChatCompletionMessage, text string, chunkMessage chan TextMessage) ([]openai.ChatCompletionMessage, error) {
-	ncm := append(cm, openai.ChatCompletionMessage{
+func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, chunkMessage chan TextMessage) ([]data.ChatCompletionMessage, error) {
+	ctx := context.Background()
+	c := claude.NewClient(apiKey)
+	ncm := append(cm, data.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleUser,
 		Content: text,
 	})
@@ -170,45 +146,52 @@ func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, mult
 		}
 	}
 
-	body := anthropicChatCompletionRequest{
-		ChatCompletionRequest: openai.ChatCompletionRequest{
-
-			Model:     model,
-			MaxTokens: 4096,
-			Messages:  ncm,
-			Stream:    true,
-		},
-		System: chatSystemPropmt,
+	anthropicChatMessages := make([]claude.RequestBodyMessagesMessages, len(ncm))
+	for i, v := range ncm {
+		anthropicChatMessages[i] = claude.RequestBodyMessagesMessages{
+			Role:    v.Role,
+			Content: v.Content,
+		}
 	}
 
-	bodyJson, err := json.Marshal(body)
+	body := claude.RequestBodyMessages{
+		Model:     model,
+		MaxTokens: 4096,
+		Messages:  anthropicChatMessages,
+		Stream:    true,
+		System:    chatSystemPropmt,
+	}
+
+	stream, err := c.CreateMessagesStream(ctx, body)
 	if err != nil {
+		log.Printf("ChatCompletionStream error: %v\n", err)
 		return cm, err
 	}
-
-	client := sse.Client{
-		Backoff: sse.Backoff{
-			MaxRetries: -1,
-		},
-	}
-	req, err := http.NewRequest(http.MethodPost, AntrhopicChatAPIEndpoint, strings.NewReader(string(bodyJson)))
-	if err != nil {
-		return cm, err
-	}
-	req.Header.Set("anthropic-version", "2023-06-01")
-	req.Header.Set("content-type", "application/json")
-	req.Header.Set("x-api-key", apiKey)
-	conn := client.NewConnection(req)
+	defer stream.Close()
 
 	allText := ""
 	bufferText := ""
-	unsubscribe := conn.SubscribeEvent(AnthropicChatResponseTypeContentBlockDelta, func(event sse.Event) {
-		var body AnthropicContentBlockDeltaBody
-		if err := json.Unmarshal([]byte(event.Data), &body); err != nil {
-			fmt.Println(err)
-			return
+	for {
+		response, err := stream.Recv()
+		if errors.Is(err, io.EOF) {
+			chunkMessage <- TextMessage{
+				Text:  bufferText,
+				Voice: voice,
+			}
+			return append(
+				ncm,
+				data.ChatCompletionMessage{
+					Role:    openai.ChatMessageRoleAssistant,
+					Content: allText,
+				},
+			), nil
 		}
-		content := body.Delta.Text
+
+		if err != nil {
+			fmt.Printf("\nStream error: %v\n", err)
+			return cm, err
+		}
+		content := response.Content[0].Text
 		allText += content
 		chunked := false
 		for _, c := range content {
@@ -227,11 +210,11 @@ func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, mult
 			bufferText += content
 		}
 
+		// bufferTextに voiceIndentifications が含まれている場合
 		if multi {
-			// bufferTextに voiceIndentifications が含まれている場合
 			for i, v := range voiceIndentifications {
 				if strings.Contains(bufferText, v) {
-					bufferText = strings.ReplaceAll(bufferText, v, "")
+					bufferText = strings.Replace(bufferText, v, "", -1)
 					chunkMessage <- TextMessage{
 						Text:  bufferText,
 						Voice: voice,
@@ -242,20 +225,5 @@ func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, mult
 				}
 			}
 		}
-	})
-	if err := conn.Connect(); !errors.Is(err, io.EOF) {
-		return cm, err
 	}
-	defer unsubscribe()
-	chunkMessage <- TextMessage{
-		Text:  bufferText,
-		Voice: voice,
-	}
-	return append(
-		ncm,
-		openai.ChatCompletionMessage{
-			Role:    openai.ChatMessageRoleAssistant,
-			Content: allText,
-		},
-	), nil
 }

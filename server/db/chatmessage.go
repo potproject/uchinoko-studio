@@ -5,13 +5,12 @@ import (
 	"encoding/json"
 
 	"github.com/potproject/uchinoko-studio/data"
-	"github.com/sashabaranov/go-openai"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
 func initChatMessage() data.ChatMessage {
 	return data.ChatMessage{
-		Chat: []openai.ChatCompletionMessage{},
+		Chat: []data.ChatCompletionMessage{},
 	}
 }
 
