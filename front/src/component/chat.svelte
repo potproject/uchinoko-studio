@@ -19,7 +19,6 @@
 
     export let audio: AudioContext;
     export let selectCharacter: CharacterConfig;
-    export let id: string;
 
     let timer = 0;
     let timerId: number | undefined = undefined;
@@ -72,7 +71,7 @@
         const extenstion = MediaRecorder.isTypeSupported('audio/webm') ? 'webm' : 'mp4';
         const mimeType = `audio/${extenstion}`;
 
-        const url = `${wsTLS}://${location.host}/v1/ws/talk/${id}/${selectCharacter.general.id}/${extenstion}`;
+        const url = `${wsTLS}://${location.host}/v1/ws/talk/${selectCharacter.general.id}/${selectCharacter.general.id}/${extenstion}`;
         socket = new SocketContext(url);
         await new Promise(resolve => {
             socket.onConnected = () => {
@@ -281,7 +280,7 @@
         }
 
         // old message load
-        const res = await fetch(`/v1/chat/${id}`, {
+        const res = await fetch(`/v1/chat/${selectCharacter.general.id}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'

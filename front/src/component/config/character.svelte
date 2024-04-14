@@ -30,6 +30,17 @@
         input.click();
     };
 
+    const onReset = () => {
+        if (window.confirm("チャット履歴をリセットしますか？")) {
+            fetch(`/v1/chat/${data.general.id}`, {
+                method: "DELETE",
+            }).finally(() => {
+                location.reload();
+            });
+            alert("チャット履歴をリセットしました");
+        }
+    };
+
     const onSave = () => {
         saveLoading = true;
         fetch(`/v1/config/character/${data.general.id}`, {
@@ -249,6 +260,12 @@
             </div>
         {/if}
 
+        <!-- チャット履歴のリセット -->
+        <div class="flex justify-center items-center p-4">
+            <button class="bg-red-500 text-white rounded-md p-2 w-64" on:click={onReset}>
+                会話履歴をリセットする
+            </button>
+        </div>
         <!-- 保存/キャンセル -->
         <div class="flex justify-center items-center p-4">
             <button class={"bg-blue-500 text-white rounded-md p-2 w-24 " + (saveLoading ? " opacity-50 cursor-not-allowed" : "")} on:click={() => onSave()}>
