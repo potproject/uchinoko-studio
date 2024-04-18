@@ -6,3 +6,8 @@ export type Message = {
     speaking: boolean;
     chunk: boolean;
 }
+
+export type ChunkMessage = {
+    type: 'change-character' | 'chat';
+    text : string;
+}
