@@ -13,7 +13,7 @@ import (
 	openai "github.com/sashabaranov/go-openai"
 )
 
-const chars = ".,?!;:—-()[]{} 。、？！；：「」（）［］｛｝　\"'"
+const chars = ".,?!;:—-)]} 。、？！；：」）］｝　\"'"
 
 func OpenAIChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, chunkMessage chan TextMessage) ([]data.ChatCompletionMessage, error) {
 	ctx := context.Background()

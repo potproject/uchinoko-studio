@@ -30,6 +30,19 @@
         input.click();
     };
 
+    const onSummary = () => {
+        if (window.confirm("チャット履歴を要約して、記憶として保存しますか？")) {
+            fetch(`/v1/chat/${data.general.id}/${data.general.id}/summary`, {
+                method: "POST",
+            }).then((res) => {
+                if (!res.ok) {
+                    throw new Error("要約の保存に失敗しました");
+                }
+                alert("チャット履歴を要約して、記憶として保存しました");
+            })
+        }
+    };
+
     const onReset = () => {
         if (window.confirm("チャット履歴をリセットしますか？")) {
             fetch(`/v1/chat/${data.general.id}`, {
@@ -258,12 +271,25 @@
                      class="w-full border border-gray-300 rounded p-1 resize-y" bind:value={data.chat.systemPrompt}></textarea>
                 </div>
             </div>
+            <div class="flex items-center px-4 py-2">
+                <div class="flex-1">
+                    <label for="history" class="text-sm">履歴</label>
+                    <textarea id="history" 
+                     rows="10"
+                     class="w-full border border-gray-300 rounded p-1 resize-y" bind:value={data.history}></textarea>
+                </div>
+            </div>
         {/if}
 
         <!-- チャット履歴のリセット -->
         <div class="flex justify-center items-center p-4">
             <button class="bg-red-500 text-white rounded-md p-2 w-64" on:click={onReset}>
                 会話履歴をリセットする
+            </button>
+        </div>
+        <div class="flex justify-center items-center p-4">
+            <button class="bg-blue-500 text-white rounded-md p-2 w-64" on:click={onSummary}>
+                会話履歴を要約して、記憶として保存する
             </button>
         </div>
         <!-- 保存/キャンセル -->

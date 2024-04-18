@@ -15,6 +15,8 @@ func Route() *fiber.App {
 	app.Use("/v1/ws/talk", controller.WS)
 	app.Get("/v1/ws/talk/:id/:characterId/:fileType", controller.WSTalk())
 
+	app.Post("/v1/chat/:id/:characterId/summary", controller.PostSummary)
+
 	app.Get("/v1/config/general", controller.GetGeneralConfig)
 	app.Post("/v1/config/general", controller.PostGeneralConfig)
 

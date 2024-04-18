@@ -15,6 +15,7 @@ type CharacterConfig struct {
 	MultiVoice bool                   `json:"multiVoice"`
 	Voice      []CharacterConfigVoice `json:"voice"`
 	Chat       CharacterConfigChat    `json:"chat"`
+	History    string                 `json:"history"`
 }
 
 type CharacterConfigGeneral struct {
