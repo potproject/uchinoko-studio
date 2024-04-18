@@ -36,22 +36,35 @@
         chatarea?.scrollTo(0, chatarea.scrollHeight);
     };
 
+    const addMessage = (message: Message) => {
+        messages = [ ...messages, message];
+        updateChat();
+    };
+
+    const changeLastMessage = (message: Partial<Message>) => {
+        messages = [
+            ...messages.slice(0, messages.length - 1),
+            {
+                ...messages[messages.length - 1],
+                ...message,
+            },
+        ];
+        updateChat();
+    };
+
     (async () => {
         const { socket, mimeType } = await SocketContext.connect(selectCharacter);
         socket.onClosed = () => {
-            messages = [
-                ...messages,
+            addMessage(
                 {
                     type: "error",
                     text: "接続が切断されました。再度ページを読み込んでください。",
-                    textChunk: [],
                     loading: false,
                     speaking: false,
                     chunk: false,
                     voiceIndex: null,
                 },
-            ];
-            updateChat();
+            );
         };
         socket.onBinary = (data) => {
             playing.playWAV(data);
@@ -60,19 +73,7 @@
 
         socket.onFinish = () => {
             if (messages[messages.length - 1].chunk) {
-                messages = [
-                    ...messages.slice(0, messages.length - 1),
-                    {
-                        type: "your",
-                        text: messages[messages.length - 1].text.trim(),
-                        textChunk: messages[messages.length - 1].textChunk,
-                        loading: false,
-                        speaking: true,
-                        chunk: false,
-                        voiceIndex: messages[messages.length - 1].voiceIndex,
-                    },
-                ];
-                updateChat();
+                changeLastMessage({loading: false, speaking: true, chunk: false});
             }
 
             // 再生後停止指示
@@ -80,97 +81,58 @@
         };
 
         socket.onChatRequest = (text) => {
-            messages = [
-                ...messages.slice(0, messages.length - 1),
-                {
-                    type: "my",
-                    text: text.trim(),
-                    textChunk: [text.trim()],
-                    loading: false,
-                    speaking: false,
-                    chunk: false,
-                    voiceIndex: null,
-                },
-            ];
-            updateChat();
+            changeLastMessage({text: text.trim(), loading: false, speaking: false});
         };
 
         socket.onChatResponseChangeCharacter = (text) => {
             if (messages[messages.length - 1].chunk && messages[messages.length - 1].type === "your") {
-                messages = [
-                    ...messages.slice(0, messages.length - 1),
-                    {
-                        type: "your",
-                        text: messages[messages.length - 1].text.trim(),
-                        textChunk: messages[messages.length - 1].textChunk,
-                        loading: false,
-                        speaking: false,
-                        chunk: false,
-                        voiceIndex: messages[messages.length - 1].voiceIndex,
-                    },
-                ];
+                changeLastMessage({
+                    text: messages[messages.length - 1].text.trim(),
+                    loading: false,
+                    speaking: false,
+                    chunk: false
+                });
             }
-            messages = [
-                ...messages,
-                {
-                    type: "your",
-                    text: "",
-                    textChunk: [],
-                    loading: true,
-                    speaking: true,
-                    chunk: true,
-                    voiceIndex: selectCharacter.voice.findIndex((v) => v.identification === text),
-                },
-            ];
+            addMessage({
+                type: "your",
+                text: "",
+                loading: true,
+                speaking: true,
+                chunk: true,
+                voiceIndex: selectCharacter.voice.findIndex((v) => v.identification === text),
+            });
         };
 
         socket.onChatResponseChunk = (text) => {
             if (messages[messages.length - 1].chunk) {
-                messages = [
-                    ...messages.slice(0, messages.length - 1),
-                    {
-                        type: "your",
-                        text: (messages[messages.length - 1].text + text).trim(),
-                        textChunk: [...messages[messages.length - 1].textChunk, text],
-                        loading: true,
-                        speaking: true,
-                        chunk: true,
-                        voiceIndex: messages[messages.length - 1].voiceIndex,
-                    },
-                ];
-                updateChat();
-                return;
-            }
-            messages = [
-                ...messages,
-                {
-                    type: "your",
-                    text: text.trim(),
-                    textChunk: [text.trim()],
+                changeLastMessage({
+                    text: (messages[messages.length - 1].text + text).trim(),
                     loading: true,
                     speaking: true,
-                    chunk: true,
-                    voiceIndex: 0,
-                },
-            ];
-            updateChat();
+                    chunk: true
+                });
+                return;
+            }
+            addMessage({
+                type: "your",
+                text: text.trim(),
+                loading: true,
+                speaking: true,
+                chunk: true,
+                voiceIndex: 0,
+            });
             return;
         }
 
         socket.onError = (text) => {
-            messages = [
-                ...messages,
-                {
-                    type: "error",
-                    text: text,
-                    textChunk: [],
-                    loading: false,
-                    speaking: false,
-                    chunk: false,
-                    voiceIndex: null,
-                },
-            ];
-            updateChat();
+            addMessage({
+                type: "error",
+                text: text,
+                loading: false,
+                speaking: false,
+                chunk: false,
+                voiceIndex: null,
+            });
         };
 
         // Playing 再生
@@ -181,19 +143,11 @@
         playing.onSpeakingEnd = () => {
             speaking = false;
             if (messages[messages.length - 1].speaking) {
-                messages = [
-                    ...messages.slice(0, messages.length - 1),
-                    {
-                        type: "your",
-                        text: messages[messages.length - 1].text,
-                        textChunk: messages[messages.length - 1].textChunk,
-                        loading: false,
-                        speaking: false,
-                        chunk: false,
-                        voiceIndex: messages[messages.length - 1].voiceIndex,
-                    },
-                ];
-                updateChat();
+                changeLastMessage({
+                    loading: false,
+                    speaking: false,
+                    chunk: false
+                });
             }
             speakDisabled(false);
         };
@@ -203,18 +157,15 @@
         await recording.init();
 
         recording.onSpeakingStart = () => {
-            messages = [
-                ...messages,
-                {
-                    type: "my",
-                    text: "...",
-                    textChunk: [],
-                    loading: false,
-                    speaking: true,
-                    chunk: false,
-                    voiceIndex: null,
-                },
-            ];
+            addMessage({
+                type: "my",
+                text: "...",
+                loading: false,
+                speaking: true,
+                chunk: false,
+                voiceIndex: null,
+            });
+            
             updateChat();
             return;
         };
@@ -225,19 +176,12 @@
                 updateChat();
                 return;
             }
-            messages = [
-                ...messages.slice(0, messages.length - 1),
-                {
-                    type: "my",
-                    text: "Loading...",
-                    textChunk: [],
-                    loading: true,
-                    speaking: false,
-                    chunk: false,
-                    voiceIndex: null,
-                },
-            ];
-            updateChat();
+            changeLastMessage({
+                text: "Loading...",
+                loading: true,
+                speaking: false,
+                chunk: false,
+            });
             speakDisabled(true);
             return;
         };
@@ -264,7 +208,6 @@
                 newmessages.push({
                     type: msg.role === "user" ? "my" : "your",
                     text: msg.content,
-                    textChunk: [msg.content],
                     loading: false,
                     speaking: false,
                     chunk: false,
