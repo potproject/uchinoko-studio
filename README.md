@@ -21,7 +21,7 @@ See Article(Japanese Only): https://blog.potproject.net/2023/12/24/ai-web-uchino
 * [Tailscale](https://tailscale.com/) Support
 * Run on Browser(Google Chrome Supported)
 * Japanese Support(for now...)
-* Chat-based LLM Support: [OpenAI GPT(Cloud Only)](https://openai.com/gpt-4)、[Anthropic Claude](https://www.anthropic.com/claude)
+* Chat-based LLM Support: [OpenAI GPT(Cloud Only)](https://openai.com/gpt-4)、[Anthropic Claude](https://www.anthropic.com/claude)、[Cohere Command(Cloud Only)](https://cohere.com/command)
 * STT LLM Support: [Whisper(Cloud Only)](https://openai.com/research/whisper)
 * TTS LLM Support: [Bert-Vits2](https://github.com/fishaudio/Bert-VITS2), [Style-Bert-VITS2](https://github.com/litagin02/Style-Bert-VITS2), [VOICEVOX](https://voicevox.hiroshiba.jp/)
 * More bugs...
@@ -45,8 +45,7 @@ TODO: 環境不要で動作できるパッケージを配布することを予�
 
 * `OPENAI_API_KEY`は動作に必須です。設定してください。
 
-* `ANTHROPIC_API_KEY`、`VOICEVOX_ENDPOINT`、`BERTVITS2_ENDPOINT`、`STYLEBERTVIT2_ENDPOINT`は使用するのであれば設定してください。
-
+* `ANTHROPIC_API_KEY`、`COHERE_API_KEY`、`VOICEVOX_ENDPOINT`、`BERTVITS2_ENDPOINT`、`STYLEBERTVIT2_ENDPOINT`は使用するのであれば設定してください。
 
 #### Text To Speech
 

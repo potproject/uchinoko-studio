@@ -8,6 +8,8 @@ import (
 	"log"
 	"strings"
 
+	cohere "github.com/cohere-ai/cohere-go/v2"
+	cohereclient "github.com/cohere-ai/cohere-go/v2/client"
 	claude "github.com/potproject/claude-sdk-go"
 	"github.com/potproject/uchinoko-studio/data"
 	openai "github.com/sashabaranov/go-openai"
@@ -194,6 +196,113 @@ func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, mult
 			return cm, err
 		}
 		content := response.Content[0].Text
+		allText += content
+		chunked := false
+		for _, c := range content {
+			chunked = strings.Contains(chars, string(c))
+			if chunked {
+				break
+			}
+		}
+		if chunked {
+			chunkMessage <- TextMessage{
+				Text:  bufferText + content,
+				Voice: voice,
+			}
+			bufferText = ""
+		} else {
+			bufferText += content
+		}
+
+		// bufferTextに voiceIndentifications が含まれている場合
+		if multi {
+			for i, v := range voiceIndentifications {
+				if strings.Contains(bufferText, v) {
+					bufferText = strings.Replace(bufferText, v, "", -1)
+					chunkMessage <- TextMessage{
+						Text:  bufferText,
+						Voice: voice,
+					}
+					bufferText = ""
+					voice = voices[i]
+					break
+				}
+			}
+		}
+	}
+}
+
+func CohereChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, chunkMessage chan TextMessage) ([]data.ChatCompletionMessage, error) {
+	ctx := context.Background()
+	c := cohereclient.NewClient(cohereclient.WithToken(apiKey))
+
+	voice := voices[0]
+	voiceIndentifications := make([]string, len(voices))
+	if multi {
+		for i, v := range voices {
+			voiceIndentifications[i] = v.Identification
+		}
+	}
+
+	cohereChatMessages := make([]*cohere.ChatMessage, len(cm)+1)
+	cohereChatMessages[0] = &cohere.ChatMessage{
+		Role:    "SYSTEM",
+		Message: chatSystemPropmt,
+	}
+	for i, v := range cm {
+		cohereRole := "USER"
+		if v.Role == openai.ChatMessageRoleAssistant {
+			cohereRole = "CHATBOT"
+		}
+		cohereChatMessages[i+1] = &cohere.ChatMessage{
+			Role:    cohere.ChatMessageRole(cohereRole),
+			Message: v.Content,
+		}
+	}
+
+	stream, err := c.ChatStream(
+		ctx,
+		&cohere.ChatStreamRequest{
+			Message:     text,
+			Model:       &model,
+			ChatHistory: cohereChatMessages,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	defer stream.Close()
+
+	allText := ""
+	bufferText := ""
+	for {
+		response, err := stream.Recv()
+		if errors.Is(err, io.EOF) {
+			chunkMessage <- TextMessage{
+				Text:  bufferText,
+				Voice: voice,
+			}
+			return append(
+				cm,
+				data.ChatCompletionMessage{
+					Role:    openai.ChatMessageRoleUser,
+					Content: text,
+				},
+				data.ChatCompletionMessage{
+					Role:    openai.ChatMessageRoleAssistant,
+					Content: allText,
+				},
+			), nil
+		}
+		if err != nil {
+			fmt.Printf("\nStream error: %v\n", err)
+			return cm, err
+		}
+		if response.TextGeneration == nil {
+			continue
+		}
+		content := response.TextGeneration.Text
 		allText += content
 		chunked := false
 		for _, c := range content {

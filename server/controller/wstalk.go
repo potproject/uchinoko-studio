@@ -69,6 +69,9 @@ func getChatApiKey(chatType string) string {
 	if chatType == "anthropic" {
 		return envgen.Get().ANTHROPIC_API_KEY()
 	}
+	if chatType == "cohere" {
+		return envgen.Get().COHERE_API_KEY()
+	}
 	return ""
 }
 
@@ -206,6 +209,10 @@ func runChatStream(id string, voices []data.CharacterConfigVoice, multi bool, re
 	}
 	if chatType == "anthropic" {
 		chatStream = api.AnthropicChatStream
+	}
+	if chatType == "cohere" {
+		chatStream = api.CohereChatStream
+
 	}
 
 	ncm, err := chatStream(apiKey, voices, multi, chatSystemPropmt, chatModel, cm.Chat, requestText, chunkMessage)

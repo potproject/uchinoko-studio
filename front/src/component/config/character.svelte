@@ -220,6 +220,7 @@
                     <select id="chat" class="w-full border border-gray-300 rounded p-1" bind:value={data.chat.type}>
                         <option value="openai">OpenAI</option>
                         <option value="anthropic">Anthropic</option>
+                        <option value="cohere">Cohere</option>
                     </select>
                 </div>
             </div>
@@ -245,6 +246,14 @@
                             <option value="claude-3-opus-20240229">Claude 3 Opus(20240229)</option>
                             <option value="claude-3-sonnet-20240229">Claude 3 Sonnet(20240229)</option>
                             <option value="claude-3-haiku-20240307">Claude 3 Haiku(20240307)</option>
+                        {/if}
+                        {#if data.chat.type === "cohere"}
+                            <option value="command-r-plus">Command R Plus</option>
+                            <option value="command-r">Command R</option>
+                            <option value="command-nightly">Command Nightly</option>
+                            <option value="command">Command</option>
+                            <option value="command-light-nightly">Command Light Nightly</option>
+                            <option value="command-light">Command Light</option>
                         {/if}
                     </datalist>
                 </div>
