@@ -30,19 +30,6 @@
         input.click();
     };
 
-    const onSummary = () => {
-        if (window.confirm("チャット履歴を要約して、記憶として保存しますか？")) {
-            fetch(`/v1/chat/${data.general.id}/${data.general.id}/summary`, {
-                method: "POST",
-            }).then((res) => {
-                if (!res.ok) {
-                    throw new Error("要約の保存に失敗しました");
-                }
-                alert("チャット履歴を要約して、記憶として保存しました");
-            })
-        }
-    };
-
     const onReset = () => {
         if (window.confirm("チャット履歴をリセットしますか？")) {
             fetch(`/v1/chat/${data.general.id}`, {
@@ -285,11 +272,6 @@
         <div class="flex justify-center items-center p-4">
             <button class="bg-red-500 text-white rounded-md p-2 w-64" on:click={onReset}>
                 会話履歴をリセットする
-            </button>
-        </div>
-        <div class="flex justify-center items-center p-4">
-            <button class="bg-blue-500 text-white rounded-md p-2 w-64" on:click={onSummary}>
-                会話履歴を要約して、記憶として保存する
             </button>
         </div>
         <!-- 保存/キャンセル -->

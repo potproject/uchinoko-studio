@@ -199,15 +199,16 @@ func runChatStream(id string, voices []data.CharacterConfigVoice, multi bool, re
 	if err != nil {
 		return err
 	}
-	var ncm []data.ChatCompletionMessage
 
+	var chatStream api.ChatStream
 	if chatType == "openai" {
-		ncm, err = api.OpenAIChatStream(apiKey, voices, multi, chatSystemPropmt, chatModel, cm.Chat, requestText, chunkMessage)
+		chatStream = api.OpenAIChatStream
 	}
 	if chatType == "anthropic" {
-		ncm, err = api.AnthropicChatStream(apiKey, voices, multi, chatSystemPropmt, chatModel, cm.Chat, requestText, chunkMessage)
+		chatStream = api.AnthropicChatStream
 	}
 
+	ncm, err := chatStream(apiKey, voices, multi, chatSystemPropmt, chatModel, cm.Chat, requestText, chunkMessage)
 	if err != nil {
 		return err
 	}
