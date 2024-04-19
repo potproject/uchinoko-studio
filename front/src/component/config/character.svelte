@@ -30,6 +30,17 @@
         input.click();
     };
 
+    const onReset = () => {
+        if (window.confirm("チャット履歴をリセットしますか？")) {
+            fetch(`/v1/chat/${data.general.id}`, {
+                method: "DELETE",
+            }).finally(() => {
+                location.reload();
+            });
+            alert("チャット履歴をリセットしました");
+        }
+    };
+
     const onSave = () => {
         saveLoading = true;
         fetch(`/v1/config/character/${data.general.id}`, {
@@ -209,6 +220,7 @@
                     <select id="chat" class="w-full border border-gray-300 rounded p-1" bind:value={data.chat.type}>
                         <option value="openai">OpenAI</option>
                         <option value="anthropic">Anthropic</option>
+                        <option value="cohere">Cohere</option>
                     </select>
                 </div>
             </div>
@@ -235,6 +247,14 @@
                             <option value="claude-3-sonnet-20240229">Claude 3 Sonnet(20240229)</option>
                             <option value="claude-3-haiku-20240307">Claude 3 Haiku(20240307)</option>
                         {/if}
+                        {#if data.chat.type === "cohere"}
+                            <option value="command-r-plus">Command R Plus</option>
+                            <option value="command-r">Command R</option>
+                            <option value="command-nightly">Command Nightly</option>
+                            <option value="command">Command</option>
+                            <option value="command-light-nightly">Command Light Nightly</option>
+                            <option value="command-light">Command Light</option>
+                        {/if}
                     </datalist>
                 </div>
             </div>
@@ -247,8 +267,22 @@
                      class="w-full border border-gray-300 rounded p-1 resize-y" bind:value={data.chat.systemPrompt}></textarea>
                 </div>
             </div>
+            <div class="flex items-center px-4 py-2">
+                <div class="flex-1">
+                    <label for="history" class="text-sm">履歴</label>
+                    <textarea id="history" 
+                     rows="10"
+                     class="w-full border border-gray-300 rounded p-1 resize-y" bind:value={data.history}></textarea>
+                </div>
+            </div>
         {/if}
 
+        <!-- チャット履歴のリセット -->
+        <div class="flex justify-center items-center p-4">
+            <button class="bg-red-500 text-white rounded-md p-2 w-64" on:click={onReset}>
+                会話履歴をリセットする
+            </button>
+        </div>
         <!-- 保存/キャンセル -->
         <div class="flex justify-center items-center p-4">
             <button class={"bg-blue-500 text-white rounded-md p-2 w-24 " + (saveLoading ? " opacity-50 cursor-not-allowed" : "")} on:click={() => onSave()}>

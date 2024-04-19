@@ -17,6 +17,7 @@ export type CharacterConfig = {
         model: string;
         systemPrompt: string;
     };
+    history: string;
 };
 
 export type CharacterConfigList = {

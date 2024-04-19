@@ -10,7 +10,6 @@ import (
 	"github.com/potproject/uchinoko-studio/data"
 	"github.com/potproject/uchinoko-studio/db"
 	"github.com/potproject/uchinoko-studio/envgen"
-	"github.com/sashabaranov/go-openai"
 )
 
 type TextInput struct {
@@ -69,6 +68,9 @@ func getChatApiKey(chatType string) string {
 	}
 	if chatType == "anthropic" {
 		return envgen.Get().ANTHROPIC_API_KEY()
+	}
+	if chatType == "cohere" {
+		return envgen.Get().COHERE_API_KEY()
 	}
 	return ""
 }
@@ -200,15 +202,20 @@ func runChatStream(id string, voices []data.CharacterConfigVoice, multi bool, re
 	if err != nil {
 		return err
 	}
-	var ncm []openai.ChatCompletionMessage
 
+	var chatStream api.ChatStream
 	if chatType == "openai" {
-		ncm, err = api.OpenAIChatStream(apiKey, voices, multi, chatSystemPropmt, chatModel, cm.Chat, requestText, chunkMessage)
+		chatStream = api.OpenAIChatStream
 	}
 	if chatType == "anthropic" {
-		ncm, err = api.AnthropicChatStream(apiKey, voices, multi, chatSystemPropmt, chatModel, cm.Chat, requestText, chunkMessage)
+		chatStream = api.AnthropicChatStream
+	}
+	if chatType == "cohere" {
+		chatStream = api.CohereChatStream
+
 	}
 
+	ncm, err := chatStream(apiKey, voices, multi, chatSystemPropmt, chatModel, cm.Chat, requestText, chunkMessage)
 	if err != nil {
 		return err
 	}

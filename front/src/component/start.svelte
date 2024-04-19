@@ -5,8 +5,6 @@
     import Character from "./character.svelte";
     import type { CharacterConfig, CharacterConfigList } from "../types/character";
 
-    export let id: string;
-
     const dispatch = createEventDispatcher();
     let micOk: boolean | undefined = undefined;
     let audioOk = false;
@@ -21,15 +19,6 @@
 
 
     let slientAudio: HTMLAudioElement;
-
-    let onReset = () => {
-        fetch(`/v1/chat/${id}`, {
-            method: "DELETE",
-        }).finally(() => {
-            location.reload();
-            localStorage.removeItem("id");
-        });
-    };
 
     onMount(async () => {
         const res = await fetch("/v1/config/characters");
@@ -121,10 +110,6 @@
             <div class="flex items-center text-gray-300 hover:text-gray-800 cursor-pointer" on:click={() => (showConfig = !showConfig)}>
                 <i class="las la-cog text-4xl mr-2"></i>
             </div>
-        </div>
-        <div class="card-header mt-2 px-4 text-xs">
-            <div>Chat ID: {id}</div>
-            <a href="#" class="text-blue-500 hover:text-blue-600" on:click={onReset}>チャット履歴をリセットする</a>
         </div>
         <!-- 利用規約欄 Textarea -->
         <div class="card-body p-3 m-2">

@@ -4,6 +4,7 @@ go 1.21
 
 require (
 	github.com/gofiber/fiber/v2 v2.51.0
+	github.com/potproject/claude-sdk-go v1.1.4
 	github.com/syndtr/goleveldb v1.0.0
 )
 
@@ -24,6 +25,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.17.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.22.0 // indirect
 	github.com/aws/smithy-go v1.14.2 // indirect
+	github.com/cohere-ai/cohere-go/v2 v2.7.1 // indirect
 	github.com/coreos/go-iptables v0.7.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/dblohm7/wingoes v0.0.0-20230929194252-e994401fc077 // indirect
@@ -83,7 +85,6 @@ require (
 	golang.org/x/tools v0.13.0 // indirect
 	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2 // indirect
 	golang.zx2c4.com/wireguard/windows v0.5.3 // indirect
-	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect
 	gvisor.dev/gvisor v0.0.0-20230928000133-4fe30062272c // indirect
 	inet.af/peercred v0.0.0-20210906144145-0893ea02156a // indirect
 	nhooyr.io/websocket v1.8.7 // indirect
@@ -92,14 +93,13 @@ require (
 require (
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/gofiber/contrib/websocket v1.2.2
-	github.com/google/uuid v1.4.0 // indirect
+	github.com/google/uuid v1.4.0
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/joho/godotenv v1.5.1
 	github.com/klauspost/compress v1.17.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
-	github.com/r3labs/sse v0.0.0-20210224172625-26fe804710bc
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/sashabaranov/go-openai v1.20.2
 	github.com/valyala/bytebufferpool v1.0.0 // indirect

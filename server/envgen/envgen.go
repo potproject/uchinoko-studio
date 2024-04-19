@@ -23,6 +23,13 @@ func (s setter) BERTVITS2_ENDPOINT(value string) {
 	env.BERTVITS2_ENDPOINT = value
 	return
 }
+func (g getter) COHERE_API_KEY() string {
+	return env.COHERE_API_KEY
+}
+func (s setter) COHERE_API_KEY(value string) {
+	env.COHERE_API_KEY = value
+	return
+}
 func (g getter) DB_FILE_PATH() string {
 	return env.DB_FILE_PATH
 }
@@ -104,6 +111,7 @@ func (s setter) VOICEVOX_ENDPOINT(value string) {
 type environment struct {
 	ANTHROPIC_API_KEY        string
 	BERTVITS2_ENDPOINT       string
+	COHERE_API_KEY           string
 	DB_FILE_PATH             string
 	HOST                     string
 	OPENAI_API_KEY           string
@@ -125,6 +133,7 @@ func Load() error {
 	var err error
 	ANTHROPIC_API_KEY := os.Getenv("ANTHROPIC_API_KEY")
 	BERTVITS2_ENDPOINT := os.Getenv("BERTVITS2_ENDPOINT")
+	COHERE_API_KEY := os.Getenv("COHERE_API_KEY")
 	DB_FILE_PATH := os.Getenv("DB_FILE_PATH")
 	HOST := os.Getenv("HOST")
 	OPENAI_API_KEY := os.Getenv("OPENAI_API_KEY")
@@ -173,6 +182,7 @@ func Load() error {
 	env = environment{
 		ANTHROPIC_API_KEY:        ANTHROPIC_API_KEY,
 		BERTVITS2_ENDPOINT:       BERTVITS2_ENDPOINT,
+		COHERE_API_KEY:           COHERE_API_KEY,
 		DB_FILE_PATH:             DB_FILE_PATH,
 		HOST:                     HOST,
 		OPENAI_API_KEY:           OPENAI_API_KEY,
@@ -191,6 +201,7 @@ func Load() error {
 type getterInterface interface {
 	ANTHROPIC_API_KEY() string
 	BERTVITS2_ENDPOINT() string
+	COHERE_API_KEY() string
 	DB_FILE_PATH() string
 	HOST() string
 	OPENAI_API_KEY() string
@@ -216,6 +227,7 @@ func Get() getter {
 type setterInterface interface {
 	ANTHROPIC_API_KEY() string
 	BERTVITS2_ENDPOINT() string
+	COHERE_API_KEY() string
 	DB_FILE_PATH() string
 	HOST() string
 	OPENAI_API_KEY() string

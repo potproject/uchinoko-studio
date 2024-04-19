@@ -2,25 +2,11 @@
     /* @ts-ignore */
     import Start from "../component/start.svelte";
     import Chat from "../component/chat.svelte";
-    import { onMount } from 'svelte';
     import type { CharacterConfig } from "../types/character";
 
     let route: "start" | "chat" = "start";
     let audio: AudioContext;
     let selectCharacter: CharacterConfig;
-    
-    let id:string;
-
-    onMount(() => {
-        const localId = localStorage.getItem("id");
-        if (localId) {
-            id = localId;
-        } else {
-            id = self.crypto.randomUUID();
-        }
-        localStorage.setItem("id", id);
-    });
-
 
     const changeRoute = (newRoute: "start" | "chat") => {
         route = newRoute;
@@ -35,9 +21,9 @@
 
 <main class="bg-gradient-to-r from-cyan-100 to-blue-400 w-screen h-screen flex justify-center items-center">
     {#if route === "start"}
-    <Start on:start={onStart} id={id} />
+    <Start on:start={onStart} />
     {/if}
     {#if route === "chat"}
-    <Chat audio={audio} selectCharacter={selectCharacter} id={id} />
+    <Chat audio={audio} selectCharacter={selectCharacter} />
     {/if}
 </main>

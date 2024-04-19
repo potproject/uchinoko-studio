@@ -1,3 +1,5 @@
+import type { CharacterConfig } from "../types/character";
+
 type TextMessage = {
     type: 'connection' | 'chat-response' | 'chat-request' | 'chat-response-change-character' | 'chat-response-chunk' | 'finish' | 'error';
     text: string;
@@ -8,8 +10,14 @@ export class SocketContext{
     
     public onConnected: () => void = () => {};
     public onBinary: (data: ArrayBuffer) => void = () => {};
-    public onText: (data: TextMessage) => void = () => {};
     public onClosed: () => void = () => {};
+
+    public onChatRequest: (text: string) => void = () => {};
+    public onChatResponse: (text: string) => void = () => {};
+    public onChatResponseChangeCharacter: (text: string) => void = () => {};
+    public onChatResponseChunk: (text: string) => void = () => {};
+    public onFinish: () => void = () => {};
+    public onError: (text: string) => void = () => {};
 
     constructor(url: string){
         this.socket = new WebSocket(url);
@@ -27,23 +35,44 @@ export class SocketContext{
                 return;
             } else if (data.type === 'chat-response') {
                 console.log('chat-response', data.text);
+                this.onChatResponse(data.text);
             } else if (data.type === 'chat-request') {
                 console.log('chat-request', data.text);
+                this.onChatRequest(data.text);
             } else if (data.type === 'chat-response-change-character') {
                 console.log('chat-response-change-character', data.text);
+                this.onChatResponseChangeCharacter(data.text);
             } else if (data.type === 'chat-response-chunk') {
                 console.log('chat-response-chunk', data.text);
+                this.onChatResponseChunk(data.text);
             } else if (data.type === 'finish') {
                 console.log('finish');
+                this.onFinish();
             } else if (data.type === 'error') {
                 console.log('error', data.text);
+                this.onError(data.text);
             }
-            this.onText(data);
         }
 
         this.socket.onclose = () => {
             this.onClosed();
         }
+    }
+
+    public static async connect(selectCharacter: CharacterConfig): Promise<{socket:SocketContext, mimeType: string}> {
+        const wsTLS = location.protocol === 'https:' ? 'wss' : 'ws';
+    
+        const extenstion = MediaRecorder.isTypeSupported('audio/webm') ? 'webm' : 'mp4';
+        const mimeType = `audio/${extenstion}`;
+    
+        const url = `${wsTLS}://${location.host}/v1/ws/talk/${selectCharacter.general.id}/${selectCharacter.general.id}/${extenstion}`;
+        const socket = new SocketContext(url);
+        await new Promise(resolve => {
+            socket.onConnected = () => {
+                resolve(socket);
+            }
+        });
+        return {socket, mimeType};
     }
 
     public sendBinary(data: any){

@@ -5,305 +5,224 @@
     import { tick } from "svelte";
     import ChatMyMsg from "./chat-my-msg.svelte";
     import ChatYourMsg from "./chat-your-msg.svelte";
+    import ChatTimer from "./chat-timer.svelte";
     import type { CharacterConfig } from "../types/character";
+    import ChatError from "./chat-error.svelte";
+    import type { Message, ChunkMessage } from "../types/message";
 
     let initLoading = true;
     let stopMic = false;
+
+    let playing: PlayingContext;
+    let recording: RecordingContext;
+    let messages: Message[] = [];
+
+    export let audio: AudioContext;
+    export let selectCharacter: CharacterConfig;
 
     const speakDisabled = (disabled: boolean) => {
         if (stopMic || initLoading) {
             disabled = true;
         }
         recording.changeRecordingAllow(!disabled);
-    }
+    };
 
-    export let audio: AudioContext;
-    export let selectCharacter: CharacterConfig;
-    export let id: string;
-
-    let timer = 0;
-    let timerId: number | undefined = undefined;
     let speaking = false;
     let chatarea: HTMLDivElement | undefined = undefined;
-
-
-    type Message = {
-        type: 'my' | 'your' | 'error';
-        voiceIndex: number|null;
-        text: string;
-        textChunk: string[];
-        loading: boolean;
-        speaking: boolean;
-        chunk: boolean;
-    }
-    let messages: Message[] = [];
-
-    const startTimer = () => {
-        timerId = window.setInterval(() => {
-            if (stopMic) {
-                return;
-            }
-            timer++;
-        }, 1000);
-    }
-
-    const parseTime = (time: number) => {
-        // 00:00
-        const min = Math.floor(time / 60);
-        const sec = time % 60;
-        return `${min < 10 ? '0' + min : min}:${sec < 10 ? '0' + sec : sec}`;
-    }
-    startTimer();
+    let chunkMessages: ChunkMessage[] = [];
 
     const updateChat = async () => {
         //スクロールバーを一番下に移動
         await tick();
         chatarea?.scrollTo(0, chatarea.scrollHeight);
-    }
+    };
 
-    let socket: SocketContext;
-    let playing: PlayingContext;
-    let recording: RecordingContext;
+    const addMessage = (message: Message) => {
+        messages = [...messages, message];
+        updateChat();
+    };
+
+    const changeLastMessage = (message: Partial<Message>) => {
+        messages = [
+            ...messages.slice(0, messages.length - 1),
+            {
+                ...messages[messages.length - 1],
+                ...message,
+            },
+        ];
+        updateChat();
+    };
 
     (async () => {
-        // WS
-        const wsTLS = location.protocol === 'https:' ? 'wss' : 'ws';
-
-        const extenstion = MediaRecorder.isTypeSupported('audio/webm') ? 'webm' : 'mp4';
-        const mimeType = `audio/${extenstion}`;
-
-        const url = `${wsTLS}://${location.host}/v1/ws/talk/${id}/${selectCharacter.general.id}/${extenstion}`;
-        socket = new SocketContext(url);
-        await new Promise(resolve => {
-            socket.onConnected = () => {
-                resolve(null);
-            }
-        });
+        const { socket, mimeType } = await SocketContext.connect(selectCharacter);
         socket.onClosed = () => {
-            messages = [...messages, {
-                type: 'error',
-                text: '接続が切断されました。再度ページを読み込んでください。',
-                textChunk: [],
+            addMessage({
+                type: "error",
+                text: "接続が切断されました。再度ページを読み込んでください。",
                 loading: false,
                 speaking: false,
                 chunk: false,
-                voiceIndex: null
-            }];
-            updateChat();
-        }
+                voiceIndex: null,
+            });
+        };
         socket.onBinary = (data) => {
             playing.playWAV(data);
             return;
-        }
-        socket.onText = (data) => {
-            if(data.type === 'finish') {
-                if (messages[messages.length - 1].chunk) {
-                    messages = [...messages.slice(0, messages.length - 1), {
-                        type: 'your',
-                        text: messages[messages.length - 1].text.trim(),
-                        textChunk: messages[messages.length - 1].textChunk,
-                        loading: false,
-                        speaking: true,
-                        chunk: false,
-                        voiceIndex: messages[messages.length - 1].voiceIndex
-                    }];
-                    updateChat();
-                }
+        };
 
-                // 再生後停止指示
-                playing.sendFinishAction();
-                return;
-            }
-            if(data.type === 'chat-request') {
-                messages = [...messages.slice(0, messages.length - 1), {
-                    type: 'my',
-                    text: data.text.trim(),
-                    textChunk: [data.text.trim()],
-                    loading: false,
-                    speaking: false,
-                    chunk: false,
-                    voiceIndex: null,
-                }];
-                updateChat();
-                return;
-            }
+        socket.onFinish = () => {
+            // 再生後停止指示
+            playing.sendFinishAction();
+        };
 
-            if(data.type === 'chat-response-change-character') {
-                // 1つ前がyourの場合は、そのメッセージを更新
-                if (messages[messages.length - 1].chunk && messages[messages.length - 1].type === 'your') {
-                    messages = [...messages.slice(0, messages.length - 1), {
-                        type: 'your',
-                        text: messages[messages.length - 1].text.trim(),
-                        textChunk: messages[messages.length - 1].textChunk,
-                        loading: false,
-                        speaking: false,
-                        chunk: false,
-                        voiceIndex: messages[messages.length - 1].voiceIndex
-                    }];
-                }
-                messages = [...messages, {
-                    type: 'your',
-                    text: '',
-                    textChunk: [],
-                    loading: true,
-                    speaking: true,
-                    chunk: true,
-                    voiceIndex: selectCharacter.voice.findIndex((v) => v.identification === data.text)
-                }];
-                return;
-            }
+        socket.onChatRequest = (text) => {
+            changeLastMessage({ text: text.trim(), loading: false, speaking: false });
+        };
 
-            if(data.type === 'chat-response-chunk') {
-                if (messages[messages.length - 1].chunk) {
-                    messages = [...messages.slice(0, messages.length - 1), {
-                        type: 'your',
-                        text: (messages[messages.length - 1].text + data.text).trim(),
-                        textChunk: [...messages[messages.length - 1].textChunk, data.text],
-                        loading: true,
-                        speaking: true,
-                        chunk: true,
-                        voiceIndex: messages[messages.length - 1].voiceIndex
-                    }];
-                    updateChat();
-                    return;
-                }
-                messages = [...messages, {
-                    type: 'your',
-                    text: data.text.trim(),
-                    textChunk: [data.text.trim()],
-                    loading: true,
-                    speaking: true,
-                    chunk: true,
-                    voiceIndex: 0,
-                }];
-                updateChat();
-                return;
-            }
+        socket.onChatResponseChangeCharacter = (text) => {
+            chunkMessages.push({ type: "change-character", text: text });
+        };
 
-            /*if(data.type === 'chat-response') {
-                if (messages[messages.length - 1].chunk) {
-                    messages = [...messages.slice(0, messages.length - 1), {
-                        type: 'your',
-                        text: data.text,
-                        loading: false,
-                        speaking: false,
-                        chunk: false
-                    }];
-                    updateChat();
-                    return;
-                }
-                messages = [...messages, {
-                    type: 'your',
-                    text: data.text,
-                    loading: false,
-                    speaking: false,
-                    chunk: false
-                }];
-                return;
-            }*/
+        socket.onChatResponseChunk = (text) => {
+            chunkMessages.push({ type: "chat", text: text });
+        };
 
-            if(data.type === 'error') {
-                messages = [...messages, {
-                    type: 'error',
-                    text: data.text,
-                    textChunk: [],
-                    loading: false,
-                    speaking: false,
-                    chunk: false,
-                    voiceIndex: null
-                }];
-                updateChat();
-                return;
-            }
-        }
+        socket.onError = (text) => {
+            addMessage({
+                type: "error",
+                text: text,
+                loading: false,
+                speaking: false,
+                chunk: false,
+                voiceIndex: null,
+            });
+        };
 
         // Playing 再生
         playing = new PlayingContext(audio);
         playing.onSpeakingStart = () => {
             speaking = true;
-        }
+        };
+        playing.onSpeackingChunkStart = () => {
+            while (chunkMessages.length > 0) {
+                const chunkMessage = chunkMessages.shift();
+                if (!chunkMessage) {
+                    return;
+                }
+                switch (chunkMessage.type) {
+                    case "change-character":
+                        if (messages[messages.length - 1].chunk && messages[messages.length - 1].type === "your") {
+                            changeLastMessage({
+                                text: messages[messages.length - 1].text.trim(),
+                                loading: false,
+                                speaking: false,
+                                chunk: false,
+                            });
+                        }
+                        addMessage({
+                            type: "your",
+                            text: "",
+                            loading: true,
+                            speaking: true,
+                            chunk: true,
+                            voiceIndex: selectCharacter.voice.findIndex((v) => v.identification === chunkMessage.text),
+                        });
+                        continue;
+                    case "chat":
+                        if (messages[messages.length - 1].chunk) {
+                            changeLastMessage({
+                                text: (messages[messages.length - 1].text + chunkMessage.text).trim(),
+                                loading: true,
+                                speaking: true,
+                                chunk: true,
+                            });
+                            return;
+                        }
+                        addMessage({
+                            type: "your",
+                            text: chunkMessage.text.trim(),
+                            loading: true,
+                            speaking: true,
+                            chunk: true,
+                            voiceIndex: 0,
+                        });
+                        return;
+                }
+            }
+        };
+
         playing.onSpeakingEnd = () => {
             speaking = false;
             if (messages[messages.length - 1].speaking) {
-                messages = [...messages.slice(0, messages.length - 1), {
-                    type: 'your',
-                    text: messages[messages.length - 1].text,
-                    textChunk: messages[messages.length - 1].textChunk,
+                changeLastMessage({
                     loading: false,
                     speaking: false,
                     chunk: false,
-                    voiceIndex: messages[messages.length - 1].voiceIndex
-                }];
-                updateChat();
+                });
             }
             speakDisabled(false);
-        }
+        };
 
         // Recording 録音
         recording = new RecordingContext(await navigator.mediaDevices.getUserMedia({ audio: true }), mimeType);
         await recording.init();
 
         recording.onSpeakingStart = () => {
-            messages = [...messages, {
-                type: 'my',
-                text: '...',
-                textChunk: [],
+            addMessage({
+                type: "my",
+                text: "...",
                 loading: false,
                 speaking: true,
                 chunk: false,
-                voiceIndex: null
-            }];
+                voiceIndex: null,
+            });
+
             updateChat();
             return;
-        }
+        };
         recording.onSpeakingEnd = (ignore) => {
             // 最後のメッセージを更新
-            if(ignore) {
+            if (ignore) {
                 messages = messages.slice(0, messages.length - 1);
                 updateChat();
                 return;
             }
-            messages = [...messages.slice(0, messages.length - 1), {
-                type: 'my',
-                text: 'Loading...',
-                textChunk: [],
+            changeLastMessage({
+                text: "Loading...",
                 loading: true,
                 speaking: false,
                 chunk: false,
-                voiceIndex: null
-            }];
-            updateChat();
+            });
             speakDisabled(true);
             return;
-        }
+        };
         recording.onDataAvailable = (event) => {
             socket.sendBinary(event.data);
-        }
+        };
 
         // old message load
-        const res = await fetch(`/v1/chat/${id}`, {
-            method: 'GET',
+        const res = await fetch(`/v1/chat/${selectCharacter.general.id}`, {
+            method: "GET",
             headers: {
-                'Content-Type': 'application/json'
-            }
+                "Content-Type": "application/json",
+            },
         });
-        if(res.status === 204) {
+        if (res.status === 204) {
             initLoading = false;
             updateChat();
             return;
         }
-        const oldMessages = (await res.json()).Chat as { role: string, content: string }[];
+        const oldMessages = (await res.json()).Chat as { role: string; content: string }[];
         const newmessages: Message[] = [];
-        for(const msg of oldMessages) {
-            if(msg.role === 'user' || msg.role === 'assistant') {
+        for (const msg of oldMessages) {
+            if (msg.role === "user" || msg.role === "assistant") {
                 newmessages.push({
-                    type: msg.role === 'user' ? 'my' : 'your',
+                    type: msg.role === "user" ? "my" : "your",
                     text: msg.content,
-                    textChunk: [msg.content],
                     loading: false,
                     speaking: false,
                     chunk: false,
-                    voiceIndex: null
+                    voiceIndex: null,
                 });
             }
         }
@@ -314,16 +233,8 @@
 </script>
 
 <div>
-    <!-- center img circle -->
-    <!--<div class="flex justify-center items-center">
-        <img src={selectCharacter.general.image} class="rounded-full w-32 h-32 {speaking ? 'animate-pulsate-fwd border-4 border-blue-500' : ''}" alt="ai" />
-    </div>-->
     <!-- Timer -->
-    <div class="flex justify-center items-center">
-        <p class="text-white rounded-md px-2 py-1 m-2 {!stopMic ? 'bg-blue-600' : 'bg-red-600'}">
-            {parseTime(timer)}
-        </p>
-    </div>
+    <ChatTimer {stopMic} />
     <!-- chat area -->
     <div class="w-screen">
         <div class="flex justify-center items-center py-2">
@@ -336,14 +247,12 @@
                     </div>
                 {/if}
                 {#each messages as msg}
-                    {#if msg.type === 'my'}
+                    {#if msg.type === "my"}
                         <ChatMyMsg message={msg.text} loading={msg.loading} speaking={msg.speaking} />
-                    {:else if msg.type === 'your'}
+                    {:else if msg.type === "your"}
                         <ChatYourMsg message={msg.text} loading={msg.loading} speaking={msg.speaking} img={msg.voiceIndex === null ? null : selectCharacter.voice[msg.voiceIndex].image} />
-                    {:else if msg.type === 'error'}
-                    <div class="flex justify-center items-center rounded-md bg-red-600 p-2 m-2 text-white">
-                        <i class="las text-2xl la-exclamation-circle"></i>{msg.text}
-                    </div>
+                    {:else if msg.type === "error"}
+                        <ChatError message={msg.text} />
                     {/if}
                 {/each}
             </div>
@@ -351,12 +260,15 @@
     </div>
     <div class="flex justify-center items-center">
         <div class="flex justify-center items-center">
-            <button class="btn text-white font-bold py-2 px-4 rounded-full
+            <button
+                class="btn text-white font-bold py-2 px-4 rounded-full
             {!stopMic ? 'bg-blue-500 hover:bg-blue-600' : 'bg-red-500 hover:bg-red-600'}
-            " on:click={() => {
-                stopMic = !stopMic;
-                speakDisabled(stopMic);
-            }}>
+            "
+                on:click={() => {
+                    stopMic = !stopMic;
+                    speakDisabled(stopMic);
+                }}
+            >
                 <i class="las text-2xl {!stopMic ? 'la-microphone' : 'la-microphone-slash'}"></i>
             </button>
         </div>
