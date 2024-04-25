@@ -221,6 +221,7 @@
                         <option value="openai">OpenAI</option>
                         <option value="anthropic">Anthropic</option>
                         <option value="cohere">Cohere</option>
+                        <option value="openai-local">Local LLM(OpenAI v1/chat/completions Compatible)</option>
                     </select>
                 </div>
             </div>
@@ -265,14 +266,6 @@
                     <textarea id="system_prompt" 
                      rows="10"
                      class="w-full border border-gray-300 rounded p-1 resize-y" bind:value={data.chat.systemPrompt}></textarea>
-                </div>
-            </div>
-            <div class="flex items-center px-4 py-2">
-                <div class="flex-1">
-                    <label for="history" class="text-sm">履歴</label>
-                    <textarea id="history" 
-                     rows="10"
-                     class="w-full border border-gray-300 rounded p-1 resize-y" bind:value={data.history}></textarea>
                 </div>
             </div>
         {/if}
