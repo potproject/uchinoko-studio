@@ -17,11 +17,11 @@ See Article(Japanese Only): https://blog.potproject.net/2023/12/24/ai-web-uchino
 ## Features
 
 * Real-time Voice Conversation
-* __Fast Response(Maybe 2 second)__
+* __Fast Response(Maybe 1 second or less)__
 * [Tailscale](https://tailscale.com/) Support
 * Run on Browser(Google Chrome Supported)
 * Japanese Support(for now...)
-* Chat-based LLM Support: [OpenAI GPT(Cloud Only)](https://openai.com/gpt-4)、[Anthropic Claude](https://www.anthropic.com/claude)、[Cohere Command(Cloud Only)](https://cohere.com/command)
+* Chat-based LLM Support: [OpenAI GPT(Cloud Only)](https://openai.com/gpt-4)、[Anthropic Claude](https://www.anthropic.com/claude)、[Cohere Command(Cloud Only)](https://cohere.com/command)、Local LLM(OpenAI `/v1/chat/completions` Compatible)
 * STT LLM Support: [Whisper(Cloud Only)](https://openai.com/research/whisper)
 * TTS LLM Support: [Bert-Vits2](https://github.com/fishaudio/Bert-VITS2), [Style-Bert-VITS2](https://github.com/litagin02/Style-Bert-VITS2), [VOICEVOX](https://voicevox.hiroshiba.jp/)
 * More bugs...
@@ -32,9 +32,10 @@ TODO: 環境不要で動作できるパッケージを配布することを予�
 
 ### Requirements
 
-* Go (Tested on 1.21.5/win-amd64)
-* Node.js (Tested on 20.11.1/win-x64)
+* Go (Tested on 1.22.2/win-amd64)
+* Node.js (Tested on 20.11.1/win-amd64)
 * pnpm
+* (When using) OpenAI `/v1/chat/completions` Compatible Local LLM (Tested on [LM Studio](https://lmstudio.ai/) - Llama 3 8B)
 
 ### Env Setting Up
 
@@ -47,6 +48,8 @@ TODO: 環境不要で動作できるパッケージを配布することを予�
 
 * `ANTHROPIC_API_KEY`、`COHERE_API_KEY`、`VOICEVOX_ENDPOINT`、`BERTVITS2_ENDPOINT`、`STYLEBERTVIT2_ENDPOINT`は使用するのであれば設定してください。
 
+* `OPENAI_LOCAL_API_KEY`および`OPENAI_LOCAL_API_ENDPOINT`はOpenAI互換エンドポイントを利用したローカルLLMを使用する場合に設定してください。
+
 #### Text To Speech
 
 このアプリケーションを使用する場合、以下のソフトウェアをローカルまたはネットワーク上で動作させておくことが前提です。
@@ -56,6 +59,7 @@ TODO: 環境不要で動作できるパッケージを配布することを予�
 * STYLEBERTVIT2の場合: `STYLEBERTVIT2_ENDPOINT`にStyle-Bert-VITS2 API Serverのエンドポイントを設定してください。モデルのロードは自動で行ってくれるため不要です。Bert-VITS2のAPIとの互換性はありません。
 
 #### Tailscale 
+
 * Tailscaleを使用する場合、起動時にコンソールより認証URLが表示されるので、そこから認証を行ってください。Tailscaleのアカウントが必要です。
 * `TAILSCALE_ENABLED`を`true`に設定すると、[Tailscale](https://tailscale.com/)を使用してVPN上からアクセスできるようになります。
   * これにより、自宅で起動して外からhttps通信で無いと動作しないSafariやiOSからもアクセスできるようになります。
@@ -63,6 +67,14 @@ TODO: 環境不要で動作できるパッケージを配布することを予�
 [Tailscale Funnel](https://tailscale.com/kb/1223/funnel)機能を使用してパブリックアクセスできるようになります。何のことかわからなければ変更しないでください。
 
 ### Run on Local
+
+```
+## Easy Start (Windows)
+run-win.bat
+
+## Easy Start (Linux/mac)
+run.sh
+```
 
 ```bash
 # Install Dependencies
@@ -84,8 +96,6 @@ go run main.go
 * Docs
 * Mobile Browser Support(iOS Safari, Android Chrome)
 * Add Multilingual Support(EN and CH)
-* Other Chat-based Large Language Models Support(local)
-* Add TTS LLM Support
 * Fix Bugs...
 
 

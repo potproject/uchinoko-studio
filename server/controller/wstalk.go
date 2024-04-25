@@ -72,6 +72,9 @@ func getChatApiKey(chatType string) string {
 	if chatType == "cohere" {
 		return envgen.Get().COHERE_API_KEY()
 	}
+	if chatType == "openai-local" {
+		return envgen.Get().OPENAI_LOCAL_API_KEY()
+	}
 	return ""
 }
 
@@ -212,7 +215,9 @@ func runChatStream(id string, voices []data.CharacterConfigVoice, multi bool, re
 	}
 	if chatType == "cohere" {
 		chatStream = api.CohereChatStream
-
+	}
+	if chatType == "openai-local" {
+		chatStream = api.OpenAILocalChatStream
 	}
 
 	ncm, err := chatStream(apiKey, voices, multi, chatSystemPropmt, chatModel, cm.Chat, requestText, chunkMessage)
