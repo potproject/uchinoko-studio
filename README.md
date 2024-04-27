@@ -9,6 +9,8 @@ Using OpenAI Transcriptions(Whisper), Style-Bert-VITS2, Anthropic Claude 3 Opus.
 
 __Multiple speakers & Real-Time Voice Conversation.__
 
+WARNING: This repository does not contain character images, LLM and Audio Model Data.
+
 ## About
 
 __Work In Progress__
