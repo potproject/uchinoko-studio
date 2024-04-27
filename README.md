@@ -1,8 +1,13 @@
 # Uchinoko Studio (β)
+<img width="350" alt="Uchinoko Studio (β)" src="https://github.com/potproject/uchinoko-studio/assets/6498055/55dcb6d2-aff8-4bc3-9d0b-76bef1d88dae.png">
 
-https://github.com/potproject/uchinoko-studio/assets/6498055/02d56c92-34c4-4ed3-8abf-83fc1b155b1a
+## Example (Ja)
 
-Using Whisper, Bert-Vits2, GPT-4 Turbo. Real-Time.
+https://github.com/potproject/uchinoko-studio/assets/6498055/e3b6691f-598a-4d01-b631-f7b64b7602f7
+
+Using OpenAI Transcriptions(Whisper), Style-Bert-VITS2, Anthropic Claude 3 Opus.
+
+__Multiple speakers & Real-Time Voice Conversation.__
 
 ## About
 
