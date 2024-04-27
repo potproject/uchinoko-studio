@@ -3,7 +3,7 @@
 
 ## Example (Ja)
 
-https://github.com/potproject/uchinoko-studio/assets/6498055/e3b6691f-598a-4d01-b631-f7b64b7602f7
+https://github.com/potproject/uchinoko-studio/assets/6498055/42a8e1fc-be28-4844-87ba-53bb6072ab71
 
 Using OpenAI Transcriptions(Whisper), Style-Bert-VITS2, Anthropic Claude 3 Opus.
 
