@@ -2,7 +2,8 @@ package data
 
 type GeneralConfig struct {
 	Transcription struct {
-		Type string `json:"type"`
+		Type   string `json:"type"`
+		Method string `json:"method"`
 	} `json:"transcription"`
 }
 

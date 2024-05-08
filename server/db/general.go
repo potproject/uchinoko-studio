@@ -10,9 +10,11 @@ import (
 func generalInitConfig() data.GeneralConfig {
 	return data.GeneralConfig{
 		Transcription: struct {
-			Type string `json:"type"`
+			Type   string `json:"type"`
+			Method string `json:"method"`
 		}{
-			Type: "whisper",
+			Type:   "whisper",
+			Method: "auto",
 		},
 	}
 }

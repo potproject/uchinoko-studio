@@ -1,16 +1,11 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
+    import type { GeneralConfig } from "../../types/general";
     const dispatch = createEventDispatcher();
 
     export let data: GeneralConfig;
 
     let saveLoading = false;
-
-    type GeneralConfig = {
-        transcription: {
-            type: string;
-        };
-    };
 
     let onSave = (data: GeneralConfig) => {
         saveLoading = true;
@@ -59,6 +54,16 @@
                 <label for="transcription" class="text-sm">Speech to text</label>
                 <select id="transcription" class="w-full border border-gray-300 rounded p-1" bind:value={data.transcription.type}>
                     <option value="whisper">OpenAI Whisper</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="flex items-center px-4 py-2">
+            <div class="flex-1">
+                <label for="transcription" class="text-sm">音声認識方法</label>
+                <select id="transcription" class="w-full border border-gray-300 rounded p-1" bind:value={data.transcription.method}>
+                    <option value="auto">自動認識</option>
+                    <option value="pushToTalk">プッシュトゥトーク</option>
                 </select>
             </div>
         </div>

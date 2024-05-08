@@ -7,18 +7,22 @@
     import ChatYourMsg from "./chat-your-msg.svelte";
     import ChatTimer from "./chat-timer.svelte";
     import type { CharacterConfig } from "../types/character";
+    import type { GeneralConfig } from "../types/general";
     import ChatError from "./chat-error.svelte";
     import type { Message, ChunkMessage } from "../types/message";
+    import { RecordingPushToTalkContext } from "$lib/RecordingPushToTalkContent";
 
     let initLoading = true;
     let stopMic = false;
 
     let playing: PlayingContext;
-    let recording: RecordingContext;
+    let recording: RecordingContext | RecordingPushToTalkContext;
     let messages: Message[] = [];
 
     export let audio: AudioContext;
+    export let media: MediaStream;
     export let selectCharacter: CharacterConfig;
+    export let generalConfig: GeneralConfig;
 
     const speakDisabled = (disabled: boolean) => {
         if (stopMic || initLoading) {
@@ -164,13 +168,19 @@
         };
 
         // Recording 録音
-        recording = new RecordingContext(await navigator.mediaDevices.getUserMedia({ audio: true }), mimeType);
+        if (generalConfig.transcription.method === "pushToTalk") {
+            recording = new RecordingPushToTalkContext(media, mimeType);
+            stopMic = true;
+            speakDisabled(true);
+        } else {
+            recording = new RecordingContext(media, mimeType);
+        }
         await recording.init();
 
         recording.onSpeakingStart = () => {
             addMessage({
                 type: "my",
-                text: "...",
+                text: "話し中...",
                 loading: false,
                 speaking: true,
                 chunk: false,
@@ -188,7 +198,7 @@
                 return;
             }
             changeLastMessage({
-                text: "Loading...",
+                text: "音声認識中...",
                 loading: true,
                 speaking: false,
                 chunk: false,
@@ -233,12 +243,9 @@
 </script>
 
 <div>
-    <!-- Timer -->
-    <ChatTimer {stopMic} />
-    <!-- chat area -->
-    <div class="w-screen">
+    <div class="w-screen absolute top-0 left-0 z-10">
         <div class="flex justify-center items-center py-2">
-            <div class="w-full md:w-2/3 h-96 overflow-y-scroll hidden-scrollbar" bind:this={chatarea}>
+            <div class="w-full md:w-2/3 h-128 px-20 overflow-y-scroll hidden-scrollbar" bind:this={chatarea}>
                 {#if initLoading}
                     <div class="flex justify-center items-center">
                         <div class="flex justify-center items-center rounded-md bg-gray-600 p-2 m-2 text-white">
@@ -258,8 +265,10 @@
             </div>
         </div>
     </div>
-    <div class="flex justify-center items-center">
-        <div class="flex justify-center items-center">
+    <div class="flex justify-center items-center z-10 absolute bottom-0 left-0 w-screen pb-16">
+        <!-- Timer -->
+        <ChatTimer {stopMic} />
+        <div class="flex justify-center items-center ml-8">
             <button
                 class="btn text-white font-bold py-2 px-4 rounded-full
             {!stopMic ? 'bg-blue-500 hover:bg-blue-600' : 'bg-red-500 hover:bg-red-600'}
