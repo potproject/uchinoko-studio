@@ -58,7 +58,7 @@
     };
 
     (async () => {
-        const { socket, mimeType } = await SocketContext.connect(selectCharacter);
+        const { socket, mimeType } = await SocketContext.connect(generalConfig, selectCharacter);
         socket.onClosed = () => {
             addMessage({
                 type: "error",
