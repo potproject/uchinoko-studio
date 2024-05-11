@@ -1,10 +1,10 @@
 class VolumeProcessor extends AudioWorkletProcessor {
     constructor(options) {
         super(options);
-        this.threshold = options.processorOptions.threshold;
+        this.threshold = options.processorOptions.threshold || 0.02;
         this.sampleRate = options.processorOptions.sampleRate;
         this.silentCount = 0;
-        this.slientThreshold = 1;
+        this.silentThreshold = options.processorOptions.silentThreshold || 1;
         this.running = false;
         this.port.postMessage({ speak: false });
     }
@@ -32,7 +32,7 @@ class VolumeProcessor extends AudioWorkletProcessor {
             }else{
                 if(this.running){
                     this.silentCount += samples.length;
-                    if(this.silentCount > this.sampleRate * this.slientThreshold){
+                    if(this.silentCount > this.sampleRate * this.silentThreshold){
                         this.port.postMessage({ speak: false });
                         this.running = false;
                         this.silentCount = 0;

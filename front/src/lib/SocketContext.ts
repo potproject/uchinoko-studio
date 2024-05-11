@@ -1,5 +1,4 @@
 import type { CharacterConfig } from "../types/character";
-import type { GeneralConfig } from "../types/general";
 
 type TextMessage = {
     type: 'connection' | 'chat-response' | 'chat-request' | 'chat-response-change-character' | 'chat-response-chunk' | 'finish' | 'error';
@@ -60,15 +59,12 @@ export class SocketContext{
         }
     }
 
-    public static async connect(generalConfig: GeneralConfig, selectCharacter: CharacterConfig): Promise<{socket:SocketContext, mimeType: string}> {
+    public static async connect(selectCharacter: CharacterConfig): Promise<{socket:SocketContext, mimeType: string}> {
         const wsTLS = location.protocol === 'https:' ? 'wss' : 'ws';
-        
-        let mimeType = `audio/ogg`;
-        if (generalConfig.transcription.method === 'auto') {
-            mimeType = `audio/webm; codecs=opus`;
-        }
+        const mimeType = 'audio/wav';
+        const extension = 'wav';
     
-        const url = `${wsTLS}://${location.host}/v1/ws/talk/${selectCharacter.general.id}/${selectCharacter.general.id}/ogg`;
+        const url = `${wsTLS}://${location.host}/v1/ws/talk/${selectCharacter.general.id}/${selectCharacter.general.id}/${extension}`;
         const socket = new SocketContext(url);
         await new Promise(resolve => {
             socket.onConnected = () => {

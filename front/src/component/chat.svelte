@@ -58,7 +58,7 @@
     };
 
     (async () => {
-        const { socket, mimeType } = await SocketContext.connect(generalConfig, selectCharacter);
+        const { socket, mimeType } = await SocketContext.connect(selectCharacter);
         socket.onClosed = () => {
             addMessage({
                 type: "error",
@@ -173,7 +173,7 @@
             stopMic = true;
             speakDisabled(true);
         } else {
-            recording = new RecordingContext(media, mimeType);
+            recording = new RecordingContext(media, mimeType, generalConfig);
         }
         await recording.init();
 

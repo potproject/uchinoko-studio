@@ -10,11 +10,25 @@ import (
 func generalInitConfig() data.GeneralConfig {
 	return data.GeneralConfig{
 		Transcription: struct {
-			Type   string `json:"type"`
-			Method string `json:"method"`
+			Type        string `json:"type"`
+			Method      string `json:"method"`
+			AutoSetting struct {
+				Threshold       float64 `json:"threshold"`
+				SilentThreshold float64 `json:"silentThreshold"`
+				AudioMinLength  float64 `json:"audioMinLength"`
+			} `json:"autoSetting"`
 		}{
 			Type:   "whisper",
 			Method: "auto",
+			AutoSetting: struct {
+				Threshold       float64 `json:"threshold"`
+				SilentThreshold float64 `json:"silentThreshold"`
+				AudioMinLength  float64 `json:"audioMinLength"`
+			}{
+				Threshold:       0.02,
+				SilentThreshold: 1,
+				AudioMinLength:  1.3,
+			},
 		},
 	}
 }
