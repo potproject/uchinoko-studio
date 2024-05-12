@@ -169,7 +169,7 @@
 
         // Recording 録音
         if (generalConfig.transcription.method === "pushToTalk") {
-            recording = new RecordingPushToTalkContext(media, mimeType);
+            recording = new RecordingPushToTalkContext(media, mimeType, generalConfig);
             stopMic = true;
             speakDisabled(true);
         } else {

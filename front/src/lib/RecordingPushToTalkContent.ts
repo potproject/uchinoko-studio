@@ -1,6 +1,5 @@
 import RecordRTC from "recordrtc";
-// 1.3秒以上の音声データを送信
-const audioMinLength = 1300;
+import type { GeneralConfig } from "../types/general";
 
 export class RecordingPushToTalkContext {
     private stream: MediaStream;
@@ -9,15 +8,18 @@ export class RecordingPushToTalkContext {
     private recordStartTime: number = 0;
     private recordStopTime: number = 0;
 
+    private audioMinLength: number;
+
     public onSpeakingStart: () => void = () => { };
     public onSpeakingEnd: (ignore: boolean) => void = () => { };
     public onDataAvailable: (event: BlobEvent) => void = () => { };
 
-    constructor(stream: MediaStream, mimeType: string) {
+    constructor(stream: MediaStream, mimeType: string, generalConfig: GeneralConfig) {
         this.stream = stream;
         this.mimeType = mimeType;
         /** @ts-ignore */
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        this.audioMinLength = generalConfig.transcription.autoSetting.audioMinLength ?? 1.3;
         this.create();
     }
 
@@ -47,7 +49,7 @@ export class RecordingPushToTalkContext {
                 });
                 this.recordStopTime = Date.now();
                 const recordingTime = this.recordStopTime - this.recordStartTime;
-                if (recordingTime >= audioMinLength) {
+                if (recordingTime >= (this.audioMinLength*1000)) {
                     this.onSpeakingEnd(false);
                 } else {
                     this.onSpeakingEnd(true);
