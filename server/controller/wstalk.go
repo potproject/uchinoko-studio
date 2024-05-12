@@ -84,7 +84,7 @@ func WSTalk() fiber.Handler {
 		fileType := c.Params("fileType")
 		characterId := c.Params("characterId")
 
-		if fileType != "mp4" && fileType != "mp3" && fileType != "wav" && fileType != "webm" {
+		if fileType != "mp4" && fileType != "mp3" && fileType != "wav" && fileType != "webm" && fileType != "ogg" {
 			c.Close()
 			return
 		}

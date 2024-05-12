@@ -4,6 +4,7 @@
     import ConfigCharacterModal from "./config/character.svelte";
     import Character from "./character.svelte";
     import type { CharacterConfig, CharacterConfigList } from "../types/character";
+    import type { GeneralConfig } from "../types/general";
 
     const dispatch = createEventDispatcher();
     let micOk: boolean | undefined = undefined;
@@ -16,9 +17,10 @@
     let showCharacterConfig: CharacterConfig | undefined = undefined;
 
     let characters: CharacterConfigList = { characters: [] };
-
+    let general: GeneralConfig = { transcription: { type: "whisper", method: "auto" , autoSetting: { threshold: 0.02, silentThreshold: 1, audioMinLength: 1.3 } } };
 
     let slientAudio: HTMLAudioElement;
+    let mediaStream: MediaStream;
 
     onMount(async () => {
         const res = await fetch("/v1/config/characters");
@@ -26,6 +28,9 @@
         if (characters.characters.length > 0) {
             selectCharacterIndex = 0;
         }
+
+        const ResGeneral = await fetch("/v1/config/general");
+        general = await ResGeneral.json();
     });
 
     let onClick = () => {
@@ -42,14 +47,16 @@
             }
             dispatch("start", {
                 audio,
+                mediaStream,
                 selectCharacter: characters.characters[selectCharacterIndex],
+                general,
             });
         };
     };
 
     const checkMic = async () => {
         try {
-            await globalThis.navigator.mediaDevices.getUserMedia({
+            mediaStream = await globalThis.navigator.mediaDevices.getUserMedia({
                 audio: true,
             });
             micOk = true;
@@ -75,7 +82,7 @@
 
 <div>
     {#if showConfig}
-        <ConfigModal on:close={() => (showConfig = false)} data={{ transcription: { type: "whisper" } }} />
+        <ConfigModal on:close={() => (showConfig = false)} data={general} />
     {/if}
     {#if showCharacterConfig !== undefined}
         <ConfigCharacterModal

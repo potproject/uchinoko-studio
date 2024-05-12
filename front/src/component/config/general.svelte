@@ -1,16 +1,11 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
+    import type { GeneralConfig } from "../../types/general";
     const dispatch = createEventDispatcher();
 
     export let data: GeneralConfig;
 
     let saveLoading = false;
-
-    type GeneralConfig = {
-        transcription: {
-            type: string;
-        };
-    };
 
     let onSave = (data: GeneralConfig) => {
         saveLoading = true;
@@ -62,6 +57,38 @@
                 </select>
             </div>
         </div>
+
+        <div class="flex items-center px-4 py-2">
+            <div class="flex-1">
+                <label for="method" class="text-sm">音声認識方法</label>
+                <select id="method" class="w-full border border-gray-300 rounded p-1" bind:value={data.transcription.method}>
+                    <option value="auto">自動認識</option>
+                    <option value="pushToTalk">プッシュトゥトーク</option>
+                </select>
+            </div>
+        </div>
+
+        {#if data.transcription.method === "auto"}
+        <div class="flex items-center px-4 py-2">
+            <div class="flex-1">
+                <label for="threshold" class="text-sm">自動認識音量の閾値</label>
+                <input type="number" min="0" max="1" step="0.01" id="threshold" class="w-full border border-gray-300 rounded p-1" bind:value={data.transcription.autoSetting.threshold}>
+            </div>
+        </div>
+
+        <div class="flex items-center px-4 py-2">
+            <div class="flex-1">
+                <label for="silentThreshold" class="text-sm">無音状態の閾値(秒)</label>
+                <input type="number" id="silentThreshold" class="w-full border border-gray-300 rounded p-1" bind:value={data.transcription.autoSetting.silentThreshold}>
+            </div>
+        </div>
+        <div class="flex items-center px-4 py-2">
+            <div class="flex-1">
+                <label for="audioMinLength" class="text-sm">無視する音声の長さ(秒)</label>
+                <input type="number" min="0" max="10" step="0.1" id="audioMinLength" class="w-full border border-gray-300 rounded p-1" bind:value={data.transcription.autoSetting.audioMinLength}>
+            </div>
+        </div>
+        {/if}
 
         <!-- 保存/キャンセル -->
         <div class="flex justify-center items-center p-4">

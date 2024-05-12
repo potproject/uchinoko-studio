@@ -61,11 +61,10 @@ export class SocketContext{
 
     public static async connect(selectCharacter: CharacterConfig): Promise<{socket:SocketContext, mimeType: string}> {
         const wsTLS = location.protocol === 'https:' ? 'wss' : 'ws';
+        const mimeType = 'audio/wav';
+        const extension = 'wav';
     
-        const extenstion = MediaRecorder.isTypeSupported('audio/webm') ? 'webm' : 'mp4';
-        const mimeType = `audio/${extenstion}`;
-    
-        const url = `${wsTLS}://${location.host}/v1/ws/talk/${selectCharacter.general.id}/${selectCharacter.general.id}/${extenstion}`;
+        const url = `${wsTLS}://${location.host}/v1/ws/talk/${selectCharacter.general.id}/${selectCharacter.general.id}/${extension}`;
         const socket = new SocketContext(url);
         await new Promise(resolve => {
             socket.onConnected = () => {
