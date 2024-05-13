@@ -28,10 +28,11 @@ See Article(Japanese Only): https://blog.potproject.net/2023/12/24/ai-web-uchino
 * __Fast Response(Maybe 1 second or less)__
 * [Tailscale](https://tailscale.com/) Support
 * Run on Browser(Google Chrome Supported)
+* Mobile Browser Support(iOS Safari, Android Chrome)
 * Japanese Support(for now...)
-* Chat-based LLM Support: [OpenAI GPT(Cloud Only)](https://openai.com/gpt-4)、[Anthropic Claude](https://www.anthropic.com/claude)、[Cohere Command(Cloud Only)](https://cohere.com/command)、Local LLM(OpenAI `/v1/chat/completions` Compatible)
-* STT LLM Support: [Whisper(Cloud Only)](https://openai.com/research/whisper)
-* TTS LLM Support: [Bert-Vits2](https://github.com/fishaudio/Bert-VITS2), [Style-Bert-VITS2](https://github.com/litagin02/Style-Bert-VITS2), [VOICEVOX](https://voicevox.hiroshiba.jp/)
+* Chat-based LLM Support: [OpenAI GPT(Cloud)](https://openai.com/gpt-4)、[Anthropic Claude(Cloud)](https://www.anthropic.com/claude)、[Cohere Command(Cloud)](https://cohere.com/command)、Local LLM(OpenAI `/v1/chat/completions` Compatible)
+* STT Support: [Whisper(Cloud)](https://platform.openai.com/docs/guides/speech-to-text), [SpeechRecognition(Web API)](https://developer.mozilla.org/docs/Web/API/SpeechRecognition)
+* TTS Support: [Bert-Vits2(local)](https://github.com/fishaudio/Bert-VITS2), [Style-Bert-VITS2(local)](https://github.com/litagin02/Style-Bert-VITS2), [VOICEVOX(local)](https://voicevox.hiroshiba.jp/)
 * More bugs...
 
 ## Getting Started
@@ -43,20 +44,40 @@ TODO: 環境不要で動作できるパッケージを配布することを予�
 * Go (Tested on 1.22.2/win-amd64)
 * Node.js (Tested on 20.11.1/win-amd64)
 * pnpm
-* (When using) OpenAI `/v1/chat/completions` Compatible Local LLM (Tested on [LM Studio](https://lmstudio.ai/) - Llama 3 8B)
 
 ### Env Setting Up
 
 [.env.example](server/.env.example)を参考に`server/.env`を作成し
 てください。
 
-#### Speech To Text And Chat-based LLM
+#### Speech To Text
 
-* `OPENAI_API_KEY`は動作に必須です。設定してください。
+* Whisper(Cloud): `OPENAI_API_KEY`
+* SpeechRecognition(Web API): none
 
-* `ANTHROPIC_API_KEY`、`COHERE_API_KEY`、`VOICEVOX_ENDPOINT`、`BERTVITS2_ENDPOINT`、`STYLEBERTVIT2_ENDPOINT`は使用するのであれば設定してください。
+#### Chat-based LLM(Cloud)
 
-* `OPENAI_LOCAL_API_KEY`および`OPENAI_LOCAL_API_ENDPOINT`はOpenAI互換エンドポイントを利用したローカルLLMを使用する場合に設定してください。
+* OpenAI: `OPENAI_API_KEY`
+* Anthropic: `ANTHROPIC_API_KEY`
+* cohere: `COHERE_API_KEY`
+
+#### Chat-based LLM(Local)
+
+LM StudioやOllamaのような、OpenAI互換のローカルLLMを使用することが出来ます。
+
+* `OPENAI_LOCAL_API_KEY` and `OPENAI_LOCAL_API_ENDPOINT`
+
+```
+# Example (Using LM Studio)
+OPENAI_LOCAL_API_KEY=
+OPENAI_LOCAL_API_ENDPOINT=http://localhost:1234/
+```
+
+```
+# Example (Using Ollama)
+OPENAI_LOCAL_API_KEY=
+OPENAI_LOCAL_API_ENDPOINT=http://localhost:11434/
+```
 
 #### Text To Speech
 
@@ -103,7 +124,6 @@ go run main.go
 
 * Docs
 * Frontend Design issue
-* Mobile Browser Support(iOS Safari, Android Chrome)
 * Add Multilingual Support(EN and CH)
 * Fix Bugs...
 

@@ -54,10 +54,12 @@
                 <label for="transcription" class="text-sm">Speech to text</label>
                 <select id="transcription" class="w-full border border-gray-300 rounded p-1" bind:value={data.transcription.type}>
                     <option value="whisper">OpenAI Whisper</option>
+                    <option value="speech_recognition">SpeechRecognition</option>
                 </select>
             </div>
         </div>
 
+        {#if data.transcription.type === "whisper"}
         <div class="flex items-center px-4 py-2">
             <div class="flex-1">
                 <label for="method" class="text-sm">音声認識方法</label>
@@ -88,6 +90,7 @@
                 <input type="number" min="0" max="10" step="0.1" id="audioMinLength" class="w-full border border-gray-300 rounded p-1" bind:value={data.transcription.autoSetting.audioMinLength}>
             </div>
         </div>
+        {/if}
         {/if}
 
         <!-- 保存/キャンセル -->

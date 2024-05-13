@@ -11,12 +11,14 @@
     import ChatError from "./chat-error.svelte";
     import type { Message, ChunkMessage } from "../types/message";
     import { RecordingPushToTalkContext } from "$lib/RecordingPushToTalkContent";
+    import { RecognitionContent } from "$lib/RecognitionContent";
+    import type { RecordingContentInterface } from "$lib/RecordingContentInterface";
 
     let initLoading = true;
     let stopMic = false;
 
     let playing: PlayingContext;
-    let recording: RecordingContext | RecordingPushToTalkContext;
+    let recording: RecordingContentInterface;
     let messages: Message[] = [];
 
     export let audio: AudioContext;
@@ -168,7 +170,9 @@
         };
 
         // Recording 録音
-        if (generalConfig.transcription.method === "pushToTalk") {
+        if (generalConfig.transcription.type === "speech_recognition") {
+            recording = new RecognitionContent(media, mimeType, generalConfig);
+        } else if (generalConfig.transcription.type ===  "whisper" && generalConfig.transcription.method === "pushToTalk") {
             recording = new RecordingPushToTalkContext(media, mimeType, generalConfig);
             stopMic = true;
             speakDisabled(true);
@@ -208,6 +212,11 @@
         };
         recording.onDataAvailable = (event) => {
             socket.sendBinary(event.data);
+        };
+
+        /** @ts-ignore */
+        recording.onText = (text: string) => {
+            socket.sendText(text);
         };
 
         // old message load

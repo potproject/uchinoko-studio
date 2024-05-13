@@ -77,4 +77,9 @@ export class SocketContext{
     public sendBinary(data: any){
         this.socket.send(data);
     }
+
+    public sendText(text: string){
+        const data = JSON.stringify({text});
+        this.socket.send(data);
+    }
 }  

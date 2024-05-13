@@ -1,7 +1,8 @@
 import RecordRTC from "recordrtc";
 import type { GeneralConfig } from "../types/general";
+import type { RecordingContentInterface } from "./RecordingContentInterface";
 
-export class RecordingContext {
+export class RecordingContext implements RecordingContentInterface {
     private stream: MediaStream;
     private mediaRecorder!: RecordRTC;
     private mimeType: string;
@@ -19,6 +20,7 @@ export class RecordingContext {
     public onSpeakingStart: () => void = () => { };
     public onSpeakingEnd: (ignore: boolean) => void = () => { };
     public onDataAvailable: (event: BlobEvent) => void = () => { };
+    public onText: (text: string) => void = () => { };
 
     constructor(stream: MediaStream, mimeType: string, generalConfig: GeneralConfig) {
         this.stream = stream;
