@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"log"
 	"net"
@@ -14,6 +15,9 @@ import (
 	"github.com/potproject/uchinoko-studio/router"
 	"tailscale.com/tsnet"
 )
+
+//go:embed all:static/*
+var static embed.FS
 
 func main() {
 	envSetup()
@@ -62,7 +66,7 @@ func openBrowser(url string) {
 
 func serverSetup() {
 	openBrowser("http://" + envgen.Get().HOST() + ":" + strconv.FormatInt(int64(envgen.Get().PORT()), 10))
-	app := router.Route()
+	app := router.Route(static)
 	log.Fatal(app.Listen(envgen.Get().HOST() + ":" + strconv.FormatInt(int64(envgen.Get().PORT()), 10)))
 }
 
@@ -89,7 +93,7 @@ func tailscaleSetup() {
 	}
 	defer ln.Close()
 
-	app := router.Route()
+	app := router.Route(static)
 	protocol := "http"
 	if envgen.Get().TAILSCALE_ENABLED_TLS() {
 		protocol = "https"

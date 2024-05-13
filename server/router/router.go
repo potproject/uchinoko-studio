@@ -1,13 +1,21 @@
 package router
 
 import (
+	"embed"
+	"net/http"
+
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/potproject/uchinoko-studio/controller"
 )
 
-func Route() *fiber.App {
+func Route(static embed.FS) *fiber.App {
 	app := fiber.New()
-	app.Static("/", "../front/build")
+	app.Use("/", filesystem.New(filesystem.Config{
+		Root:       http.FS(static),
+		PathPrefix: "static",
+		Browse:     true,
+	}))
 	app.Get("/adminopr/statall", controller.StatAll)
 	app.Get("/adminopr/stat", controller.Stat)
 	app.Get("/v1/chat/:id", controller.GetChat)
