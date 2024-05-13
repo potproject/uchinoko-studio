@@ -77,77 +77,33 @@ func OpenAIChatStreamMain(ctx context.Context, c *openai.Client, voices []data.C
 	}
 	defer stream.Close()
 
-	allText := ""
-	bufferText := ""
-	for {
-		response, err := stream.Recv()
-		if errors.Is(err, io.EOF) {
-			chunkMessage <- TextMessage{
-				Text:  bufferText,
-				Voice: voice,
-			}
-			return append(
-				ncm,
-				data.ChatCompletionMessage{
-					Role:    openai.ChatMessageRoleAssistant,
-					Content: allText,
-				},
-			), nil
-		}
+	charChannel := make(chan rune)
+	done := make(chan bool)
 
-		if err != nil {
-			fmt.Printf("\nStream error: %v\n", err)
-			return cm, err
-		}
-		content := response.Choices[0].Delta.Content
-		allText += content
-		chunked := false
-		for _, c := range content {
-			chunked = strings.Contains(chars, string(c))
-			if chunked {
+	defer close(charChannel)
+	defer close(done)
+	go func() {
+		for {
+			response, err := stream.Recv()
+			if errors.Is(err, io.EOF) {
 				break
 			}
-		}
-		if chunked {
-			chunkMessage <- TextMessage{
-				Text:  bufferText + content,
-				Voice: voice,
+			if err != nil {
+				fmt.Printf("\nStream error: %v\n", err)
+				break
 			}
-			bufferText = ""
-		} else {
-			bufferText += content
+			if response.Choices == nil || len(response.Choices) == 0 {
+				continue
+			}
+			content := response.Choices[0].Delta.Content
+			for _, c := range content {
+				charChannel <- c
+			}
 		}
+		done <- true
+	}()
 
-		// bufferTextに voiceIndentifications が含まれている場合
-		if multi {
-			for i, v := range voiceIndentifications {
-				if strings.Contains(bufferText, v) {
-					bufferText = strings.Replace(bufferText, v, "", -1)
-					chunkMessage <- TextMessage{
-						Text:  bufferText,
-						Voice: voice,
-					}
-					bufferText = ""
-					voice = voices[i]
-					break
-				}
-			}
-		}
-
-		if response.Choices[0].FinishReason == "stop" {
-			chunkMessage <- TextMessage{
-				Text:  bufferText,
-				Voice: voice,
-			}
-			return append(
-				ncm,
-				data.ChatCompletionMessage{
-					Role:    openai.ChatMessageRoleAssistant,
-					Content: allText,
-				},
-			), nil
-		}
-	}
+	return chatReceiver(charChannel, done, multi, voiceIndentifications, voice, voices, chunkMessage, text, cm)
 }
 
 func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, chunkMessage chan TextMessage) ([]data.ChatCompletionMessage, error) {
@@ -189,63 +145,33 @@ func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, mult
 	}
 	defer stream.Close()
 
-	allText := ""
-	bufferText := ""
-	for {
-		response, err := stream.Recv()
-		if errors.Is(err, io.EOF) {
-			chunkMessage <- TextMessage{
-				Text:  bufferText,
-				Voice: voice,
-			}
-			return append(
-				ncm,
-				data.ChatCompletionMessage{
-					Role:    openai.ChatMessageRoleAssistant,
-					Content: allText,
-				},
-			), nil
-		}
+	charChannel := make(chan rune)
+	done := make(chan bool)
 
-		if err != nil {
-			fmt.Printf("\nStream error: %v\n", err)
-			return cm, err
-		}
-		content := response.Content[0].Text
-		allText += content
-		chunked := false
-		for _, c := range content {
-			chunked = strings.Contains(chars, string(c))
-			if chunked {
+	defer close(charChannel)
+	defer close(done)
+	go func() {
+		for {
+			response, err := stream.Recv()
+			if errors.Is(err, io.EOF) {
 				break
 			}
-		}
-		if chunked {
-			chunkMessage <- TextMessage{
-				Text:  bufferText + content,
-				Voice: voice,
+			if err != nil {
+				fmt.Printf("\nStream error: %v\n", err)
+				break
 			}
-			bufferText = ""
-		} else {
-			bufferText += content
+			if response.Content == nil || len(response.Content) == 0 {
+				continue
+			}
+			content := response.Content[0].Text
+			for _, c := range content {
+				charChannel <- c
+			}
 		}
+		done <- true
+	}()
 
-		// bufferTextに voiceIndentifications が含まれている場合
-		if multi {
-			for i, v := range voiceIndentifications {
-				if strings.Contains(bufferText, v) {
-					bufferText = strings.Replace(bufferText, v, "", -1)
-					chunkMessage <- TextMessage{
-						Text:  bufferText,
-						Voice: voice,
-					}
-					bufferText = ""
-					voice = voices[i]
-					break
-				}
-			}
-		}
-	}
+	return chatReceiver(charChannel, done, multi, voiceIndentifications, voice, voices, chunkMessage, text, cm)
 }
 
 func CohereChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, chunkMessage chan TextMessage) ([]data.ChatCompletionMessage, error) {
@@ -290,69 +216,33 @@ func CohereChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 
 	defer stream.Close()
 
-	allText := ""
-	bufferText := ""
-	for {
-		response, err := stream.Recv()
-		if errors.Is(err, io.EOF) {
-			chunkMessage <- TextMessage{
-				Text:  bufferText,
-				Voice: voice,
-			}
-			return append(
-				cm,
-				data.ChatCompletionMessage{
-					Role:    openai.ChatMessageRoleUser,
-					Content: text,
-				},
-				data.ChatCompletionMessage{
-					Role:    openai.ChatMessageRoleAssistant,
-					Content: allText,
-				},
-			), nil
-		}
-		if err != nil {
-			fmt.Printf("\nStream error: %v\n", err)
-			return cm, err
-		}
-		if response.TextGeneration == nil {
-			continue
-		}
-		content := response.TextGeneration.Text
-		allText += content
-		chunked := false
-		for _, c := range content {
-			chunked = strings.Contains(chars, string(c))
-			if chunked {
+	charChannel := make(chan rune)
+	done := make(chan bool)
+
+	defer close(charChannel)
+	defer close(done)
+	go func() {
+		for {
+			response, err := stream.Recv()
+			if errors.Is(err, io.EOF) {
 				break
 			}
-		}
-		if chunked {
-			chunkMessage <- TextMessage{
-				Text:  bufferText + content,
-				Voice: voice,
+			if err != nil {
+				fmt.Printf("\nStream error: %v\n", err)
+				break
 			}
-			bufferText = ""
-		} else {
-			bufferText += content
+			if response.TextGeneration == nil {
+				continue
+			}
+			content := response.TextGeneration.Text
+			for _, c := range content {
+				charChannel <- c
+			}
 		}
+		done <- true
+	}()
 
-		// bufferTextに voiceIndentifications が含まれている場合
-		if multi {
-			for i, v := range voiceIndentifications {
-				if strings.Contains(bufferText, v) {
-					bufferText = strings.Replace(bufferText, v, "", -1)
-					chunkMessage <- TextMessage{
-						Text:  bufferText,
-						Voice: voice,
-					}
-					bufferText = ""
-					voice = voices[i]
-					break
-				}
-			}
-		}
-	}
+	return chatReceiver(charChannel, done, multi, voiceIndentifications, voice, voices, chunkMessage, text, cm)
 }
 
 func GeminiChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, chunkMessage chan TextMessage) ([]data.ChatCompletionMessage, error) {
@@ -397,11 +287,74 @@ func GeminiChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 		gemini.Text(text),
 	)
 
+	charChannel := make(chan rune)
+	done := make(chan bool)
+
+	defer close(charChannel)
+	defer close(done)
+	go func() {
+		for {
+			response, err := iter.Next()
+			if err == iterator.Done {
+				break
+			}
+			gres := geminiResponse(response)
+			if gres == nil {
+				continue
+			}
+			content := *gres
+			for _, c := range content {
+				charChannel <- c
+			}
+		}
+		done <- true
+	}()
+	return chatReceiver(charChannel, done, multi, voiceIndentifications, voice, voices, chunkMessage, text, cm)
+}
+
+func chatReceiver(
+	charChannel chan rune,
+	done chan bool,
+	multi bool,
+	voiceIndentifications []string,
+	voice data.CharacterConfigVoice,
+	voices []data.CharacterConfigVoice,
+	chunkMessage chan TextMessage,
+	text string,
+	cm []data.ChatCompletionMessage,
+) ([]data.ChatCompletionMessage, error) {
 	allText := ""
 	bufferText := ""
 	for {
-		response, err := iter.Next()
-		if err == iterator.Done {
+		select {
+		case c := <-charChannel:
+			allText += string(c)
+			bufferText += string(c)
+
+			if multi {
+				for i, v := range voiceIndentifications {
+					if strings.Contains(bufferText, v) {
+						bufferText = strings.Replace(bufferText, v, "", -1)
+						chunkMessage <- TextMessage{
+							Text:  bufferText,
+							Voice: voice,
+						}
+						bufferText = ""
+						voice = voices[i]
+						break
+					}
+				}
+			}
+
+			contain := strings.Contains(chars, string(c))
+			if contain {
+				chunkMessage <- TextMessage{
+					Text:  bufferText,
+					Voice: voice,
+				}
+				bufferText = ""
+			}
+		case <-done:
 			chunkMessage <- TextMessage{
 				Text:  bufferText,
 				Voice: voice,
@@ -417,48 +370,6 @@ func GeminiChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 					Content: strings.Trim(allText, "\n"),
 				},
 			), nil
-		}
-		if err != nil {
-			fmt.Printf("\nStream error: %v\n", err)
-			return cm, err
-		}
-		gres := geminiResponse(response)
-		if gres == nil {
-			continue
-		}
-		content := *gres
-		allText += content
-		chunked := false
-		for _, c := range content {
-			chunked = strings.Contains(chars, string(c))
-			if chunked {
-				break
-			}
-		}
-		if chunked {
-			chunkMessage <- TextMessage{
-				Text:  bufferText + content,
-				Voice: voice,
-			}
-			bufferText = ""
-		} else {
-			bufferText += content
-		}
-
-		// bufferTextに voiceIndentifications が含まれている場合
-		if multi {
-			for i, v := range voiceIndentifications {
-				if strings.Contains(bufferText, v) {
-					bufferText = strings.Replace(bufferText, v, "", -1)
-					chunkMessage <- TextMessage{
-						Text:  bufferText,
-						Voice: voice,
-					}
-					bufferText = ""
-					voice = voices[i]
-					break
-				}
-			}
 		}
 	}
 }
