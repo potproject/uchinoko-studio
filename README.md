@@ -30,7 +30,7 @@ See Article(Japanese Only): https://blog.potproject.net/2023/12/24/ai-web-uchino
 * Run on Browser(Google Chrome Supported)
 * Mobile Browser Support(iOS Safari, Android Chrome)
 * Japanese Support(for now...)
-* Chat-based LLM Support: [OpenAI GPT(Cloud)](https://openai.com/gpt-4)、[Anthropic Claude(Cloud)](https://www.anthropic.com/claude)、[Cohere Command(Cloud)](https://cohere.com/command)、Local LLM(OpenAI `/v1/chat/completions` Compatible)
+* Chat-based LLM Support: [OpenAI GPT(Cloud)](https://openai.com/gpt-4)、[Anthropic Claude(Cloud)](https://www.anthropic.com/claude)、[Cohere Command(Cloud)](https://cohere.com/command)、[Gemini(Cloud)](https://gemini.google.com)、Local LLM(OpenAI `/v1/chat/completions` Compatible)
 * STT Support: [Whisper(Cloud)](https://platform.openai.com/docs/guides/speech-to-text), [SpeechRecognition(Web API)](https://developer.mozilla.org/docs/Web/API/SpeechRecognition)
 * TTS Support: [Bert-Vits2(local)](https://github.com/fishaudio/Bert-VITS2), [Style-Bert-VITS2(local)](https://github.com/litagin02/Style-Bert-VITS2), [VOICEVOX(local)](https://voicevox.hiroshiba.jp/)
 * More bugs...
@@ -60,6 +60,7 @@ TODO: 環境不要で動作できるパッケージを配布することを予�
 * OpenAI: `OPENAI_API_KEY`
 * Anthropic: `ANTHROPIC_API_KEY`
 * cohere: `COHERE_API_KEY`
+* Gemini: `GEMINI_API_KEY`
 
 #### Chat-based LLM(Local)
 

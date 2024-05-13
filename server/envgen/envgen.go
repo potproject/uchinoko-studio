@@ -37,6 +37,13 @@ func (s setter) DB_FILE_PATH(value string) {
 	env.DB_FILE_PATH = value
 	return
 }
+func (g getter) GEMINI_API_KEY() string {
+	return env.GEMINI_API_KEY
+}
+func (s setter) GEMINI_API_KEY(value string) {
+	env.GEMINI_API_KEY = value
+	return
+}
 func (g getter) HOST() string {
 	return env.HOST
 }
@@ -127,6 +134,7 @@ type environment struct {
 	BERTVITS2_ENDPOINT        string
 	COHERE_API_KEY            string
 	DB_FILE_PATH              string
+	GEMINI_API_KEY            string
 	HOST                      string
 	OPENAI_API_KEY            string
 	OPENAI_LOCAL_API_ENDPOINT string
@@ -151,6 +159,7 @@ func Load() error {
 	BERTVITS2_ENDPOINT := os.Getenv("BERTVITS2_ENDPOINT")
 	COHERE_API_KEY := os.Getenv("COHERE_API_KEY")
 	DB_FILE_PATH := os.Getenv("DB_FILE_PATH")
+	GEMINI_API_KEY := os.Getenv("GEMINI_API_KEY")
 	HOST := os.Getenv("HOST")
 	OPENAI_API_KEY := os.Getenv("OPENAI_API_KEY")
 	OPENAI_LOCAL_API_ENDPOINT := os.Getenv("OPENAI_LOCAL_API_ENDPOINT")
@@ -202,6 +211,7 @@ func Load() error {
 		BERTVITS2_ENDPOINT:        BERTVITS2_ENDPOINT,
 		COHERE_API_KEY:            COHERE_API_KEY,
 		DB_FILE_PATH:              DB_FILE_PATH,
+		GEMINI_API_KEY:            GEMINI_API_KEY,
 		HOST:                      HOST,
 		OPENAI_API_KEY:            OPENAI_API_KEY,
 		OPENAI_LOCAL_API_ENDPOINT: OPENAI_LOCAL_API_ENDPOINT,
@@ -223,6 +233,7 @@ type getterInterface interface {
 	BERTVITS2_ENDPOINT() string
 	COHERE_API_KEY() string
 	DB_FILE_PATH() string
+	GEMINI_API_KEY() string
 	HOST() string
 	OPENAI_API_KEY() string
 	OPENAI_LOCAL_API_ENDPOINT() string
@@ -251,6 +262,7 @@ type setterInterface interface {
 	BERTVITS2_ENDPOINT() string
 	COHERE_API_KEY() string
 	DB_FILE_PATH() string
+	GEMINI_API_KEY() string
 	HOST() string
 	OPENAI_API_KEY() string
 	OPENAI_LOCAL_API_ENDPOINT() string

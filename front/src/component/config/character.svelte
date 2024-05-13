@@ -221,6 +221,7 @@
                         <option value="openai">OpenAI</option>
                         <option value="anthropic">Anthropic</option>
                         <option value="cohere">Cohere</option>
+                        <option value="gemini">Gemini</option>
                         <option value="openai-local">Local LLM(OpenAI v1/chat/completions Compatible)</option>
                     </select>
                 </div>
@@ -255,6 +256,10 @@
                             <option value="command">Command</option>
                             <option value="command-light-nightly">Command Light Nightly</option>
                             <option value="command-light">Command Light</option>
+                        {/if}
+                        {#if data.chat.type === "gemini"}
+                            <option value="gemini-1.5-pro-latest">Gemini 1.5 Pro</option>
+                            <option value="gemini-pro">Gemini Pro</option>
                         {/if}
                     </datalist>
                 </div>
