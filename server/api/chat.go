@@ -298,6 +298,10 @@ func GeminiChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 			if err == iterator.Done {
 				break
 			}
+			if err != nil {
+				fmt.Printf("\nStream error: %v\n", err)
+				break
+			}
 			gres := geminiResponse(response)
 			if gres == nil {
 				continue
