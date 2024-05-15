@@ -25,40 +25,47 @@ func removeNewLineAndSpace(text string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(text, "\n", ""), " ", "")
 }
 
-func TTSStream(chunkMessage <-chan TextMessage, changeVoice chan<- data.CharacterConfigVoice, outAudioMessage chan<- AudioMessage, chatDone chan bool) error {
+func TTSStream(chunkMessage <-chan ChunkMessage, changeVoice chan<- data.CharacterConfigVoice, outAudioMessage chan<- AudioMessage, chatDone chan bool) error {
 	beforeVoiceIdentification := ""
 	for {
 		select {
-		case t := <-chunkMessage:
-			escapeText := removeNewLineAndSpace(t.Text)
-			if len(escapeText) == 0 {
-				continue
-			}
-			if beforeVoiceIdentification != t.Voice.Identification {
-				beforeVoiceIdentification = t.Voice.Identification
-				changeVoice <- t.Voice
-			}
-			var bin []byte
-			var err error
+		case c := <-chunkMessage:
+			if t, ok := c.(TextChunkMessage); ok {
+				escapeText := removeNewLineAndSpace(t.Text)
+				if len(escapeText) == 0 {
+					continue
+				}
 
-			if t.Voice.Type == "voicevox" {
-				bin, err = voicevoxTTS(getVoiceEndpoint(t.Voice.Type), t.Voice.SpeakerID, t.Text)
-			}
-			if t.Voice.Type == "bertvits2" {
-				bin, err = bertVits2TTS(getVoiceEndpoint(t.Voice.Type), t.Voice.ModelID, t.Voice.SpeakerID, t.Text)
-			}
-			if t.Voice.Type == "stylebertvits2" {
-				bin, err = styleBertVits2TTS(getVoiceEndpoint(t.Voice.Type), t.Voice.ModelID, t.Voice.ModelFile, t.Voice.SpeakerID, t.Text)
-			}
+				if beforeVoiceIdentification != t.Voice.Identification {
+					beforeVoiceIdentification = t.Voice.Identification
+					changeVoice <- t.Voice
+				}
 
-			if err != nil {
-				log.Printf("Error: %s", err.Error())
-				return err
+				var bin []byte
+				var err error
+
+				if t.Voice.Type == "voicevox" {
+					bin, err = voicevoxTTS(getVoiceEndpoint(t.Voice.Type), t.Voice.SpeakerID, t.Text)
+				}
+				if t.Voice.Type == "bertvits2" {
+					bin, err = bertVits2TTS(getVoiceEndpoint(t.Voice.Type), t.Voice.ModelID, t.Voice.SpeakerID, t.Text)
+				}
+				if t.Voice.Type == "stylebertvits2" {
+					bin, err = styleBertVits2TTS(getVoiceEndpoint(t.Voice.Type), t.Voice.ModelID, t.Voice.ModelFile, t.Voice.SpeakerID, t.Text)
+				}
+
+				if err != nil {
+					log.Printf("Error: %s", err.Error())
+					return err
+				}
+				outAudioMessage <- AudioMessage{
+					Audio: &bin,
+					Text:  t.Text,
+				}
 			}
-			outAudioMessage <- AudioMessage{
-				Audio: &bin,
-				Text:  t.Text,
-			}
+			// if _, ok := c.(BehaviorChunkMessage); ok {
+			//
+			// }
 		case <-chatDone:
 			return nil
 		}

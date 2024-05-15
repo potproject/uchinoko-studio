@@ -22,9 +22,9 @@ import (
 
 const chars = ".,?!;:—-)]} 。、？！；：」）］｝　\"'"
 
-type ChatStream func(string, []data.CharacterConfigVoice, bool, string, string, []data.ChatCompletionMessage, string, chan TextMessage) ([]data.ChatCompletionMessage, error)
+type ChatStream func(string, []data.CharacterConfigVoice, bool, string, string, []data.ChatCompletionMessage, string, chan ChunkMessage) ([]data.ChatCompletionMessage, error)
 
-func OpenAILocalChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, chunkMessage chan TextMessage) ([]data.ChatCompletionMessage, error) {
+func OpenAILocalChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, chunkMessage chan ChunkMessage) ([]data.ChatCompletionMessage, error) {
 	config := openai.DefaultConfig(apiKey)
 	baseUrl, _ := url.JoinPath(envgen.Get().OPENAI_LOCAL_API_ENDPOINT(), "v1")
 	config.BaseURL = baseUrl
@@ -32,21 +32,13 @@ func OpenAILocalChatStream(apiKey string, voices []data.CharacterConfigVoice, mu
 	return OpenAIChatStreamMain(context.Background(), c, voices, multi, chatSystemPropmt, model, cm, text, chunkMessage)
 }
 
-func OpenAIChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, chunkMessage chan TextMessage) ([]data.ChatCompletionMessage, error) {
+func OpenAIChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, chunkMessage chan ChunkMessage) ([]data.ChatCompletionMessage, error) {
 	ctx := context.Background()
 	c := openai.NewClient(apiKey)
 	return OpenAIChatStreamMain(ctx, c, voices, multi, chatSystemPropmt, model, cm, text, chunkMessage)
 }
 
-func OpenAIChatStreamMain(ctx context.Context, c *openai.Client, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, chunkMessage chan TextMessage) ([]data.ChatCompletionMessage, error) {
-	voice := voices[0]
-	voiceIndentifications := make([]string, len(voices))
-	if multi {
-		for i, v := range voices {
-			voiceIndentifications[i] = v.Identification
-		}
-	}
-
+func OpenAIChatStreamMain(ctx context.Context, c *openai.Client, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, chunkMessage chan ChunkMessage) ([]data.ChatCompletionMessage, error) {
 	ncm := append(cm, data.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleUser,
 		Content: text,
@@ -103,24 +95,16 @@ func OpenAIChatStreamMain(ctx context.Context, c *openai.Client, voices []data.C
 		done <- true
 	}()
 
-	return chatReceiver(charChannel, done, multi, voiceIndentifications, voice, voices, chunkMessage, text, cm)
+	return chatReceiver(charChannel, done, multi, voices, chunkMessage, text, cm)
 }
 
-func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, chunkMessage chan TextMessage) ([]data.ChatCompletionMessage, error) {
+func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, chunkMessage chan ChunkMessage) ([]data.ChatCompletionMessage, error) {
 	ctx := context.Background()
 	c := claude.NewClient(apiKey)
 	ncm := append(cm, data.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleUser,
 		Content: text,
 	})
-
-	voice := voices[0]
-	voiceIndentifications := make([]string, len(voices))
-	if multi {
-		for i, v := range voices {
-			voiceIndentifications[i] = v.Identification
-		}
-	}
 
 	anthropicChatMessages := make([]claude.RequestBodyMessagesMessages, len(ncm))
 	for i, v := range ncm {
@@ -171,20 +155,12 @@ func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, mult
 		done <- true
 	}()
 
-	return chatReceiver(charChannel, done, multi, voiceIndentifications, voice, voices, chunkMessage, text, cm)
+	return chatReceiver(charChannel, done, multi, voices, chunkMessage, text, cm)
 }
 
-func CohereChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, chunkMessage chan TextMessage) ([]data.ChatCompletionMessage, error) {
+func CohereChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, chunkMessage chan ChunkMessage) ([]data.ChatCompletionMessage, error) {
 	ctx := context.Background()
 	c := cohereclient.NewClient(cohereclient.WithToken(apiKey))
-
-	voice := voices[0]
-	voiceIndentifications := make([]string, len(voices))
-	if multi {
-		for i, v := range voices {
-			voiceIndentifications[i] = v.Identification
-		}
-	}
 
 	cohereChatMessages := make([]*cohere.ChatMessage, len(cm)+1)
 	cohereChatMessages[0] = &cohere.ChatMessage{
@@ -242,10 +218,10 @@ func CohereChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 		done <- true
 	}()
 
-	return chatReceiver(charChannel, done, multi, voiceIndentifications, voice, voices, chunkMessage, text, cm)
+	return chatReceiver(charChannel, done, multi, voices, chunkMessage, text, cm)
 }
 
-func GeminiChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, chunkMessage chan TextMessage) ([]data.ChatCompletionMessage, error) {
+func GeminiChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, chunkMessage chan ChunkMessage) ([]data.ChatCompletionMessage, error) {
 	ctx := context.Background()
 	client, err := gemini.NewClient(ctx, option.WithAPIKey(apiKey))
 	if err != nil {
@@ -258,14 +234,6 @@ func GeminiChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 		Parts: []gemini.Part{gemini.Text(chatSystemPropmt)},
 	}
 	cs := geminiModel.StartChat()
-
-	voice := voices[0]
-	voiceIndentifications := make([]string, len(voices))
-	if multi {
-		for i, v := range voices {
-			voiceIndentifications[i] = v.Identification
-		}
-	}
 
 	geminiContents := make([]*gemini.Content, len(cm))
 	for i, v := range cm {
@@ -313,20 +281,26 @@ func GeminiChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 		}
 		done <- true
 	}()
-	return chatReceiver(charChannel, done, multi, voiceIndentifications, voice, voices, chunkMessage, text, cm)
+	return chatReceiver(charChannel, done, multi, voices, chunkMessage, text, cm)
 }
 
 func chatReceiver(
 	charChannel chan rune,
 	done chan bool,
 	multi bool,
-	voiceIndentifications []string,
-	voice data.CharacterConfigVoice,
 	voices []data.CharacterConfigVoice,
-	chunkMessage chan TextMessage,
+	chunkMessage chan ChunkMessage,
 	text string,
 	cm []data.ChatCompletionMessage,
 ) ([]data.ChatCompletionMessage, error) {
+	voice := voices[0]
+	voiceIndentifications := make([]string, len(voices))
+	if multi {
+		for i, v := range voices {
+			voiceIndentifications[i] = v.Identification
+		}
+	}
+
 	allText := ""
 	bufferText := ""
 	for {
@@ -339,7 +313,7 @@ func chatReceiver(
 				for i, v := range voiceIndentifications {
 					if strings.Contains(bufferText, v) {
 						bufferText = strings.Replace(bufferText, v, "", -1)
-						chunkMessage <- TextMessage{
+						chunkMessage <- TextChunkMessage{
 							Text:  bufferText,
 							Voice: voice,
 						}
@@ -352,14 +326,14 @@ func chatReceiver(
 
 			contain := strings.Contains(chars, string(c))
 			if contain {
-				chunkMessage <- TextMessage{
+				chunkMessage <- TextChunkMessage{
 					Text:  bufferText,
 					Voice: voice,
 				}
 				bufferText = ""
 			}
 		case <-done:
-			chunkMessage <- TextMessage{
+			chunkMessage <- TextChunkMessage{
 				Text:  bufferText,
 				Voice: voice,
 			}

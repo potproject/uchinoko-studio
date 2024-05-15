@@ -26,6 +26,7 @@ const (
 	ChatRequestOutputType       = "chat-request"
 	ChatResponseOutputType      = "chat-response"
 	ChatResponseChangeCharacter = "chat-response-change-character"
+	ChatResponseBehavior        = "chat-response-behavior"
 	ChatResponseChunkOutputType = "chat-response-chunk"
 	ErrorOutputType             = "error"
 	FinishOutputType            = "finish"
@@ -110,7 +111,6 @@ func WSTalk() fiber.Handler {
 
 		for {
 			mt, msg, err := c.ReadMessage()
-			//start := time.Now()
 			if err != nil {
 				sendError(c, err)
 				break
@@ -125,7 +125,7 @@ func WSTalk() fiber.Handler {
 			wsSendTextMessage(c, ChatRequestOutputType, requestText)
 
 			var wg sync.WaitGroup
-			chunkMessage := make(chan api.TextMessage)
+			chunkMessage := make(chan api.ChunkMessage)
 			chunkAudio := make(chan api.AudioMessage)
 			changeVoice := make(chan data.CharacterConfigVoice)
 
@@ -194,7 +194,7 @@ func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, changeV
 	}
 }
 
-func runTTSStream(chunkMessage chan api.TextMessage, changeVoice chan data.CharacterConfigVoice,
+func runTTSStream(chunkMessage chan api.ChunkMessage, changeVoice chan data.CharacterConfigVoice,
 	outAudioMessage chan api.AudioMessage, chatDone chan bool) error {
 	err := api.TTSStream(chunkMessage, changeVoice, outAudioMessage, chatDone)
 	if err != nil {
@@ -203,7 +203,7 @@ func runTTSStream(chunkMessage chan api.TextMessage, changeVoice chan data.Chara
 	return nil
 }
 
-func runChatStream(id string, voices []data.CharacterConfigVoice, multi bool, requestText string, chatType string, apiKey string, chatSystemPropmt string, chatModel string, chunkMessage chan api.TextMessage) error {
+func runChatStream(id string, voices []data.CharacterConfigVoice, multi bool, requestText string, chatType string, apiKey string, chatSystemPropmt string, chatModel string, chunkMessage chan api.ChunkMessage) error {
 	cm, _, err := db.GetChatMessage(id)
 	if err != nil {
 		return err
