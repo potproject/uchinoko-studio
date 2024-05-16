@@ -5,7 +5,7 @@
     export let img: string|null = 'default.png';
 </script>
 
-<div>
+<div class="flex justify-start items-center">
     <div class="flex justify-center items-start">
         {#if img}
         <img src={img} class="rounded-full w-12 h-12 mt-4 ml-2" alt="avatar" />

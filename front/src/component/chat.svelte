@@ -5,7 +5,6 @@
     import { tick } from "svelte";
     import ChatMyMsg from "./chat-my-msg.svelte";
     import ChatYourMsg from "./chat-your-msg.svelte";
-    import ChatTimer from "./chat-timer.svelte";
     import type { CharacterConfig } from "../types/character";
     import type { GeneralConfig } from "../types/general";
     import ChatError from "./chat-error.svelte";
@@ -25,6 +24,7 @@
     export let media: MediaStream;
     export let selectCharacter: CharacterConfig;
     export let generalConfig: GeneralConfig;
+    let backgroundImage: { path: string, characterChange: boolean } = { path: "", characterChange: false };
 
     const speakDisabled = (disabled: boolean) => {
         if (stopMic || initLoading) {
@@ -89,6 +89,10 @@
             chunkMessages.push({ type: "change-character", text: text });
         };
 
+        socket.onChatResponseChangeBehavior = (imagePath) => {
+            chunkMessages.push({ type: "change-behavior", text: imagePath });
+        };
+
         socket.onChatResponseChunk = (text) => {
             chunkMessages.push({ type: "chat", text: text });
         };
@@ -133,6 +137,17 @@
                             chunk: true,
                             voiceIndex: selectCharacter.voice.findIndex((v) => v.identification === chunkMessage.text),
                         });
+                        backgroundImage = { path: "", characterChange: false };
+                        tick().then(() => {
+                            backgroundImage = 
+                            {
+                                path: selectCharacter.voice.find((v) => v.identification === chunkMessage.text)?.backgroundImagePath ?? "",
+                                characterChange: true
+                            };
+                        });
+                        continue;
+                    case "change-behavior":
+                        backgroundImage = { path: chunkMessage.text, characterChange: false };
                         continue;
                     case "chat":
                         if (messages[messages.length - 1].chunk) {
@@ -247,14 +262,22 @@
         }
         messages = newmessages;
         initLoading = false;
+        if (selectCharacter.voice.length > 0) {
+            backgroundImage = { path: selectCharacter.voice[0].backgroundImagePath, characterChange: false };
+        }
         updateChat();
     })();
 </script>
 
-<div>
-    <div class="w-screen absolute top-0 left-0 z-10">
-        <div class="flex justify-center items-center py-2">
-            <div class="w-full md:w-2/3 h-128 px-20 overflow-y-scroll hidden-scrollbar" bind:this={chatarea}>
+<div class="w-full h-full">
+    <div class="flex flex-col md:flex-row md:justify-center justify-end w-full h-full">
+        {#if backgroundImage.path !== ""}
+        <div class="flex justify-end items-start md:items-end h-full pt-0 absolute md:static z-0 md:w-80">
+            <img src={"images/" + backgroundImage.path} alt="avatar" class={"w-full max-h-full " + (backgroundImage.characterChange ? "animate-slide-in-bck-bottom" : "")} />
+        </div>
+        {/if}
+        <div class="flex flex-col z-10 md:w-256">
+            <div class="py-2 px-4 h-80 md:h-full overflow-y-scroll hidden-scrollbar" bind:this={chatarea}>
                 {#if initLoading}
                     <div class="flex justify-center items-center">
                         <div class="flex justify-center items-center rounded-md bg-gray-600 p-2 m-2 text-white">
@@ -272,23 +295,21 @@
                     {/if}
                 {/each}
             </div>
-        </div>
-    </div>
-    <div class="flex justify-center items-center z-10 absolute bottom-0 left-0 w-screen pb-16">
-        <!-- Timer -->
-        <ChatTimer {stopMic} />
-        <div class="flex justify-center items-center ml-8">
-            <button
-                class="btn text-white font-bold py-2 px-4 rounded-full
-            {!stopMic ? 'bg-blue-500 hover:bg-blue-600' : 'bg-red-500 hover:bg-red-600'}
-            "
-                on:click={() => {
-                    stopMic = !stopMic;
-                    speakDisabled(stopMic);
-                }}
-            >
-                <i class="las text-2xl {!stopMic ? 'la-microphone' : 'la-microphone-slash'}"></i>
-            </button>
+            <div class="py-4">
+                <div class="flex justify-center items-center">
+                    <button
+                        class="btn text-white font-bold py-2 px-4 rounded-full
+                    {!stopMic ? 'bg-blue-500 hover:bg-blue-600' : 'bg-red-500 hover:bg-red-600'}
+                    "
+                        on:click={() => {
+                            stopMic = !stopMic;
+                            speakDisabled(stopMic);
+                        }}
+                    >
+                        <i class="las text-2xl {!stopMic ? 'la-microphone' : 'la-microphone-slash'}"></i>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>

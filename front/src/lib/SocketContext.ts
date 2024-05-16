@@ -1,7 +1,7 @@
 import type { CharacterConfig } from "../types/character";
 
 type TextMessage = {
-    type: 'connection' | 'chat-response' | 'chat-request' | 'chat-response-change-character' | 'chat-response-chunk' | 'finish' | 'error';
+    type: 'connection' | 'chat-response' | 'chat-request' | 'chat-response-change-character' | 'chat-response-change-behavior' | 'chat-response-chunk' | 'finish' | 'error';
     text: string;
 };
 
@@ -15,6 +15,7 @@ export class SocketContext{
     public onChatRequest: (text: string) => void = () => {};
     public onChatResponse: (text: string) => void = () => {};
     public onChatResponseChangeCharacter: (text: string) => void = () => {};
+    public onChatResponseChangeBehavior: (text: string) => void = () => {};
     public onChatResponseChunk: (text: string) => void = () => {};
     public onFinish: () => void = () => {};
     public onError: (text: string) => void = () => {};
@@ -42,6 +43,9 @@ export class SocketContext{
             } else if (data.type === 'chat-response-change-character') {
                 console.log('chat-response-change-character', data.text);
                 this.onChatResponseChangeCharacter(data.text);
+            } else if (data.type === 'chat-response-change-behavior') {
+                console.log('chat-response-change-behavior', data.text);
+                this.onChatResponseChangeBehavior(data.text);
             } else if (data.type === 'chat-response-chunk') {
                 console.log('chat-response-chunk', data.text);
                 this.onChatResponseChunk(data.text);

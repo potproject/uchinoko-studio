@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/url"
 	"strings"
+	"unicode/utf8"
 
 	cohere "github.com/cohere-ai/cohere-go/v2"
 	cohereclient "github.com/cohere-ai/cohere-go/v2/client"
@@ -308,16 +309,22 @@ func chatReceiver(
 		case c := <-charChannel:
 			allText += string(c)
 			bufferText += string(c)
+			if len(voice.Behavior) > 0 {
+				for _, v := range voice.Behavior {
+					if strings.Contains(bufferText, v.Identification) {
+						bufferText = strings.Replace(bufferText, v.Identification, "", -1)
+						chunkMessage <- BehaviorChunkMessage{
+							Behavior: v,
+						}
+						break
+					}
+				}
+			}
 
 			if multi {
 				for i, v := range voiceIndentifications {
 					if strings.Contains(bufferText, v) {
 						bufferText = strings.Replace(bufferText, v, "", -1)
-						chunkMessage <- TextChunkMessage{
-							Text:  bufferText,
-							Voice: voice,
-						}
-						bufferText = ""
 						voice = voices[i]
 						break
 					}
@@ -325,7 +332,7 @@ func chatReceiver(
 			}
 
 			contain := strings.Contains(chars, string(c))
-			if contain {
+			if contain && utf8.RuneCountInString(bufferText) > 1 {
 				chunkMessage <- TextChunkMessage{
 					Text:  bufferText,
 					Voice: voice,

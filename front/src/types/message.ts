@@ -8,6 +8,6 @@ export type Message = {
 }
 
 export type ChunkMessage = {
-    type: 'change-character' | 'chat';
+    type: 'change-character' | 'change-behavior' | 'chat';
     text : string;
 }

@@ -17,12 +17,14 @@ func CharacterInitConfig() data.CharacterConfig {
 		MultiVoice: false,
 		Voice: []data.CharacterConfigVoice{
 			{
-				Type:           "bertvits2",
-				Identification: "",
-				ModelID:        "0",
-				ModelFile:      "",
-				SpeakerID:      "0",
-				Image:          "default.png",
+				Type:                "bertvits2",
+				Identification:      "",
+				ModelID:             "0",
+				ModelFile:           "",
+				SpeakerID:           "0",
+				Image:               "default.png",
+				BackgroundImagePath: "",
+				Behavior:            []data.CharacterConfigVoiceBehavior{},
 			},
 		},
 		Chat: data.CharacterConfigChat{

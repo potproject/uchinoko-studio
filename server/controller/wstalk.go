@@ -26,7 +26,7 @@ const (
 	ChatRequestOutputType       = "chat-request"
 	ChatResponseOutputType      = "chat-response"
 	ChatResponseChangeCharacter = "chat-response-change-character"
-	ChatResponseBehavior        = "chat-response-behavior"
+	ChatResponseChangeBehavior  = "chat-response-change-behavior"
 	ChatResponseChunkOutputType = "chat-response-chunk"
 	ErrorOutputType             = "error"
 	FinishOutputType            = "finish"
@@ -128,6 +128,7 @@ func WSTalk() fiber.Handler {
 			chunkMessage := make(chan api.ChunkMessage)
 			chunkAudio := make(chan api.AudioMessage)
 			changeVoice := make(chan data.CharacterConfigVoice)
+			changeBehavior := make(chan data.CharacterConfigVoiceBehavior)
 
 			chatDone := make(chan bool)
 			ttsDone := make(chan bool)
@@ -146,7 +147,7 @@ func WSTalk() fiber.Handler {
 			// TTS処理
 			wg.Add(1)
 			go func() {
-				err := runTTSStream(chunkMessage, changeVoice, chunkAudio, chatDone)
+				err := runTTSStream(chunkMessage, changeVoice, changeBehavior, chunkAudio, chatDone)
 				if err != nil {
 					sendError(c, err)
 				}
@@ -157,7 +158,7 @@ func WSTalk() fiber.Handler {
 			// WebSocketへの出力
 			wg.Add(1)
 			go func() {
-				runWSSend(c, chunkAudio, changeVoice, ttsDone)
+				runWSSend(c, chunkAudio, changeVoice, changeBehavior, ttsDone)
 				wg.Done()
 			}()
 			wg.Wait()
@@ -172,7 +173,7 @@ func WSTalk() fiber.Handler {
 	})
 }
 
-func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, changeVoice chan data.CharacterConfigVoice, ttsDone chan bool) {
+func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, changeVoice chan data.CharacterConfigVoice, changeBehavior chan data.CharacterConfigVoiceBehavior, ttsDone chan bool) {
 	text := ""
 	for {
 		select {
@@ -187,6 +188,8 @@ func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, changeV
 			}
 		case v := <-changeVoice:
 			wsSendTextMessage(c, ChatResponseChangeCharacter, v.Identification)
+		case b := <-changeBehavior:
+			wsSendTextMessage(c, ChatResponseChangeBehavior, b.ImagePath)
 		case <-ttsDone:
 			wsSendTextMessage(c, ChatResponseOutputType, text)
 			return
@@ -194,9 +197,8 @@ func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, changeV
 	}
 }
 
-func runTTSStream(chunkMessage chan api.ChunkMessage, changeVoice chan data.CharacterConfigVoice,
-	outAudioMessage chan api.AudioMessage, chatDone chan bool) error {
-	err := api.TTSStream(chunkMessage, changeVoice, outAudioMessage, chatDone)
+func runTTSStream(chunkMessage chan api.ChunkMessage, changeVoice chan data.CharacterConfigVoice, changeBehavior chan<- data.CharacterConfigVoiceBehavior, outAudioMessage chan api.AudioMessage, chatDone chan bool) error {
+	err := api.TTSStream(chunkMessage, changeVoice, changeBehavior, outAudioMessage, chatDone)
 	if err != nil {
 		return err
 	}

@@ -30,12 +30,19 @@ type CharacterConfigGeneral struct {
 }
 
 type CharacterConfigVoice struct {
-	Type           string `json:"type"`
+	Type                string                         `json:"type"`
+	Identification      string                         `json:"identification"`
+	ModelID             string                         `json:"modelId"`
+	ModelFile           string                         `json:"modelFile"`
+	SpeakerID           string                         `json:"speakerId"`
+	Image               string                         `json:"image"`
+	BackgroundImagePath string                         `json:"backgroundImagePath"`
+	Behavior            []CharacterConfigVoiceBehavior `json:"behavior"`
+}
+
+type CharacterConfigVoiceBehavior struct {
 	Identification string `json:"identification"`
-	ModelID        string `json:"modelId"`
-	ModelFile      string `json:"modelFile"`
-	SpeakerID      string `json:"speakerId"`
-	Image          string `json:"image"`
+	ImagePath      string `json:"imagePath"`
 }
 
 type CharacterConfigChat struct {

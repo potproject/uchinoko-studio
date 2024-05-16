@@ -25,7 +25,7 @@ func removeNewLineAndSpace(text string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(text, "\n", ""), " ", "")
 }
 
-func TTSStream(chunkMessage <-chan ChunkMessage, changeVoice chan<- data.CharacterConfigVoice, outAudioMessage chan<- AudioMessage, chatDone chan bool) error {
+func TTSStream(chunkMessage <-chan ChunkMessage, changeVoice chan<- data.CharacterConfigVoice, changeBehavior chan<- data.CharacterConfigVoiceBehavior, outAudioMessage chan<- AudioMessage, chatDone chan bool) error {
 	beforeVoiceIdentification := ""
 	for {
 		select {
@@ -63,9 +63,9 @@ func TTSStream(chunkMessage <-chan ChunkMessage, changeVoice chan<- data.Charact
 					Text:  t.Text,
 				}
 			}
-			// if _, ok := c.(BehaviorChunkMessage); ok {
-			//
-			// }
+			if _, ok := c.(BehaviorChunkMessage); ok {
+				changeBehavior <- c.(BehaviorChunkMessage).Behavior
+			}
 		case <-chatDone:
 			return nil
 		}

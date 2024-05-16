@@ -7,9 +7,9 @@ type TextChunkMessage struct {
 	Voice data.CharacterConfigVoice
 }
 
-// type BehaviorChunkMessage struct {
-// 	Behavior string
-// }
+type BehaviorChunkMessage struct {
+	Behavior data.CharacterConfigVoiceBehavior
+}
 
 type ChunkMessage interface {
 	// TextMessage or BehaviorChunkMessage
