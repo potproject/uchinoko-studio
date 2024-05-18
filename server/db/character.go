@@ -17,11 +17,11 @@ func CharacterInitConfig() data.CharacterConfig {
 		MultiVoice: false,
 		Voice: []data.CharacterConfigVoice{
 			{
-				Type:                "bertvits2",
+				Type:                "voicevox",
 				Identification:      "",
-				ModelID:             "0",
+				ModelID:             "",
 				ModelFile:           "",
-				SpeakerID:           "0",
+				SpeakerID:           "1",
 				Image:               "default.png",
 				BackgroundImagePath: "",
 				Behavior:            []data.CharacterConfigVoiceBehavior{},

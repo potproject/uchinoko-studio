@@ -22,11 +22,18 @@ func getVoiceEndpoint(voiceType string) string {
 	return ""
 }
 
+func getApiKey(voiceType string) string {
+	if voiceType == "google-text-to-speech" {
+		return envgen.Get().GOOGLE_TEXT_TO_SPEECH_API_KEY()
+	}
+	return ""
+}
+
 func removeNewLineAndSpace(text string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(text, "\n", ""), " ", "")
 }
 
-func TTSStream(chunkMessage <-chan api.ChunkMessage, changeVoice chan<- data.CharacterConfigVoice, changeBehavior chan<- data.CharacterConfigVoiceBehavior, outAudioMessage chan<- api.AudioMessage, chatDone chan bool) error {
+func TTSStream(general data.GeneralConfig, chunkMessage <-chan api.ChunkMessage, changeVoice chan<- data.CharacterConfigVoice, changeBehavior chan<- data.CharacterConfigVoiceBehavior, outAudioMessage chan<- api.AudioMessage, chatDone chan bool) error {
 	beforeVoiceIdentification := ""
 	for {
 		select {
@@ -46,13 +53,16 @@ func TTSStream(chunkMessage <-chan api.ChunkMessage, changeVoice chan<- data.Cha
 				var err error
 
 				if t.Voice.Type == "voicevox" {
-					bin, err = voicevoxTTS(getVoiceEndpoint(t.Voice.Type), t.Voice.SpeakerID, t.Text)
+					bin, err = voicevox(getVoiceEndpoint(t.Voice.Type), t.Voice.SpeakerID, t.Text)
 				}
 				if t.Voice.Type == "bertvits2" {
-					bin, err = bertVits2TTS(getVoiceEndpoint(t.Voice.Type), t.Voice.ModelID, t.Voice.SpeakerID, t.Text)
+					bin, err = bertVits2(getVoiceEndpoint(t.Voice.Type), t.Voice.ModelID, t.Voice.SpeakerID, t.Text)
 				}
 				if t.Voice.Type == "stylebertvits2" {
-					bin, err = styleBertVits2TTS(getVoiceEndpoint(t.Voice.Type), t.Voice.ModelID, t.Voice.ModelFile, t.Voice.SpeakerID, t.Text)
+					bin, err = styleBertVits2(getVoiceEndpoint(t.Voice.Type), t.Voice.ModelID, t.Voice.ModelFile, t.Voice.SpeakerID, t.Text)
+				}
+				if t.Voice.Type == "google-text-to-speech" {
+					bin, err = goSpeech(getApiKey(t.Voice.Type), general.Language, t.Voice.SpeakerID, t.Voice.ModelID, t.Text)
 				}
 
 				if err != nil {

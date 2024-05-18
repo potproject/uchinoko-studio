@@ -51,6 +51,13 @@ func (s setter) GOOGLE_SPEECH_TO_TEXT_API_KEY(value string) {
 	env.GOOGLE_SPEECH_TO_TEXT_API_KEY = value
 	return
 }
+func (g getter) GOOGLE_TEXT_TO_SPEECH_API_KEY() string {
+	return env.GOOGLE_TEXT_TO_SPEECH_API_KEY
+}
+func (s setter) GOOGLE_TEXT_TO_SPEECH_API_KEY(value string) {
+	env.GOOGLE_TEXT_TO_SPEECH_API_KEY = value
+	return
+}
 func (g getter) HOST() string {
 	return env.HOST
 }
@@ -150,6 +157,7 @@ type environment struct {
 	DB_FILE_PATH                  string
 	GEMINI_API_KEY                string
 	GOOGLE_SPEECH_TO_TEXT_API_KEY string
+	GOOGLE_TEXT_TO_SPEECH_API_KEY string
 	HOST                          string
 	OPENAI_API_KEY                string
 	OPENAI_LOCAL_API_ENDPOINT     string
@@ -177,6 +185,7 @@ func Load() error {
 	DB_FILE_PATH := os.Getenv("DB_FILE_PATH")
 	GEMINI_API_KEY := os.Getenv("GEMINI_API_KEY")
 	GOOGLE_SPEECH_TO_TEXT_API_KEY := os.Getenv("GOOGLE_SPEECH_TO_TEXT_API_KEY")
+	GOOGLE_TEXT_TO_SPEECH_API_KEY := os.Getenv("GOOGLE_TEXT_TO_SPEECH_API_KEY")
 	HOST := os.Getenv("HOST")
 	OPENAI_API_KEY := os.Getenv("OPENAI_API_KEY")
 	OPENAI_LOCAL_API_ENDPOINT := os.Getenv("OPENAI_LOCAL_API_ENDPOINT")
@@ -231,6 +240,7 @@ func Load() error {
 		DB_FILE_PATH:                  DB_FILE_PATH,
 		GEMINI_API_KEY:                GEMINI_API_KEY,
 		GOOGLE_SPEECH_TO_TEXT_API_KEY: GOOGLE_SPEECH_TO_TEXT_API_KEY,
+		GOOGLE_TEXT_TO_SPEECH_API_KEY: GOOGLE_TEXT_TO_SPEECH_API_KEY,
 		HOST:                          HOST,
 		OPENAI_API_KEY:                OPENAI_API_KEY,
 		OPENAI_LOCAL_API_ENDPOINT:     OPENAI_LOCAL_API_ENDPOINT,
@@ -255,6 +265,7 @@ type getterInterface interface {
 	DB_FILE_PATH() string
 	GEMINI_API_KEY() string
 	GOOGLE_SPEECH_TO_TEXT_API_KEY() string
+	GOOGLE_TEXT_TO_SPEECH_API_KEY() string
 	HOST() string
 	OPENAI_API_KEY() string
 	OPENAI_LOCAL_API_ENDPOINT() string
@@ -286,6 +297,7 @@ type setterInterface interface {
 	DB_FILE_PATH() string
 	GEMINI_API_KEY() string
 	GOOGLE_SPEECH_TO_TEXT_API_KEY() string
+	GOOGLE_TEXT_TO_SPEECH_API_KEY() string
 	HOST() string
 	OPENAI_API_KEY() string
 	OPENAI_LOCAL_API_ENDPOINT() string

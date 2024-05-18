@@ -30,9 +30,9 @@ See Article(Japanese Only): https://blog.potproject.net/2023/12/24/ai-web-uchino
 * Run on Browser(Google Chrome Supported)
 * Mobile Browser Support(iOS Safari, Android Chrome)
 * Japanese Support(for now...)
-* Chat-based LLM Support: [OpenAI GPT(Cloud)](https://openai.com/gpt-4)、[Anthropic Claude(Cloud)](https://www.anthropic.com/claude)、[Cohere Command(Cloud)](https://cohere.com/command)、[Gemini(Cloud)](https://gemini.google.com)、Local LLM(OpenAI `/v1/chat/completions` Compatible)
-* STT Support: [OpenAI Speech to Text API(Cloud)](https://platform.openai.com/docs/guides/speech-to-text)、[Google Speech to Text API(Cloud)](https://cloud.google.com/speech-to-text)、[SpeechRecognition(Web API)](https://developer.mozilla.org/docs/Web/API/SpeechRecognition)
-* TTS Support: [Bert-Vits2(local)](https://github.com/fishaudio/Bert-VITS2), [Style-Bert-VITS2(local)](https://github.com/litagin02/Style-Bert-VITS2), [VOICEVOX(local)](https://voicevox.hiroshiba.jp/)
+* Chat-based LLM Support: [OpenAI GPT(Cloud)](https://openai.com/gpt-4),[Anthropic Claude(Cloud)](https://www.anthropic.com/claude),[Cohere Command(Cloud)](https://cohere.com/command),[Gemini(Cloud)](https://gemini.google.com),Local LLM(OpenAI `/v1/chat/completions` Compatible)
+* Speach-To-Text Support: [OpenAI Speech to Text API(Cloud)](https://platform.openai.com/docs/guides/speech-to-text),[Google Speech to Text API(Cloud)](https://cloud.google.com/speech-to-text),[SpeechRecognition(Web API)](https://developer.mozilla.org/docs/Web/API/SpeechRecognition)
+* Text-To-Speech Support: [Bert-Vits2(local)](https://github.com/fishaudio/Bert-VITS2), [Style-Bert-VITS2(local)](https://github.com/litagin02/Style-Bert-VITS2), [VOICEVOX(local)](https://voicevox.hiroshiba.jp/), [Google Text To Speech API(Cloud)](https://cloud.google.com/text-to-speech)
 * More bugs...
 
 ## Getting Started
@@ -88,6 +88,7 @@ OPENAI_LOCAL_API_ENDPOINT=http://localhost:11434/
 * VOICEVOXの場合: `VOICEVOX_ENDPOINT`にVOICEVOX Engine APIのエンドポイントを設定してください。
 * BERTVITS2の場合: `BERTVITS2_ENDPOINT`にBert-VITS2 FastAPIのエンドポイントを設定してください。また、先にモデルのロードを行っていないと動作しません。
 * STYLEBERTVIT2の場合: `STYLEBERTVIT2_ENDPOINT`にStyle-Bert-VITS2 API Serverのエンドポイントを設定してください。モデルのロードは自動で行ってくれるため不要です。Bert-VITS2のAPIとの互換性はありません。
+* Google Text To Speech API(Cloud)の場合: `GOOGLE_TEXT_TO_SPEECH_API_KEY`を設定してください。
 
 #### Tailscale 
 

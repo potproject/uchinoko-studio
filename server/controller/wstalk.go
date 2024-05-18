@@ -170,7 +170,7 @@ func WSTalk() fiber.Handler {
 			// TTS処理
 			wg.Add(1)
 			go func() {
-				err := runTTSStream(chunkMessage, changeVoice, changeBehavior, chunkAudio, chatDone)
+				err := texttospeech.TTSStream(general, chunkMessage, changeVoice, changeBehavior, chunkAudio, chatDone)
 				if err != nil {
 					sendError(c, err)
 				}
@@ -218,14 +218,6 @@ func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, changeV
 			return
 		}
 	}
-}
-
-func runTTSStream(chunkMessage chan api.ChunkMessage, changeVoice chan data.CharacterConfigVoice, changeBehavior chan<- data.CharacterConfigVoiceBehavior, outAudioMessage chan api.AudioMessage, chatDone chan bool) error {
-	err := texttospeech.TTSStream(chunkMessage, changeVoice, changeBehavior, outAudioMessage, chatDone)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func runChatStream(id string, voices []data.CharacterConfigVoice, multi bool, requestText string, chatType string, apiKey string, chatSystemPropmt string, chatModel string, chunkMessage chan api.ChunkMessage) error {
