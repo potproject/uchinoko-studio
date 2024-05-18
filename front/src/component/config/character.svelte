@@ -168,6 +168,7 @@
                                 <option value="bertvits2">Bert-VITS2(FastAPI)</option>
                                 <option value="stylebertvits2">Style-Bert-VITS2(FastAPI)</option>
                                 <option value="google-text-to-speech">Google Text to Speech API</option>
+                                <option value="openai-speech">OpenAI Speech API</option>
                             </select>
                         </div>
                     </div>
@@ -222,23 +223,47 @@
                     </div>
                     {/if}
                     {#if data.voice[index].type === "google-text-to-speech"}
-                        <div class="flex items-center px-4 py-2">
-                            <div class="flex-1">
-                                <label for="gender" class="text-sm">性別</label>
-                                <select id="gender" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].speakerId}>
-                                    <option value="MALE">男性</option>
-                                    <option value="FEMALE">女性</option>
-                                    <option value="NEUTRAL">ナチュラル</option>
-                                    <option value="">指定なし</option>
-                                </select>
-                            </div>
+                    <div class="flex items-center px-4 py-2">
+                        <div class="flex-1">
+                            <label for="gender" class="text-sm">性別</label>
+                            <select id="gender" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].speakerId}>
+                                <option value="MALE">男性</option>
+                                <option value="FEMALE">女性</option>
+                                <option value="NEUTRAL">ナチュラル</option>
+                                <option value="">指定なし</option>
+                            </select>
                         </div>
-                        <div class="flex items-center px-4 py-2">
-                            <div class="flex-1">
-                                <label for="model_id" class="text-sm">音声名</label>
-                                <input type="text" id="model_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].modelId} />
-                            </div>
+                    </div>
+                    <div class="flex items-center px-4 py-2">
+                        <div class="flex-1">
+                            <label for="model_id" class="text-sm">音声名</label>
+                            <input type="text" id="model_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].modelId} />
                         </div>
+                    </div>
+                    {/if}
+                    {#if data.voice[index].type === "openai-speech"}
+                    <div class="flex items-center px-4 py-2">
+                        <div class="flex-1">
+                            <label for="model" class="text-sm">モデル</label>
+                            <select id="model" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].modelId}>
+                                <option value="tts-1">tts-1</option>
+                                <option value="tts-1-hd">tts-1-hd</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex items-center px-4 py-2">
+                        <div class="flex-1">
+                            <label for="voice" class="text-sm">ボイス</label>
+                            <select id="voice" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].speakerId}>
+                                <option value="alloy">alloy</option>
+                                <option value="echo">echo</option>
+                                <option value="fable">fable</option>
+                                <option value="onyx">onyx</option>
+                                <option value="nova">nova</option>
+                                <option value="shimmer">shimmer</option>
+                            </select>
+                        </div>
+                    </div>
                     {/if}
                     {#if index > 0}
                         <div class="flex justify-between items-center p-4">

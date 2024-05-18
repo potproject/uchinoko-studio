@@ -26,6 +26,9 @@ func getApiKey(voiceType string) string {
 	if voiceType == "google-text-to-speech" {
 		return envgen.Get().GOOGLE_TEXT_TO_SPEECH_API_KEY()
 	}
+	if voiceType == "openai-speech" {
+		return envgen.Get().OPENAI_SPEECH_API_KEY()
+	}
 	return ""
 }
 
@@ -63,6 +66,9 @@ func TTSStream(general data.GeneralConfig, chunkMessage <-chan api.ChunkMessage,
 				}
 				if t.Voice.Type == "google-text-to-speech" {
 					bin, err = goSpeech(getApiKey(t.Voice.Type), general.Language, t.Voice.SpeakerID, t.Voice.ModelID, t.Text)
+				}
+				if t.Voice.Type == "openai-speech" {
+					bin, err = openAISpeech(getApiKey(t.Voice.Type), t.Voice.ModelID, t.Voice.SpeakerID, t.Text)
 				}
 
 				if err != nil {
