@@ -1,3 +1,4 @@
 .env
 server/database
 server/static
+server/images

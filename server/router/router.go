@@ -16,6 +16,7 @@ func Route(static embed.FS) *fiber.App {
 		PathPrefix: "static",
 		Browse:     true,
 	}))
+	app.Static("/images/", "./images")
 	app.Get("/adminopr/statall", controller.StatAll)
 	app.Get("/adminopr/stat", controller.Stat)
 	app.Get("/v1/chat/:id", controller.GetChat)

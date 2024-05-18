@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"sync"
 
 	"github.com/gofiber/contrib/websocket"
@@ -26,14 +27,21 @@ const (
 	ChatRequestOutputType       = "chat-request"
 	ChatResponseOutputType      = "chat-response"
 	ChatResponseChangeCharacter = "chat-response-change-character"
+	ChatResponseChangeBehavior  = "chat-response-change-behavior"
 	ChatResponseChunkOutputType = "chat-response-chunk"
 	ErrorOutputType             = "error"
 	FinishOutputType            = "finish"
 )
 
-func messageProcess(mt int, msg []byte, fileType string, apiKey string) (string, error) {
+func messageProcess(mt int, msg []byte, fileType string, language string, typeTranscription string, apiKey string) (string, error) {
 	if mt == websocket.BinaryMessage {
-		return api.Whisper(apiKey, msg, fileType)
+		if typeTranscription == "google_speech_to_text" {
+			return api.GoSpeech(apiKey, msg, fileType, language)
+		}
+		if typeTranscription == "openai_speech_to_text" {
+			return api.OpenAISpeech(apiKey, msg, fileType, language)
+		}
+		return "", fmt.Errorf("unsupported transcription type: %s", typeTranscription)
 	}
 	if mt == websocket.TextMessage {
 		textInput := TextInput{}
@@ -58,8 +66,14 @@ func wsSendBinaryMessage(c *websocket.Conn, data []byte) error {
 	return c.WriteMessage(websocket.BinaryMessage, data)
 }
 
-func getTranscriptionApiKey() string {
-	return envgen.Get().OPENAI_API_KEY()
+func getTranscriptionApiKey(transcriptionType string) string {
+	if transcriptionType == "google_speech_to_text" {
+		return envgen.Get().GOOGLE_SPEECH_TO_TEXT_API_KEY()
+	}
+	if transcriptionType == "openai_speech_to_text" {
+		return envgen.Get().OPENAI_SPEECH_TO_TEXT_API_KEY()
+	}
+	return ""
 }
 
 func getChatApiKey(chatType string) string {
@@ -81,18 +95,25 @@ func getChatApiKey(chatType string) string {
 	return ""
 }
 
+// Support File Types: mp3, wav, webm, ogg
 func WSTalk() fiber.Handler {
 	return websocket.New(func(c *websocket.Conn) {
 		id := c.Params("id")
 		fileType := c.Params("fileType")
 		characterId := c.Params("characterId")
 
-		if fileType != "mp4" && fileType != "mp3" && fileType != "wav" && fileType != "webm" && fileType != "ogg" {
+		if fileType != "mp3" && fileType != "wav" && fileType != "webm" && fileType != "ogg" {
 			c.Close()
 			return
 		}
 
 		character, err := db.GetCharacterConfig(characterId)
+		if err != nil {
+			sendError(c, err)
+			return
+		}
+
+		general, err := db.GetGeneralConfig()
 		if err != nil {
 			sendError(c, err)
 			return
@@ -110,13 +131,12 @@ func WSTalk() fiber.Handler {
 
 		for {
 			mt, msg, err := c.ReadMessage()
-			//start := time.Now()
 			if err != nil {
 				sendError(c, err)
 				break
 			}
 
-			requestText, err := messageProcess(mt, msg, fileType, getTranscriptionApiKey())
+			requestText, err := messageProcess(mt, msg, fileType, general.Language, general.Transcription.Type, getTranscriptionApiKey(general.Transcription.Type))
 			if err != nil {
 				sendError(c, err)
 				break
@@ -125,9 +145,10 @@ func WSTalk() fiber.Handler {
 			wsSendTextMessage(c, ChatRequestOutputType, requestText)
 
 			var wg sync.WaitGroup
-			chunkMessage := make(chan api.TextMessage)
+			chunkMessage := make(chan api.ChunkMessage)
 			chunkAudio := make(chan api.AudioMessage)
 			changeVoice := make(chan data.CharacterConfigVoice)
+			changeBehavior := make(chan data.CharacterConfigVoiceBehavior)
 
 			chatDone := make(chan bool)
 			ttsDone := make(chan bool)
@@ -146,7 +167,7 @@ func WSTalk() fiber.Handler {
 			// TTS処理
 			wg.Add(1)
 			go func() {
-				err := runTTSStream(chunkMessage, changeVoice, chunkAudio, chatDone)
+				err := runTTSStream(chunkMessage, changeVoice, changeBehavior, chunkAudio, chatDone)
 				if err != nil {
 					sendError(c, err)
 				}
@@ -157,7 +178,7 @@ func WSTalk() fiber.Handler {
 			// WebSocketへの出力
 			wg.Add(1)
 			go func() {
-				runWSSend(c, chunkAudio, changeVoice, ttsDone)
+				runWSSend(c, chunkAudio, changeVoice, changeBehavior, ttsDone)
 				wg.Done()
 			}()
 			wg.Wait()
@@ -172,7 +193,7 @@ func WSTalk() fiber.Handler {
 	})
 }
 
-func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, changeVoice chan data.CharacterConfigVoice, ttsDone chan bool) {
+func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, changeVoice chan data.CharacterConfigVoice, changeBehavior chan data.CharacterConfigVoiceBehavior, ttsDone chan bool) {
 	text := ""
 	for {
 		select {
@@ -187,6 +208,8 @@ func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, changeV
 			}
 		case v := <-changeVoice:
 			wsSendTextMessage(c, ChatResponseChangeCharacter, v.Identification)
+		case b := <-changeBehavior:
+			wsSendTextMessage(c, ChatResponseChangeBehavior, b.ImagePath)
 		case <-ttsDone:
 			wsSendTextMessage(c, ChatResponseOutputType, text)
 			return
@@ -194,16 +217,15 @@ func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, changeV
 	}
 }
 
-func runTTSStream(chunkMessage chan api.TextMessage, changeVoice chan data.CharacterConfigVoice,
-	outAudioMessage chan api.AudioMessage, chatDone chan bool) error {
-	err := api.TTSStream(chunkMessage, changeVoice, outAudioMessage, chatDone)
+func runTTSStream(chunkMessage chan api.ChunkMessage, changeVoice chan data.CharacterConfigVoice, changeBehavior chan<- data.CharacterConfigVoiceBehavior, outAudioMessage chan api.AudioMessage, chatDone chan bool) error {
+	err := api.TTSStream(chunkMessage, changeVoice, changeBehavior, outAudioMessage, chatDone)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func runChatStream(id string, voices []data.CharacterConfigVoice, multi bool, requestText string, chatType string, apiKey string, chatSystemPropmt string, chatModel string, chunkMessage chan api.TextMessage) error {
+func runChatStream(id string, voices []data.CharacterConfigVoice, multi bool, requestText string, chatType string, apiKey string, chatSystemPropmt string, chatModel string, chunkMessage chan api.ChunkMessage) error {
 	cm, _, err := db.GetChatMessage(id)
 	if err != nil {
 		return err

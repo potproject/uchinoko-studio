@@ -8,13 +8,13 @@ import (
 	"net/http"
 )
 
-const OpenAIwhisperEndpoint = "https://api.openai.com/v1/audio/transcriptions"
+const OpenAITranscriptionsEndpoint = "https://api.openai.com/v1/audio/transcriptions"
 
-func Whisper(apiKey string, fileData []byte, extention string) (string, error) {
+func OpenAISpeech(apiKey string, fileData []byte, extention string, language string) (string, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	writer.WriteField("model", "whisper-1")
-	writer.WriteField("language", "ja")
+	writer.WriteField("language", language[:2])
 	writer.WriteField("response_format", "text")
 	part, err := writer.CreateFormFile("file", "audio."+extention)
 	if err != nil {
@@ -23,7 +23,7 @@ func Whisper(apiKey string, fileData []byte, extention string) (string, error) {
 	part.Write(fileData)
 	writer.Close()
 
-	req, err := http.NewRequest("POST", OpenAIwhisperEndpoint, body)
+	req, err := http.NewRequest("POST", OpenAITranscriptionsEndpoint, body)
 	if err != nil {
 		return "", err
 	}

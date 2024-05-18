@@ -11,6 +11,11 @@ export type CharacterConfig = {
         modelId: string;
         modelFile: string;
         speakerId: string;
+        backgroundImagePath: string;
+        behavior: {
+            identification: string;
+            imagePath: string;
+        }[];
     }[];
     chat: {
         type: string;

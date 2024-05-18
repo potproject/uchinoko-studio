@@ -24,7 +24,7 @@
     }
 </script>
 
-<main class="bg-gradient-to-r from-cyan-100 to-blue-400 w-screen h-screen flex justify-center items-center">
+<main class="bg-gradient-to-r from-cyan-100 to-blue-400 w-screen h-screen">
     {#if route === "start"}
     <Start on:start={onStart} />
     {/if}

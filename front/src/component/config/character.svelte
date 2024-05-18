@@ -65,8 +65,8 @@
     };
 </script>
 
-<div class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 overflow-y-auto">
-    <div class="bg-white shadow-lg rounded-3xl w-96 md:w-2/3">
+<div class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 py-4">
+    <div class="bg-white rounded-lg shadow-lg max-w-lg w-full max-h-full overflow-auto my-10 mx-4">
         <div class="card-header p-4 flex m-2">
             <h1 class="text-2xl font-bold flex-1">
                 <i class="las la-wrench text-2xl mr-2"></i>
@@ -123,6 +123,41 @@
                         <div class="flex-1">
                             <label for="image" class="text-sm">キャラクター画像</label>
                             <img src={data.voice[index].image} alt="キャラクター画像" class="w-24 h-24 rounded-full border shadow-sm bg-white cursor-pointer hover:shadow-md border-2" on:click={() => uploadImage(index)} />
+                        </div>
+                    </div>
+                    <div class="flex items-center px-4 py-2">
+                        <div class="flex-1">
+                            <label for="backgroundImage" class="text-sm">立ち絵画像</label>
+                            <input type="text" id="backgroundImage" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].backgroundImagePath} placeholder="画像パス" />
+                            <p class="text-xs text-gray-500">※ imagesフォルダ内に画像を配置してください</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center px-4 py-2">
+                        <div class="flex-1">
+                            <label for="behavior" class="text-sm">立ち絵変更</label>
+                            <div class="border">
+                                {#each data.voice[index].behavior as _, i}
+                                <div class="bg-white p-2 rounded-lg w-full flex border-gray-300">
+                                    <button class="border border-red-500 text-red-500 bg-white rounded-md p-1 hover:bg-red-500 hover:text-white" on:click={() =>
+                                        data.voice[index].behavior = data.voice[index].behavior.filter((_, j) => j !== i)
+                                    }>
+                                        <i class="las la-trash"></i>
+                                    </button>
+                                    <div class="flex items-center space-x-2 w-2/5">
+                                        <input type="text" class="w-full border border-gray-300 rounded p-1 mx-2" placeholder="識別子">
+                                    </div>
+                                    <div class="flex items-center space-x-2 w-2/5">
+                                        <input type="text" class="w-full border border-gray-300 rounded p-1 mx-2" placeholder="画像パス">
+                                    </div>
+                                </div>
+                                {/each}
+                                <button class="m-2 px-2 py-1 border border-blue-500 text-blue-500 bg-white rounded-md hover:bg-blue-500 hover:text-white" on:click={() =>
+                                    data.voice[index].behavior = [...data.voice[index].behavior, { identification: "", imagePath: "" }]
+                                }>
+                                    <i class="las la-plus"></i>
+                                </button>
+                            </div>
+                            <p class="text-xs text-gray-500">※ imagesフォルダ内に画像を配置してください</p>
                         </div>
                     </div>
                     <div class="flex items-center px-4 py-2">
@@ -199,7 +234,7 @@
             {#if data.multiVoice}
             <div class="flex justify-between items-center p-4">
                 <button class="border border-blue-500 text-blue-500 bg-white rounded-md px-4 py-2 hover:bg-blue-500 hover:text-white" on:click={() => 
-                    data.voice = [...data.voice, { type: "bertvits2", modelId: "", speakerId: "", identification: "", modelFile: "" ,image: ""}]
+                    data.voice = [...data.voice, { type: "bertvits2", modelId: "", speakerId: "", identification: "", modelFile: "" ,image: "", backgroundImagePath: "", behavior: []}]
                 }>
                     <i class="las la-plus"></i> 追加
                 </button>
