@@ -44,6 +44,13 @@ func (s setter) GEMINI_API_KEY(value string) {
 	env.GEMINI_API_KEY = value
 	return
 }
+func (g getter) GOOGLE_SPEECH_TO_TEXT_API_KEY() string {
+	return env.GOOGLE_SPEECH_TO_TEXT_API_KEY
+}
+func (s setter) GOOGLE_SPEECH_TO_TEXT_API_KEY(value string) {
+	env.GOOGLE_SPEECH_TO_TEXT_API_KEY = value
+	return
+}
 func (g getter) HOST() string {
 	return env.HOST
 }
@@ -70,6 +77,13 @@ func (g getter) OPENAI_LOCAL_API_KEY() string {
 }
 func (s setter) OPENAI_LOCAL_API_KEY(value string) {
 	env.OPENAI_LOCAL_API_KEY = value
+	return
+}
+func (g getter) OPENAI_SPEECH_TO_TEXT_API_KEY() string {
+	return env.OPENAI_SPEECH_TO_TEXT_API_KEY
+}
+func (s setter) OPENAI_SPEECH_TO_TEXT_API_KEY(value string) {
+	env.OPENAI_SPEECH_TO_TEXT_API_KEY = value
 	return
 }
 func (g getter) PORT() int32 {
@@ -130,23 +144,25 @@ func (s setter) VOICEVOX_ENDPOINT(value string) {
 }
 
 type environment struct {
-	ANTHROPIC_API_KEY         string
-	BERTVITS2_ENDPOINT        string
-	COHERE_API_KEY            string
-	DB_FILE_PATH              string
-	GEMINI_API_KEY            string
-	HOST                      string
-	OPENAI_API_KEY            string
-	OPENAI_LOCAL_API_ENDPOINT string
-	OPENAI_LOCAL_API_KEY      string
-	PORT                      int32
-	STYLEBERTVIT2_ENDPOINT    string
-	TAILSCALE_ENABLED         bool
-	TAILSCALE_ENABLED_TLS     bool
-	TAILSCALE_FUNNEL_ENABLED  bool
-	TAILSCALE_HOSTNAME        string
-	TAILSCALE_PORT            int32
-	VOICEVOX_ENDPOINT         string
+	ANTHROPIC_API_KEY             string
+	BERTVITS2_ENDPOINT            string
+	COHERE_API_KEY                string
+	DB_FILE_PATH                  string
+	GEMINI_API_KEY                string
+	GOOGLE_SPEECH_TO_TEXT_API_KEY string
+	HOST                          string
+	OPENAI_API_KEY                string
+	OPENAI_LOCAL_API_ENDPOINT     string
+	OPENAI_LOCAL_API_KEY          string
+	OPENAI_SPEECH_TO_TEXT_API_KEY string
+	PORT                          int32
+	STYLEBERTVIT2_ENDPOINT        string
+	TAILSCALE_ENABLED             bool
+	TAILSCALE_ENABLED_TLS         bool
+	TAILSCALE_FUNNEL_ENABLED      bool
+	TAILSCALE_HOSTNAME            string
+	TAILSCALE_PORT                int32
+	VOICEVOX_ENDPOINT             string
 }
 
 var env environment
@@ -160,10 +176,12 @@ func Load() error {
 	COHERE_API_KEY := os.Getenv("COHERE_API_KEY")
 	DB_FILE_PATH := os.Getenv("DB_FILE_PATH")
 	GEMINI_API_KEY := os.Getenv("GEMINI_API_KEY")
+	GOOGLE_SPEECH_TO_TEXT_API_KEY := os.Getenv("GOOGLE_SPEECH_TO_TEXT_API_KEY")
 	HOST := os.Getenv("HOST")
 	OPENAI_API_KEY := os.Getenv("OPENAI_API_KEY")
 	OPENAI_LOCAL_API_ENDPOINT := os.Getenv("OPENAI_LOCAL_API_ENDPOINT")
 	OPENAI_LOCAL_API_KEY := os.Getenv("OPENAI_LOCAL_API_KEY")
+	OPENAI_SPEECH_TO_TEXT_API_KEY := os.Getenv("OPENAI_SPEECH_TO_TEXT_API_KEY")
 	PORT__S := os.Getenv("PORT")
 	PORT__64, err := strconv.ParseInt(PORT__S, 10, 32)
 	if err != nil {
@@ -207,23 +225,25 @@ func Load() error {
 	TAILSCALE_PORT := int32(TAILSCALE_PORT__64)
 	VOICEVOX_ENDPOINT := os.Getenv("VOICEVOX_ENDPOINT")
 	env = environment{
-		ANTHROPIC_API_KEY:         ANTHROPIC_API_KEY,
-		BERTVITS2_ENDPOINT:        BERTVITS2_ENDPOINT,
-		COHERE_API_KEY:            COHERE_API_KEY,
-		DB_FILE_PATH:              DB_FILE_PATH,
-		GEMINI_API_KEY:            GEMINI_API_KEY,
-		HOST:                      HOST,
-		OPENAI_API_KEY:            OPENAI_API_KEY,
-		OPENAI_LOCAL_API_ENDPOINT: OPENAI_LOCAL_API_ENDPOINT,
-		OPENAI_LOCAL_API_KEY:      OPENAI_LOCAL_API_KEY,
-		PORT:                      PORT,
-		STYLEBERTVIT2_ENDPOINT:    STYLEBERTVIT2_ENDPOINT,
-		TAILSCALE_ENABLED:         TAILSCALE_ENABLED,
-		TAILSCALE_ENABLED_TLS:     TAILSCALE_ENABLED_TLS,
-		TAILSCALE_FUNNEL_ENABLED:  TAILSCALE_FUNNEL_ENABLED,
-		TAILSCALE_HOSTNAME:        TAILSCALE_HOSTNAME,
-		TAILSCALE_PORT:            TAILSCALE_PORT,
-		VOICEVOX_ENDPOINT:         VOICEVOX_ENDPOINT,
+		ANTHROPIC_API_KEY:             ANTHROPIC_API_KEY,
+		BERTVITS2_ENDPOINT:            BERTVITS2_ENDPOINT,
+		COHERE_API_KEY:                COHERE_API_KEY,
+		DB_FILE_PATH:                  DB_FILE_PATH,
+		GEMINI_API_KEY:                GEMINI_API_KEY,
+		GOOGLE_SPEECH_TO_TEXT_API_KEY: GOOGLE_SPEECH_TO_TEXT_API_KEY,
+		HOST:                          HOST,
+		OPENAI_API_KEY:                OPENAI_API_KEY,
+		OPENAI_LOCAL_API_ENDPOINT:     OPENAI_LOCAL_API_ENDPOINT,
+		OPENAI_LOCAL_API_KEY:          OPENAI_LOCAL_API_KEY,
+		OPENAI_SPEECH_TO_TEXT_API_KEY: OPENAI_SPEECH_TO_TEXT_API_KEY,
+		PORT:                          PORT,
+		STYLEBERTVIT2_ENDPOINT:        STYLEBERTVIT2_ENDPOINT,
+		TAILSCALE_ENABLED:             TAILSCALE_ENABLED,
+		TAILSCALE_ENABLED_TLS:         TAILSCALE_ENABLED_TLS,
+		TAILSCALE_FUNNEL_ENABLED:      TAILSCALE_FUNNEL_ENABLED,
+		TAILSCALE_HOSTNAME:            TAILSCALE_HOSTNAME,
+		TAILSCALE_PORT:                TAILSCALE_PORT,
+		VOICEVOX_ENDPOINT:             VOICEVOX_ENDPOINT,
 	}
 	return err
 }
@@ -234,10 +254,12 @@ type getterInterface interface {
 	COHERE_API_KEY() string
 	DB_FILE_PATH() string
 	GEMINI_API_KEY() string
+	GOOGLE_SPEECH_TO_TEXT_API_KEY() string
 	HOST() string
 	OPENAI_API_KEY() string
 	OPENAI_LOCAL_API_ENDPOINT() string
 	OPENAI_LOCAL_API_KEY() string
+	OPENAI_SPEECH_TO_TEXT_API_KEY() string
 	PORT() int32
 	STYLEBERTVIT2_ENDPOINT() string
 	TAILSCALE_ENABLED() bool
@@ -263,10 +285,12 @@ type setterInterface interface {
 	COHERE_API_KEY() string
 	DB_FILE_PATH() string
 	GEMINI_API_KEY() string
+	GOOGLE_SPEECH_TO_TEXT_API_KEY() string
 	HOST() string
 	OPENAI_API_KEY() string
 	OPENAI_LOCAL_API_ENDPOINT() string
 	OPENAI_LOCAL_API_KEY() string
+	OPENAI_SPEECH_TO_TEXT_API_KEY() string
 	PORT() int32
 	STYLEBERTVIT2_ENDPOINT() string
 	TAILSCALE_ENABLED() bool

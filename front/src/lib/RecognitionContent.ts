@@ -21,7 +21,7 @@ export class RecognitionContent implements RecordingContentInterface {
 
         /** @ts-ignore */
         this.recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        this.recognition.lang = 'ja-JP';
+        this.recognition.lang = generalConfig.language;
         this.recognition.interimResults = false;
         this.recognition.continuous = false;
         this.recognition.onresult = (event: any) => {

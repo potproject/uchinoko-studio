@@ -1,6 +1,7 @@
 export type GeneralConfig = {
+    language: "ja-JP";
     transcription: {
-        type: string;
+        type: "openai_speech_to_text"|"google_speech_to_text"|"speech_recognition";
         method: "auto"|"pushToTalk"
         autoSetting: {
             threshold: number;

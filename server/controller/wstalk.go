@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"sync"
 
 	"github.com/gofiber/contrib/websocket"
@@ -32,9 +33,15 @@ const (
 	FinishOutputType            = "finish"
 )
 
-func messageProcess(mt int, msg []byte, fileType string, apiKey string) (string, error) {
+func messageProcess(mt int, msg []byte, fileType string, language string, typeTranscription string, apiKey string) (string, error) {
 	if mt == websocket.BinaryMessage {
-		return api.Whisper(apiKey, msg, fileType)
+		if typeTranscription == "google_speech_to_text" {
+			return api.GoSpeech(apiKey, msg, fileType, language)
+		}
+		if typeTranscription == "openai_speech_to_text" {
+			return api.OpenAISpeech(apiKey, msg, fileType, language)
+		}
+		return "", fmt.Errorf("unsupported transcription type: %s", typeTranscription)
 	}
 	if mt == websocket.TextMessage {
 		textInput := TextInput{}
@@ -59,8 +66,14 @@ func wsSendBinaryMessage(c *websocket.Conn, data []byte) error {
 	return c.WriteMessage(websocket.BinaryMessage, data)
 }
 
-func getTranscriptionApiKey() string {
-	return envgen.Get().OPENAI_API_KEY()
+func getTranscriptionApiKey(transcriptionType string) string {
+	if transcriptionType == "google_speech_to_text" {
+		return envgen.Get().GOOGLE_SPEECH_TO_TEXT_API_KEY()
+	}
+	if transcriptionType == "openai_speech_to_text" {
+		return envgen.Get().OPENAI_SPEECH_TO_TEXT_API_KEY()
+	}
+	return ""
 }
 
 func getChatApiKey(chatType string) string {
@@ -82,18 +95,25 @@ func getChatApiKey(chatType string) string {
 	return ""
 }
 
+// Support File Types: mp3, wav, webm, ogg
 func WSTalk() fiber.Handler {
 	return websocket.New(func(c *websocket.Conn) {
 		id := c.Params("id")
 		fileType := c.Params("fileType")
 		characterId := c.Params("characterId")
 
-		if fileType != "mp4" && fileType != "mp3" && fileType != "wav" && fileType != "webm" && fileType != "ogg" {
+		if fileType != "mp3" && fileType != "wav" && fileType != "webm" && fileType != "ogg" {
 			c.Close()
 			return
 		}
 
 		character, err := db.GetCharacterConfig(characterId)
+		if err != nil {
+			sendError(c, err)
+			return
+		}
+
+		general, err := db.GetGeneralConfig()
 		if err != nil {
 			sendError(c, err)
 			return
@@ -116,7 +136,7 @@ func WSTalk() fiber.Handler {
 				break
 			}
 
-			requestText, err := messageProcess(mt, msg, fileType, getTranscriptionApiKey())
+			requestText, err := messageProcess(mt, msg, fileType, general.Language, general.Transcription.Type, getTranscriptionApiKey(general.Transcription.Type))
 			if err != nil {
 				sendError(c, err)
 				break

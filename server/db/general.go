@@ -9,6 +9,7 @@ import (
 
 func generalInitConfig() data.GeneralConfig {
 	return data.GeneralConfig{
+		Language: "ja-JP",
 		Transcription: struct {
 			Type        string `json:"type"`
 			Method      string `json:"method"`
@@ -18,7 +19,7 @@ func generalInitConfig() data.GeneralConfig {
 				AudioMinLength  float64 `json:"audioMinLength"`
 			} `json:"autoSetting"`
 		}{
-			Type:   "whisper",
+			Type:   "openai_speech_to_text",
 			Method: "auto",
 			AutoSetting: struct {
 				Threshold       float64 `json:"threshold"`

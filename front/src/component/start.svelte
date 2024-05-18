@@ -17,7 +17,7 @@
     let showCharacterConfig: CharacterConfig | undefined = undefined;
 
     let characters: CharacterConfigList = { characters: [] };
-    let general: GeneralConfig = { transcription: { type: "whisper", method: "auto" , autoSetting: { threshold: 0.02, silentThreshold: 1, audioMinLength: 1.3 } } };
+    let general: GeneralConfig = { language: "ja-JP", transcription: { type: "openai_speech_to_text", method: "auto" , autoSetting: { threshold: 0.02, silentThreshold: 1, audioMinLength: 1.3 } } };
 
     let slientAudio: HTMLAudioElement;
     let mediaStream: MediaStream;

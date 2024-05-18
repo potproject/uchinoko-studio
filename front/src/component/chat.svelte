@@ -187,7 +187,7 @@
         // Recording 録音
         if (generalConfig.transcription.type === "speech_recognition") {
             recording = new RecognitionContent(media, mimeType, generalConfig);
-        } else if (generalConfig.transcription.type ===  "whisper" && generalConfig.transcription.method === "pushToTalk") {
+        } else if (generalConfig.transcription.method === "pushToTalk") {
             recording = new RecordingPushToTalkContext(media, mimeType, generalConfig);
             stopMic = true;
             speakDisabled(true);

@@ -21,7 +21,7 @@
                 if (!res.ok) {
                     throw new Error("設定の保存に失敗しました");
                 }
-                dispatch("close");
+                globalThis.location.reload();
             })
             .catch((e) => {
                 window.alert(e.message);
@@ -50,17 +50,25 @@
                 入力設定
             </h2>
             <div class="flex items-center px-4 py-2">
-                <!-- 使用する入力設定 OpenAI Whisper -->
+                <div class="flex-1">
+                    <label for="language" class="text-sm">言語</label>
+                    <select id="language" class="w-full border border-gray-300 rounded p-1" bind:value={data.language}>
+                        <option value="ja-JP">日本語</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex items-center px-4 py-2">
                 <div class="flex-1">
                     <label for="transcription" class="text-sm">Speech to text</label>
                     <select id="transcription" class="w-full border border-gray-300 rounded p-1" bind:value={data.transcription.type}>
-                        <option value="whisper">OpenAI Whisper</option>
+                        <option value="openai_speech_to_text">OpenAI Speech to Text API</option>
+                        <option value="google_speech_to_text">Google Speech to Text</option>
                         <option value="speech_recognition">SpeechRecognition</option>
                     </select>
                 </div>
             </div>
 
-            {#if data.transcription.type === "whisper"}
+            {#if data.transcription.type === "openai_speech_to_text" || data.transcription.type === "google_speech_to_text"}
             <div class="flex items-center px-4 py-2">
                 <div class="flex-1">
                     <label for="method" class="text-sm">音声認識方法</label>
