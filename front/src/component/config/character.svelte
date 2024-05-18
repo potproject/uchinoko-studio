@@ -315,6 +315,7 @@
                         {/if}
                         {#if data.chat.type === "gemini"}
                             <option value="gemini-1.5-pro-latest">Gemini 1.5 Pro</option>
+                            <option value="gemini-1.5-flash-latest">Gemini 1.5 Flash</option>
                             <option value="gemini-pro">Gemini Pro</option>
                         {/if}
                     </datalist>

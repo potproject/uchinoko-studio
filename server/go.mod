@@ -3,6 +3,8 @@ module github.com/potproject/uchinoko-studio
 go 1.21
 
 require (
+	cloud.google.com/go/speech v1.23.1
+	cloud.google.com/go/texttospeech v1.7.7
 	github.com/cohere-ai/cohere-go/v2 v2.7.1
 	github.com/gofiber/fiber/v2 v2.51.0
 	github.com/potproject/claude-sdk-go v1.1.4
@@ -17,8 +19,6 @@ require (
 	cloud.google.com/go/auth/oauth2adapt v0.2.2 // indirect
 	cloud.google.com/go/compute/metadata v0.3.0 // indirect
 	cloud.google.com/go/longrunning v0.5.7 // indirect
-	cloud.google.com/go/speech v1.23.1 // indirect
-	cloud.google.com/go/texttospeech v1.7.7 // indirect
 	filippo.io/edwards25519 v1.0.0 // indirect
 	github.com/akutz/memconn v0.1.0 // indirect
 	github.com/alexbrainman/sspi v0.0.0-20231016080023-1a75b4708caa // indirect
@@ -134,6 +134,5 @@ require (
 	github.com/valyala/fasthttp v1.50.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	golang.org/x/sys v0.20.0 // indirect
-	google.golang.org/genproto v0.0.0-20240515191416-fc5f0ca64291
 	tailscale.com v1.54.1
 )
