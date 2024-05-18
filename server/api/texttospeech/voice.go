@@ -1,9 +1,10 @@
-package api
+package texttospeech
 
 import (
 	"log"
 	"strings"
 
+	"github.com/potproject/uchinoko-studio/api"
 	"github.com/potproject/uchinoko-studio/data"
 	"github.com/potproject/uchinoko-studio/envgen"
 )
@@ -25,12 +26,12 @@ func removeNewLineAndSpace(text string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(text, "\n", ""), " ", "")
 }
 
-func TTSStream(chunkMessage <-chan ChunkMessage, changeVoice chan<- data.CharacterConfigVoice, changeBehavior chan<- data.CharacterConfigVoiceBehavior, outAudioMessage chan<- AudioMessage, chatDone chan bool) error {
+func TTSStream(chunkMessage <-chan api.ChunkMessage, changeVoice chan<- data.CharacterConfigVoice, changeBehavior chan<- data.CharacterConfigVoiceBehavior, outAudioMessage chan<- api.AudioMessage, chatDone chan bool) error {
 	beforeVoiceIdentification := ""
 	for {
 		select {
 		case c := <-chunkMessage:
-			if t, ok := c.(TextChunkMessage); ok {
+			if t, ok := c.(api.TextChunkMessage); ok {
 				escapeText := removeNewLineAndSpace(t.Text)
 				if len(escapeText) == 0 {
 					continue
@@ -58,13 +59,13 @@ func TTSStream(chunkMessage <-chan ChunkMessage, changeVoice chan<- data.Charact
 					log.Printf("Error: %s", err.Error())
 					return err
 				}
-				outAudioMessage <- AudioMessage{
+				outAudioMessage <- api.AudioMessage{
 					Audio: &bin,
 					Text:  t.Text,
 				}
 			}
-			if _, ok := c.(BehaviorChunkMessage); ok {
-				changeBehavior <- c.(BehaviorChunkMessage).Behavior
+			if _, ok := c.(api.BehaviorChunkMessage); ok {
+				changeBehavior <- c.(api.BehaviorChunkMessage).Behavior
 			}
 		case <-chatDone:
 			return nil

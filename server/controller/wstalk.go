@@ -8,6 +8,9 @@ import (
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/potproject/uchinoko-studio/api"
+	"github.com/potproject/uchinoko-studio/api/chat"
+	"github.com/potproject/uchinoko-studio/api/speechtotext"
+	"github.com/potproject/uchinoko-studio/api/texttospeech"
 	"github.com/potproject/uchinoko-studio/data"
 	"github.com/potproject/uchinoko-studio/db"
 	"github.com/potproject/uchinoko-studio/envgen"
@@ -36,10 +39,10 @@ const (
 func messageProcess(mt int, msg []byte, fileType string, language string, typeTranscription string, apiKey string) (string, error) {
 	if mt == websocket.BinaryMessage {
 		if typeTranscription == "google_speech_to_text" {
-			return api.GoSpeech(apiKey, msg, fileType, language)
+			return speechtotext.GoSpeech(apiKey, msg, fileType, language)
 		}
 		if typeTranscription == "openai_speech_to_text" {
-			return api.OpenAISpeech(apiKey, msg, fileType, language)
+			return speechtotext.OpenAISpeech(apiKey, msg, fileType, language)
 		}
 		return "", fmt.Errorf("unsupported transcription type: %s", typeTranscription)
 	}
@@ -218,7 +221,7 @@ func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, changeV
 }
 
 func runTTSStream(chunkMessage chan api.ChunkMessage, changeVoice chan data.CharacterConfigVoice, changeBehavior chan<- data.CharacterConfigVoiceBehavior, outAudioMessage chan api.AudioMessage, chatDone chan bool) error {
-	err := api.TTSStream(chunkMessage, changeVoice, changeBehavior, outAudioMessage, chatDone)
+	err := texttospeech.TTSStream(chunkMessage, changeVoice, changeBehavior, outAudioMessage, chatDone)
 	if err != nil {
 		return err
 	}
@@ -231,21 +234,21 @@ func runChatStream(id string, voices []data.CharacterConfigVoice, multi bool, re
 		return err
 	}
 
-	var chatStream api.ChatStream
+	var chatStream chat.ChatStream
 	if chatType == "openai" {
-		chatStream = api.OpenAIChatStream
+		chatStream = chat.OpenAIChatStream
 	}
 	if chatType == "anthropic" {
-		chatStream = api.AnthropicChatStream
+		chatStream = chat.AnthropicChatStream
 	}
 	if chatType == "cohere" {
-		chatStream = api.CohereChatStream
+		chatStream = chat.CohereChatStream
 	}
 	if chatType == "gemini" {
-		chatStream = api.GeminiChatStream
+		chatStream = chat.GeminiChatStream
 	}
 	if chatType == "openai-local" {
-		chatStream = api.OpenAILocalChatStream
+		chatStream = chat.OpenAILocalChatStream
 	}
 
 	ncm, err := chatStream(apiKey, voices, multi, chatSystemPropmt, chatModel, cm.Chat, requestText, chunkMessage)
