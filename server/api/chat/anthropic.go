@@ -12,19 +12,35 @@ import (
 	"github.com/potproject/uchinoko-studio/data"
 )
 
-func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, error) {
+func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, error) {
 	ctx := context.Background()
 	c := claude.NewClient(apiKey)
 	ncm := append(cm, data.ChatCompletionMessage{
 		Role:    data.ChatCompletionMessageRoleUser,
 		Content: text,
+		Image:   image,
 	})
 
 	anthropicChatMessages := make([]claude.RequestBodyMessagesMessages, len(ncm))
 	for i, v := range ncm {
-		anthropicChatMessages[i] = claude.RequestBodyMessagesMessages{
-			Role:    v.Role,
-			Content: v.Content,
+		if v.Image == nil {
+			anthropicChatMessages[i] = claude.RequestBodyMessagesMessages{
+				Role:    v.Role,
+				Content: v.Content,
+			}
+		} else {
+			anthropicChatMessages[i] = claude.RequestBodyMessagesMessages{
+				Role: v.Role,
+				ContentTypeImage: []claude.RequestBodyMessagesMessagesContentTypeImage{
+					{
+						Source: claude.RequestBodyMessagesMessagesContentTypeImageSource{
+							Type:      "base64",
+							MediaType: v.Image.MediaType(),
+							Data:      v.Image.Base64(),
+						},
+					},
+				},
+			}
 		}
 	}
 
@@ -69,5 +85,5 @@ func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, mult
 		done <- true
 	}()
 
-	return chatReceiver(charChannel, done, multi, voices, chunkMessage, text, cm)
+	return chatReceiver(charChannel, done, multi, voices, chunkMessage, text, image, cm)
 }

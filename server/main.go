@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"os/exec"
 	"runtime"
 	"strconv"
@@ -22,7 +23,7 @@ var static embed.FS
 func main() {
 	envSetup()
 	dbSetup()
-	if envgen.Get().TAILSCALE_ENABLED() == false {
+	if !envgen.Get().TAILSCALE_ENABLED() {
 		serverSetup()
 	} else {
 		tailscaleSetup()
@@ -34,9 +35,21 @@ func dbSetup() {
 }
 
 func envSetup() {
-	err := godotenv.Load()
+	// Load .env or env.txt file
+
+	envFile := ".env"
+	_, err := os.Stat(envFile)
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		envFile = "env.txt"
+		_, err = os.Stat(envFile)
+		if err != nil {
+			log.Fatal("Error loading .env or env.txt file")
+		}
+	}
+
+	err = godotenv.Load(envFile)
+	if err != nil {
+		log.Fatal("Error loading .env or env.txt file")
 	}
 	// Setup envgen package from environment variables
 	err = envgen.Load()

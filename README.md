@@ -37,33 +37,29 @@ See Article(Japanese Only): https://blog.potproject.net/2023/12/24/ai-web-uchino
 
 ## Getting Started
 
-TODO: 環境不要で動作できるパッケージを配布することを予定しています。現在は以下の環境での動作が必要です。
+__!WARNING! このアプリケーションはまだ開発中であり、正常に動作しない場合があります。__
+上手く動作しなくなった場合は、databaseフォルダを削除すると初期化されます。
 
-### Requirements
+また、アンチウイルスソフトウェアによっては、誤検知され、不正なファイルと判定されることがあるため、その場合は除外設定を行ってください。
 
-* Go (Tested on 1.22.2/win-amd64)
-* Node.js (Tested on 20.11.1/win-amd64)
-* pnpm
+[Env Setting](#env-setting)を参考に.env.exampleから.envファイルを作成すれば実行できます。
 
-### Env Setting Up
+## Env Setting
 
-[.env.example](server/.env.example)を参考に`server/.env`を作成し
-てください。
-
-#### Speech To Text
+### Speech To Text
 
 * OpenAI Speech to Text API(Cloud): `OPENAI_SPEECH_TO_TEXT_API_KEY`
 * Google Speech to Text API(Cloud): `GOOGLE_SPEECH_TO_TEXT_API_KEY`
 * SpeechRecognition(Web API): none
 
-#### Chat-based LLM(Cloud)
+### Chat-based LLM(Cloud)
 
 * OpenAI: `OPENAI_API_KEY`
 * Anthropic: `ANTHROPIC_API_KEY`
 * cohere: `COHERE_API_KEY`
 * Gemini: `GEMINI_API_KEY`
 
-#### Chat-based LLM(Local)
+### Chat-based LLM(Local)
 
 LM StudioやOllamaのような、OpenAI互換のローカルLLMを使用することが出来ます。
 
@@ -81,7 +77,7 @@ OPENAI_LOCAL_API_KEY=
 OPENAI_LOCAL_API_ENDPOINT=http://localhost:11434/
 ```
 
-#### Text To Speech
+### Text To Speech
 
 このアプリケーションを使用する場合、以下のソフトウェアをローカルまたはネットワーク上で動作させておくことが前提です。
 
@@ -91,7 +87,7 @@ OPENAI_LOCAL_API_ENDPOINT=http://localhost:11434/
 * Google Text To Speech API(Cloud)の場合: `GOOGLE_TEXT_TO_SPEECH_API_KEY`を設定してください。
 * OpenAI Speech API(Cloud)の場合: `OPENAI_SPEECH_API_KEY`を設定してください。
 
-#### Tailscale 
+### Tailscale 
 
 * Tailscaleを使用する場合、起動時にコンソールより認証URLが表示されるので、そこから認証を行ってください。Tailscaleのアカウントが必要です。
 * `TAILSCALE_ENABLED`を`true`に設定すると、[Tailscale](https://tailscale.com/)を使用してVPN上からアクセスできるようになります。
@@ -99,13 +95,27 @@ OPENAI_LOCAL_API_ENDPOINT=http://localhost:11434/
 * `TAILSCALE_FUNNEL_ENABLED`を`true`に設定すると、
 [Tailscale Funnel](https://tailscale.com/kb/1223/funnel)機能を使用してパブリックアクセスできるようになります。何のことかわからなければ変更しないでください。
 
+## Development
+
+### Requirements
+
+* Go (Tested on 1.22.2/win-amd64)
+* Node.js (Tested on 20.11.1/win-amd64)
+* pnpm
+
 ### Run on Local
 
 ```
 ## Easy Start (Windows)
+git clone https://github.com/potproject/uchinoko-studio
+cd uchinoko-studio
+copy server\.env.example server\.env
 run-win.bat
 
 ## Easy Start (Linux/mac)
+git clone https://github.com/potproject/uchinoko-studio
+cd uchinoko-studio
+cp server/.env.example server/.env
 run.sh
 ```
 

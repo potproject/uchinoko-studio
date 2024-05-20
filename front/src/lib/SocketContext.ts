@@ -66,9 +66,8 @@ export class SocketContext{
     public static async connect(selectCharacter: CharacterConfig): Promise<{socket:SocketContext, mimeType: string}> {
         const wsTLS = location.protocol === 'https:' ? 'wss' : 'ws';
         const mimeType = 'audio/wav';
-        const extension = 'wav';
     
-        const url = `${wsTLS}://${location.host}/v1/ws/talk/${selectCharacter.general.id}/${selectCharacter.general.id}/${extension}`;
+        const url = `${wsTLS}://${location.host}/v1/ws/talk/${selectCharacter.general.id}/${selectCharacter.general.id}`;
         const socket = new SocketContext(url);
         await new Promise(resolve => {
             socket.onConnected = () => {

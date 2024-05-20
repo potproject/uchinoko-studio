@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"sync"
@@ -36,25 +37,39 @@ const (
 	FinishOutputType            = "finish"
 )
 
-func messageProcess(mt int, msg []byte, fileType string, language string, typeTranscription string, apiKey string) (string, error) {
+func messageProcess(mt int, msg []byte, language string, typeTranscription string, apiKey string) (text string, image *data.Image, err error) {
 	if mt == websocket.BinaryMessage {
-		if typeTranscription == "google_speech_to_text" {
-			return speechtotext.GoSpeech(apiKey, msg, fileType, language)
+		discreteType, extension, err := detectBinaryFileType(msg)
+		if err != nil {
+			return "", nil, err
 		}
-		if typeTranscription == "openai_speech_to_text" {
-			return speechtotext.OpenAISpeech(apiKey, msg, fileType, language)
+		if discreteType == "audio" {
+			if typeTranscription == "google_speech_to_text" {
+				text, err = speechtotext.GoSpeech(apiKey, msg, extension, language)
+				return text, nil, err
+			}
+			if typeTranscription == "openai_speech_to_text" {
+				text, err = speechtotext.OpenAISpeech(apiKey, msg, extension, language)
+				return text, nil, err
+			}
 		}
-		return "", fmt.Errorf("unsupported transcription type: %s", typeTranscription)
+
+		if discreteType == "image" {
+			return "", &data.Image{
+				Extension: extension,
+				Data:      msg,
+			}, nil
+		}
 	}
 	if mt == websocket.TextMessage {
 		textInput := TextInput{}
 		err := json.Unmarshal(msg, &textInput)
 		if err != nil {
-			return "", err
+			return "", nil, err
 		}
-		return textInput.Text, nil
+		return textInput.Text, nil, err
 	}
-	return "", nil
+	return
 }
 
 func wsSendTextMessage(c *websocket.Conn, msgType string, text string) error {
@@ -98,17 +113,11 @@ func getChatApiKey(chatType string) string {
 	return ""
 }
 
-// Support File Types: mp3, wav, webm, ogg
+// Support File Types: mp3, wav, webm, ogg, jpg, png, webp
 func WSTalk() fiber.Handler {
 	return websocket.New(func(c *websocket.Conn) {
 		id := c.Params("id")
-		fileType := c.Params("fileType")
 		characterId := c.Params("characterId")
-
-		if fileType != "mp3" && fileType != "wav" && fileType != "webm" && fileType != "ogg" {
-			c.Close()
-			return
-		}
 
 		character, err := db.GetCharacterConfig(characterId)
 		if err != nil {
@@ -139,7 +148,7 @@ func WSTalk() fiber.Handler {
 				break
 			}
 
-			requestText, err := messageProcess(mt, msg, fileType, general.Language, general.Transcription.Type, getTranscriptionApiKey(general.Transcription.Type))
+			requestText, requestImage, err := messageProcess(mt, msg, general.Language, general.Transcription.Type, getTranscriptionApiKey(general.Transcription.Type))
 			if err != nil {
 				sendError(c, err)
 				break
@@ -159,7 +168,7 @@ func WSTalk() fiber.Handler {
 			// Chat処理
 			wg.Add(1)
 			go func() {
-				err := runChatStream(id, voices, character.MultiVoice, requestText, chatType, getChatApiKey(chatType), chatSystemPropmt, chatModel, chunkMessage)
+				err := runChatStream(id, voices, character.MultiVoice, requestText, requestImage, chatType, getChatApiKey(chatType), chatSystemPropmt, chatModel, chunkMessage)
 				if err != nil {
 					sendError(c, err)
 				}
@@ -196,6 +205,31 @@ func WSTalk() fiber.Handler {
 	})
 }
 
+func detectBinaryFileType(data []byte) (string, string, error) {
+	if len(data) < 12 {
+		return "", "", fmt.Errorf("file size is too small")
+	}
+
+	switch {
+	case bytes.HasPrefix(data, []byte{0x4F, 0x67, 0x67, 0x53}):
+		return "audio", "ogg", nil
+	case bytes.HasPrefix(data, []byte{0x52, 0x49, 0x46, 0x46}) && bytes.Contains(data[:12], []byte{0x57, 0x41, 0x56, 0x45}):
+		return "audio", "wav", nil
+	case bytes.HasPrefix(data, []byte{0xFF, 0xFB, 0x90}) || bytes.HasPrefix(data, []byte{0xFF, 0xFA, 0x90}) || bytes.HasPrefix(data, []byte{0x49, 0x44, 0x33}):
+		return "audio", "mp3", nil
+	case bytes.HasPrefix(data, []byte{0x1A, 0x45, 0xDF, 0xA3}): // or mkv
+		return "audio", "webm", nil
+	case bytes.HasPrefix(data, []byte{0xFF, 0xD8}):
+		return "image", "jpg", nil
+	case bytes.HasPrefix(data, []byte{0x89, 0x50, 0x4E, 0x47}):
+		return "image", "png", nil
+	case bytes.HasPrefix(data, []byte{0x52, 0x49, 0x46, 0x46}) && bytes.HasPrefix(data[8:], []byte{0x57, 0x45, 0x42, 0x50}):
+		return "image", "webp", nil
+	default:
+		return "", "", fmt.Errorf("unsupported file type")
+	}
+}
+
 func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, changeVoice chan data.CharacterConfigVoice, changeBehavior chan data.CharacterConfigVoiceBehavior, ttsDone chan bool) {
 	text := ""
 	for {
@@ -220,30 +254,35 @@ func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, changeV
 	}
 }
 
-func runChatStream(id string, voices []data.CharacterConfigVoice, multi bool, requestText string, chatType string, apiKey string, chatSystemPropmt string, chatModel string, chunkMessage chan api.ChunkMessage) error {
+func runChatStream(id string, voices []data.CharacterConfigVoice, multi bool, requestText string, requestImage *data.Image, chatType string, apiKey string, chatSystemPropmt string, chatModel string, chunkMessage chan api.ChunkMessage) error {
 	cm, _, err := db.GetChatMessage(id)
 	if err != nil {
 		return err
 	}
 
 	var chatStream chat.ChatStream
+	// image support: ok
 	if chatType == "openai" {
 		chatStream = chat.OpenAIChatStream
 	}
+	// image support: ok
 	if chatType == "anthropic" {
 		chatStream = chat.AnthropicChatStream
 	}
+	// image support: ng
 	if chatType == "cohere" {
 		chatStream = chat.CohereChatStream
 	}
+	// image support: ok
 	if chatType == "gemini" {
 		chatStream = chat.GeminiChatStream
 	}
+	// image support: unknown
 	if chatType == "openai-local" {
 		chatStream = chat.OpenAILocalChatStream
 	}
 
-	ncm, err := chatStream(apiKey, voices, multi, chatSystemPropmt, chatModel, cm.Chat, requestText, chunkMessage)
+	ncm, err := chatStream(apiKey, voices, multi, chatSystemPropmt, chatModel, cm.Chat, requestText, requestImage, chunkMessage)
 	if err != nil {
 		return err
 	}

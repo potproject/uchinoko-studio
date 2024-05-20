@@ -13,7 +13,7 @@ import (
 	"google.golang.org/api/option"
 )
 
-func GeminiChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, error) {
+func GeminiChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, error) {
 	ctx := context.Background()
 	client, err := gemini.NewClient(ctx, option.WithAPIKey(apiKey))
 	if err != nil {
@@ -42,9 +42,18 @@ func GeminiChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 	}
 	cs.History = geminiContents
 
+	var part gemini.Part
+	if image == nil {
+		part = gemini.Text(text)
+	} else {
+		part = gemini.Blob{
+			MIMEType: image.MediaType(),
+			Data:     image.Data,
+		}
+	}
 	iter := cs.SendMessageStream(
 		ctx,
-		gemini.Text(text),
+		part,
 	)
 
 	charChannel := make(chan rune)
@@ -73,7 +82,7 @@ func GeminiChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 		}
 		done <- true
 	}()
-	return chatReceiver(charChannel, done, multi, voices, chunkMessage, text, cm)
+	return chatReceiver(charChannel, done, multi, voices, chunkMessage, text, image, cm)
 }
 
 func geminiResponse(resp *gemini.GenerateContentResponse) *string {

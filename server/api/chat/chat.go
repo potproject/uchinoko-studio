@@ -10,7 +10,17 @@ import (
 
 const chars = ".,?!;:—-)]} 。、？！；：」）］｝　\"'"
 
-type ChatStream func(string, []data.CharacterConfigVoice, bool, string, string, []data.ChatCompletionMessage, string, chan api.ChunkMessage) ([]data.ChatCompletionMessage, error)
+type ChatStream func(
+	string, // apiKey
+	[]data.CharacterConfigVoice, // voices
+	bool, // multi
+	string, // chatSystemPropmt
+	string, // model
+	[]data.ChatCompletionMessage, // messages
+	string, // text
+	*data.Image, // image
+	chan api.ChunkMessage, // chunkMessage
+) ([]data.ChatCompletionMessage, error)
 
 func chatReceiver(
 	charChannel chan rune,
@@ -19,6 +29,7 @@ func chatReceiver(
 	voices []data.CharacterConfigVoice,
 	chunkMessage chan api.ChunkMessage,
 	text string,
+	image *data.Image,
 	cm []data.ChatCompletionMessage,
 ) ([]data.ChatCompletionMessage, error) {
 	voice := voices[0]
@@ -76,10 +87,12 @@ func chatReceiver(
 				data.ChatCompletionMessage{
 					Role:    data.ChatCompletionMessageRoleUser,
 					Content: text,
+					Image:   image,
 				},
 				data.ChatCompletionMessage{
 					Role:    data.ChatCompletionMessageRoleAssistant,
 					Content: strings.Trim(allText, "\n"),
+					Image:   nil,
 				},
 			), nil
 		}

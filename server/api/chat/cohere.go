@@ -12,7 +12,7 @@ import (
 	"github.com/potproject/uchinoko-studio/data"
 )
 
-func CohereChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, error) {
+func CohereChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, error) {
 	ctx := context.Background()
 	c := cohereclient.NewClient(cohereclient.WithToken(apiKey))
 
@@ -72,5 +72,5 @@ func CohereChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 		done <- true
 	}()
 
-	return chatReceiver(charChannel, done, multi, voices, chunkMessage, text, cm)
+	return chatReceiver(charChannel, done, multi, voices, chunkMessage, text, image, cm)
 }
