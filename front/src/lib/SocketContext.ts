@@ -78,7 +78,7 @@ export class SocketContext{
         return socket;
     }
 
-    public sendBinary(data: any){
+    public sendBinary(data: string | ArrayBufferLike | ArrayBufferView | Blob){
         this.socket.send(data);
     }
 

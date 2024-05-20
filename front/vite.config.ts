@@ -4,5 +4,8 @@ import mkcert from 'vite-plugin-mkcert';
 
 export default defineConfig({
 	plugins: [ sveltekit(),mkcert() ],
-	server: { https: true }
+	server: { https: true },
+	optimizeDeps: {
+		exclude: ["@jsquash/jpeg", "@jsquash/png", "@jsquash/resize"]
+	}
 });

@@ -13,6 +13,7 @@
     import { RecognitionContent } from "$lib/RecognitionContent";
     import type { RecordingContentInterface } from "$lib/RecordingContentInterface";
     import ChatMyImgMsg from "./chat-my-img-msg.svelte";
+    import { ImageResize } from "$lib/ImageResize";
 
     let initLoading = true;
     let stopMic = false;
@@ -75,7 +76,6 @@
             const reader = new FileReader();
             reader.onload = async () => {
                 const arrayBuffer = reader.result as ArrayBuffer;
-                const uint8Array = new Uint8Array(arrayBuffer);
                 addMessage({
                     type: "my-img",
                     text: "画像をアップロード中...",
@@ -85,7 +85,8 @@
                     chunk: false,
                     voiceIndex: null,
                 });
-                socket.sendBinary(uint8Array);
+                const resizeArrayBuffer = await ImageResize.run(arrayBuffer);
+                socket.sendBinary(resizeArrayBuffer);
             };
             reader.readAsArrayBuffer(file);
         };
