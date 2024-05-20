@@ -12,10 +12,12 @@
     import { RecordingPushToTalkContext } from "$lib/RecordingPushToTalkContent";
     import { RecognitionContent } from "$lib/RecognitionContent";
     import type { RecordingContentInterface } from "$lib/RecordingContentInterface";
+    import ChatMyImgMsg from "./chat-my-img-msg.svelte";
 
     let initLoading = true;
     let stopMic = false;
 
+    let socket: SocketContext;
     let playing: PlayingContext;
     let recording: RecordingContentInterface;
     let messages: Message[] = [];
@@ -59,8 +61,39 @@
         updateChat();
     };
 
+    const uploadImage = async () => {
+        stopMic = true;
+        speakDisabled(stopMic);
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "image/jpeg, image/png";
+        input.onchange = async () => {
+            if (!input.files || input.files.length === 0) {
+                return;
+            }
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = async () => {
+                const arrayBuffer = reader.result as ArrayBuffer;
+                const uint8Array = new Uint8Array(arrayBuffer);
+                addMessage({
+                    type: "my-img",
+                    text: "画像をアップロード中...",
+                    img: URL.createObjectURL(file),
+                    loading: true,
+                    speaking: false,
+                    chunk: false,
+                    voiceIndex: null,
+                });
+                socket.sendBinary(uint8Array);
+            };
+            reader.readAsArrayBuffer(file);
+        };
+        input.click();
+    };
+
     (async () => {
-        const { socket, mimeType } = await SocketContext.connect(selectCharacter);
+        socket = await SocketContext.connect(selectCharacter);
         socket.onClosed = () => {
             addMessage({
                 type: "error",
@@ -186,13 +219,13 @@
 
         // Recording 録音
         if (generalConfig.transcription.type === "speech_recognition") {
-            recording = new RecognitionContent(media, mimeType, generalConfig);
+            recording = new RecognitionContent(media, socket.mimeType, generalConfig);
         } else if (generalConfig.transcription.method === "pushToTalk") {
-            recording = new RecordingPushToTalkContext(media, mimeType, generalConfig);
+            recording = new RecordingPushToTalkContext(media, socket.mimeType, generalConfig);
             stopMic = true;
             speakDisabled(true);
         } else {
-            recording = new RecordingContext(media, mimeType, generalConfig);
+            recording = new RecordingContext(media, socket.mimeType, generalConfig);
         }
         await recording.init();
 
@@ -288,6 +321,8 @@
                 {#each messages as msg}
                     {#if msg.type === "my"}
                         <ChatMyMsg message={msg.text} loading={msg.loading} speaking={msg.speaking} />
+                    {:else if msg.type === "my-img"}
+                        <ChatMyImgMsg message={msg.text} image={msg.img} loading={msg.loading} />
                     {:else if msg.type === "your"}
                         <ChatYourMsg message={msg.text} loading={msg.loading} speaking={msg.speaking} img={msg.voiceIndex === null ? null : selectCharacter.voice[msg.voiceIndex].image} />
                     {:else if msg.type === "error"}
@@ -296,7 +331,10 @@
                 {/each}
             </div>
             <div class="py-4">
-                <div class="flex justify-center items-center">
+                <div class="flex justify-center items-center space-x-2">
+                    <button class="btn text-white font-bold py-2 px-4 rounded-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50" disabled={speaking} on:click={uploadImage}>
+                        <i class="las la-file-image"></i>
+                    </button>
                     <button
                         class="btn text-white font-bold py-2 px-4 rounded-full
                     {!stopMic ? 'bg-blue-500 hover:bg-blue-600' : 'bg-red-500 hover:bg-red-600'}
@@ -308,6 +346,7 @@
                     >
                         <i class="las text-2xl {!stopMic ? 'la-microphone' : 'la-microphone-slash'}"></i>
                     </button>
+
                 </div>
             </div>
         </div>

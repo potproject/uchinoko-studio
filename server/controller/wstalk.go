@@ -113,7 +113,7 @@ func getChatApiKey(chatType string) string {
 	return ""
 }
 
-// Support File Types: mp3, wav, webm, ogg, jpg, png, webp
+// Support File Types: mp3, wav, webm, ogg, jpg, png
 func WSTalk() fiber.Handler {
 	return websocket.New(func(c *websocket.Conn) {
 		id := c.Params("id")
@@ -223,8 +223,6 @@ func detectBinaryFileType(data []byte) (string, string, error) {
 		return "image", "jpg", nil
 	case bytes.HasPrefix(data, []byte{0x89, 0x50, 0x4E, 0x47}):
 		return "image", "png", nil
-	case bytes.HasPrefix(data, []byte{0x52, 0x49, 0x46, 0x46}) && bytes.HasPrefix(data[8:], []byte{0x57, 0x45, 0x42, 0x50}):
-		return "image", "webp", nil
 	default:
 		return "", "", fmt.Errorf("unsupported file type")
 	}

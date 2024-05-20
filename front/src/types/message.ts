@@ -1,7 +1,8 @@
 export type Message = {
-    type: 'my' | 'your' | 'error';
+    type: 'my' | 'your' | 'error' | 'my-img';
     voiceIndex: number|null;
     text: string;
+    img?: string;
     loading: boolean;
     speaking: boolean;
     chunk: boolean;

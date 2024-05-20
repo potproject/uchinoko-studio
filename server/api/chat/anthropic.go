@@ -23,7 +23,7 @@ func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, mult
 
 	anthropicChatMessages := make([]claude.RequestBodyMessagesMessages, len(ncm))
 	for i, v := range ncm {
-		if v.Image == nil {
+		if v.Image == nil || i != len(ncm)-1 {
 			anthropicChatMessages[i] = claude.RequestBodyMessagesMessages{
 				Role:    v.Role,
 				Content: v.Content,

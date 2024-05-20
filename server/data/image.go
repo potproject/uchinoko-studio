@@ -13,9 +13,6 @@ func (i Image) MediaType() string {
 	if i.Extension == "jpg" {
 		return "image/jpeg"
 	}
-	if i.Extension == "webp" {
-		return "image/webp"
-	}
 	return ""
 }
 

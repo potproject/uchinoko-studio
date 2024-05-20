@@ -7,6 +7,8 @@ type TextMessage = {
 
 export class SocketContext{
     private socket: WebSocket;
+
+    public mimeType: string = 'audio/wav';
     
     public onConnected: () => void = () => {};
     public onBinary: (data: ArrayBuffer) => void = () => {};
@@ -63,9 +65,8 @@ export class SocketContext{
         }
     }
 
-    public static async connect(selectCharacter: CharacterConfig): Promise<{socket:SocketContext, mimeType: string}> {
+    public static async connect(selectCharacter: CharacterConfig): Promise<SocketContext> {
         const wsTLS = location.protocol === 'https:' ? 'wss' : 'ws';
-        const mimeType = 'audio/wav';
     
         const url = `${wsTLS}://${location.host}/v1/ws/talk/${selectCharacter.general.id}/${selectCharacter.general.id}`;
         const socket = new SocketContext(url);
@@ -74,7 +75,7 @@ export class SocketContext{
                 resolve(socket);
             }
         });
-        return {socket, mimeType};
+        return socket;
     }
 
     public sendBinary(data: any){

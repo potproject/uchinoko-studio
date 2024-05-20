@@ -36,7 +36,7 @@ func OpenAIChatStreamMain(ctx context.Context, c *openai.Client, voices []data.C
 	})
 	openaiChatMessages := make([]openai.ChatCompletionMessage, len(ncm))
 	for i, v := range ncm {
-		if v.Image == nil {
+		if v.Image == nil || i != len(ncm)-1 {
 			openaiChatMessages[i] = openai.ChatCompletionMessage{
 				Role:    v.Role,
 				Content: v.Content,
@@ -48,7 +48,8 @@ func OpenAIChatStreamMain(ctx context.Context, c *openai.Client, voices []data.C
 					{
 						Type: openai.ChatMessagePartTypeImageURL,
 						ImageURL: &openai.ChatMessageImageURL{
-							URL: v.Image.Base64(),
+							URL:    v.Image.DataURI(),
+							Detail: openai.ImageURLDetailAuto,
 						},
 					},
 				},

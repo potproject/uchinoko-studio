@@ -82,6 +82,9 @@ func chatReceiver(
 				Text:  bufferText,
 				Voice: voice,
 			}
+			if image != nil {
+				text = "image"
+			}
 			return append(
 				cm,
 				data.ChatCompletionMessage{
