@@ -13,6 +13,28 @@ import (
 	"google.golang.org/api/option"
 )
 
+func setGeminiSafetySettings() []*gemini.SafetySetting {
+	safeties := make([]*gemini.SafetySetting, 4)
+	safeties[0] = &gemini.SafetySetting{
+		Category:  gemini.HarmCategoryHarassment,
+		Threshold: gemini.HarmBlockNone,
+	}
+	safeties[1] = &gemini.SafetySetting{
+		Category:  gemini.HarmCategoryHateSpeech,
+		Threshold: gemini.HarmBlockNone,
+	}
+	safeties[2] = &gemini.SafetySetting{
+		Category:  gemini.HarmCategorySexuallyExplicit,
+		Threshold: gemini.HarmBlockNone,
+	}
+	safeties[3] = &gemini.SafetySetting{
+		Category:  gemini.HarmCategoryDangerousContent,
+		Threshold: gemini.HarmBlockNone,
+	}
+	return safeties
+
+}
+
 func GeminiChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, *data.Tokens, error) {
 	ctx := context.Background()
 	var t *data.Tokens
@@ -23,6 +45,7 @@ func GeminiChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 	defer client.Close()
 
 	geminiModel := client.GenerativeModel(model)
+	geminiModel.SafetySettings = setGeminiSafetySettings()
 	geminiModel.SystemInstruction = &gemini.Content{
 		Parts: []gemini.Part{gemini.Text(chatSystemPropmt)},
 	}
