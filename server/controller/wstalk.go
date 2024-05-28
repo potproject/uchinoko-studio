@@ -53,7 +53,7 @@ func messageProcess(mt int, msg []byte, language string, typeTranscription strin
 				return text, nil, err
 			}
 			if typeTranscription == "vosk_server" {
-				text, err = speechtotext.VoskServer(apiKey, msg, extension)
+				text, err = speechtotext.VoskServer(apiKey, msg, extension, language)
 				return text, nil, err
 			}
 		}

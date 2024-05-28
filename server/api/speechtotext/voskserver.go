@@ -87,7 +87,7 @@ func chunkBytes(data []byte, size int) [][]byte {
 }
 
 // 16bit mono PCM Only
-func VoskServer(endpoint string, fileData []byte, extention string) (string, error) {
+func VoskServer(endpoint string, fileData []byte, extention string, language string) (string, error) {
 	if extention != "wav" {
 		return "", fmt.Errorf("only wav files are supported")
 	}
@@ -141,5 +141,8 @@ func VoskServer(endpoint string, fileData []byte, extention string) (string, err
 	if err != nil {
 		return "", err
 	}
-	return strings.ReplaceAll(m.Text, " ", ""), nil
+	if language == "ja-JP" {
+		return strings.ReplaceAll(m.Text, " ", ""), nil
+	}
+	return m.Text, nil
 }
