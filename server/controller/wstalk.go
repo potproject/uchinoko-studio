@@ -52,6 +52,10 @@ func messageProcess(mt int, msg []byte, language string, typeTranscription strin
 				text, err = speechtotext.OpenAISpeech(apiKey, msg, extension, language)
 				return text, nil, err
 			}
+			if typeTranscription == "vosk_server" {
+				text, err = speechtotext.VoskServer(apiKey, msg, extension)
+				return text, nil, err
+			}
 		}
 
 		if discreteType == "image" {
@@ -90,6 +94,9 @@ func getTranscriptionApiKey(transcriptionType string) string {
 	}
 	if transcriptionType == "openai_speech_to_text" {
 		return envgen.Get().OPENAI_SPEECH_TO_TEXT_API_KEY()
+	}
+	if transcriptionType == "vosk_server" {
+		return envgen.Get().VOSK_SERVER_ENDPOINT()
 	}
 	return ""
 }
