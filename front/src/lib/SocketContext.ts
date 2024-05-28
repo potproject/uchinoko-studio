@@ -52,7 +52,7 @@ export class SocketContext{
                 console.log('chat-response-chunk', data.text);
                 this.onChatResponseChunk(data.text);
             } else if (data.type === 'finish') {
-                console.log('finish');
+                console.log('finish', data.text);
                 this.onFinish();
             } else if (data.type === 'error') {
                 console.log('error', data.text);

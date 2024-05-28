@@ -148,6 +148,16 @@ func WSTalk() fiber.Handler {
 				break
 			}
 
+			allow, err := db.RateLimitIsAllowed(id, character.Chat.Limit)
+			if err != nil {
+				sendError(c, err)
+				return
+			}
+			if !allow {
+				sendError(c, fmt.Errorf("rate limit exceeded"))
+				return
+			}
+
 			requestText, requestImage, err := messageProcess(mt, msg, general.Language, general.Transcription.Type, getTranscriptionApiKey(general.Transcription.Type))
 			if err != nil {
 				sendError(c, err)
@@ -164,11 +174,21 @@ func WSTalk() fiber.Handler {
 
 			chatDone := make(chan bool)
 			ttsDone := make(chan bool)
+			var tokens *data.Tokens
 
 			// Chat処理
 			wg.Add(1)
 			go func() {
-				err := runChatStream(id, voices, character.MultiVoice, requestText, requestImage, chatType, getChatApiKey(chatType), chatSystemPropmt, chatModel, chunkMessage)
+				var err error
+				tokens, err = runChatStream(id, voices, character.MultiVoice, requestText, requestImage, chatType, getChatApiKey(chatType), chatSystemPropmt, chatModel, chunkMessage)
+				if err != nil {
+					sendError(c, err)
+				}
+				var totalToken int64
+				if tokens != nil {
+					totalToken = (tokens.InputTokens) + (tokens.OutputTokens)
+				}
+				err = db.AddRateLimit(id, 1, int64(totalToken))
 				if err != nil {
 					sendError(c, err)
 				}
@@ -195,7 +215,8 @@ func WSTalk() fiber.Handler {
 			}()
 			wg.Wait()
 
-			wsSendTextMessage(c, FinishOutputType, "")
+			jsonTokens, _ := json.Marshal(tokens)
+			wsSendTextMessage(c, FinishOutputType, string(jsonTokens))
 
 			close(chunkMessage)
 			close(chunkAudio)
@@ -252,10 +273,11 @@ func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, changeV
 	}
 }
 
-func runChatStream(id string, voices []data.CharacterConfigVoice, multi bool, requestText string, requestImage *data.Image, chatType string, apiKey string, chatSystemPropmt string, chatModel string, chunkMessage chan api.ChunkMessage) error {
+func runChatStream(id string, voices []data.CharacterConfigVoice, multi bool, requestText string, requestImage *data.Image, chatType string, apiKey string, chatSystemPropmt string, chatModel string, chunkMessage chan api.ChunkMessage) (*data.Tokens, error) {
+	var t *data.Tokens
 	cm, _, err := db.GetChatMessage(id)
 	if err != nil {
-		return err
+		return t, err
 	}
 
 	var chatStream chat.ChatStream
@@ -280,9 +302,9 @@ func runChatStream(id string, voices []data.CharacterConfigVoice, multi bool, re
 		chatStream = chat.OpenAILocalChatStream
 	}
 
-	ncm, err := chatStream(apiKey, voices, multi, chatSystemPropmt, chatModel, cm.Chat, requestText, requestImage, chunkMessage)
+	ncm, t, err := chatStream(apiKey, voices, multi, chatSystemPropmt, chatModel, cm.Chat, requestText, requestImage, chunkMessage)
 	if err != nil {
-		return err
+		return t, err
 	}
 
 	err = db.PutChatMessage(id, data.ChatMessage{
@@ -290,9 +312,9 @@ func runChatStream(id string, voices []data.CharacterConfigVoice, multi bool, re
 	})
 
 	if err != nil {
-		return err
+		return t, err
 	}
-	return nil
+	return t, nil
 }
 
 func sendError(c *websocket.Conn, err error) error {

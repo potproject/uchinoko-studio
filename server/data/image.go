@@ -2,6 +2,11 @@ package data
 
 import "encoding/base64"
 
+type Image struct {
+	Extension string
+	Data      []byte
+}
+
 func (i Image) Base64() string {
 	return base64.StdEncoding.EncodeToString(i.Data)
 }

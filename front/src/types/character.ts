@@ -21,6 +21,20 @@ export type CharacterConfig = {
         type: string;
         model: string;
         systemPrompt: string;
+        limit:{
+            day: {
+                request: number;
+                token: number;
+            },
+            hour: {
+                request: number;
+                token: number;
+            },
+            minute: {
+                request: number;
+                token: number;
+            }
+        }
     };
 };
 

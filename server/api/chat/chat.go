@@ -20,7 +20,7 @@ type ChatStream func(
 	string, // text
 	*data.Image, // image
 	chan api.ChunkMessage, // chunkMessage
-) ([]data.ChatCompletionMessage, error)
+) ([]data.ChatCompletionMessage, *data.Tokens, error)
 
 func chatReceiver(
 	charChannel chan rune,

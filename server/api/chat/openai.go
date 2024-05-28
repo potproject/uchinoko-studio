@@ -14,7 +14,7 @@ import (
 	openai "github.com/sashabaranov/go-openai"
 )
 
-func OpenAILocalChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, error) {
+func OpenAILocalChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, *data.Tokens, error) {
 	config := openai.DefaultConfig(apiKey)
 	baseUrl, _ := url.JoinPath(envgen.Get().OPENAI_LOCAL_API_ENDPOINT(), "v1")
 	config.BaseURL = baseUrl
@@ -22,13 +22,14 @@ func OpenAILocalChatStream(apiKey string, voices []data.CharacterConfigVoice, mu
 	return OpenAIChatStreamMain(context.Background(), c, voices, multi, chatSystemPropmt, model, cm, text, image, chunkMessage)
 }
 
-func OpenAIChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, error) {
+func OpenAIChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, *data.Tokens, error) {
 	ctx := context.Background()
 	c := openai.NewClient(apiKey)
 	return OpenAIChatStreamMain(ctx, c, voices, multi, chatSystemPropmt, model, cm, text, image, chunkMessage)
 }
 
-func OpenAIChatStreamMain(ctx context.Context, c *openai.Client, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, error) {
+func OpenAIChatStreamMain(ctx context.Context, c *openai.Client, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, *data.Tokens, error) {
+	var t *data.Tokens
 	ncm := append(cm, data.ChatCompletionMessage{
 		Role:    data.ChatCompletionMessageRoleUser,
 		Content: text,
@@ -67,11 +68,14 @@ func OpenAIChatStreamMain(ctx context.Context, c *openai.Client, voices []data.C
 			},
 		}, openaiChatMessages...),
 		Stream: true,
+		StreamOptions: &openai.StreamOptions{
+			IncludeUsage: true,
+		},
 	}
 	stream, err := c.CreateChatCompletionStream(ctx, req)
 	if err != nil {
 		log.Printf("ChatCompletionStream error: %v\n", err)
-		return cm, err
+		return cm, t, err
 	}
 	defer stream.Close()
 
@@ -83,6 +87,12 @@ func OpenAIChatStreamMain(ctx context.Context, c *openai.Client, voices []data.C
 	go func() {
 		for {
 			response, err := stream.Recv()
+			if response.Usage != nil {
+				t = &data.Tokens{
+					InputTokens:  int64(response.Usage.PromptTokens),
+					OutputTokens: int64(response.Usage.CompletionTokens),
+				}
+			}
 			if errors.Is(err, io.EOF) {
 				break
 			}
@@ -101,5 +111,6 @@ func OpenAIChatStreamMain(ctx context.Context, c *openai.Client, voices []data.C
 		done <- true
 	}()
 
-	return chatReceiver(charChannel, done, multi, voices, chunkMessage, text, image, cm)
+	cr, err := chatReceiver(charChannel, done, multi, voices, chunkMessage, text, image, cm)
+	return cr, t, err
 }

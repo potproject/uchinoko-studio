@@ -12,9 +12,11 @@ import (
 	"github.com/potproject/uchinoko-studio/data"
 )
 
-func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, error) {
+func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, *data.Tokens, error) {
 	ctx := context.Background()
 	c := claude.NewClient(apiKey)
+
+	var t *data.Tokens
 	ncm := append(cm, data.ChatCompletionMessage{
 		Role:    data.ChatCompletionMessageRoleUser,
 		Content: text,
@@ -55,7 +57,7 @@ func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, mult
 	stream, err := c.CreateMessagesStream(ctx, body)
 	if err != nil {
 		log.Printf("ChatCompletionStream error: %v\n", err)
-		return cm, err
+		return cm, t, err
 	}
 	defer stream.Close()
 
@@ -67,6 +69,10 @@ func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, mult
 	go func() {
 		for {
 			response, err := stream.Recv()
+			t = &data.Tokens{
+				InputTokens:  response.Usage.InputTokens,
+				OutputTokens: response.Usage.OutputTokens,
+			}
 			if errors.Is(err, io.EOF) {
 				break
 			}
@@ -84,6 +90,6 @@ func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, mult
 		}
 		done <- true
 	}()
-
-	return chatReceiver(charChannel, done, multi, voices, chunkMessage, text, image, cm)
+	cr, err := chatReceiver(charChannel, done, multi, voices, chunkMessage, text, image, cm)
+	return cr, t, err
 }

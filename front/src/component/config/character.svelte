@@ -355,6 +355,38 @@
                      class="w-full border border-gray-300 rounded p-1 resize-y" bind:value={data.chat.systemPrompt}></textarea>
                 </div>
             </div>
+            <!-- レートリミット -->
+            <div class="text-xl px-2 py-2 border-b border-gray-300 flex items-center mb-2 mx-4 mt-4">レートリミット(0で無効)</div>
+            <div class="flex items-center px-4 py-2">
+                <div class="flex-1">
+                    <label for="rate_limit" class="text-sm">リクエスト(1日)</label>
+                    <input type="number" id="rate_limit" class="w-full border border-gray-300 rounded p-1" bind:value={data.chat.limit.day.request} />
+                </div>
+                <div class="flex-1">
+                    <label for="rate_limit" class="text-sm">トークン(1日)</label>
+                    <input type="number" id="rate_limit" class="w-full border border-gray-300 rounded p-1" bind:value={data.chat.limit.day.token} />
+                </div>
+            </div>
+            <div class="flex items-center px-4 py-2">
+                <div class="flex-1">
+                    <label for="rate_limit" class="text-sm">リクエスト(1時間)</label>
+                    <input type="number" id="rate_limit" class="w-full border border-gray-300 rounded p-1" bind:value={data.chat.limit.hour.request} />
+                </div>
+                <div class="flex-1">
+                    <label for="rate_limit" class="text-sm">トークン(1時間)</label>
+                    <input type="number" id="rate_limit" class="w-full border border-gray-300 rounded p-1" bind:value={data.chat.limit.hour.token} />
+                </div>
+            </div>
+            <div class="flex items-center px-4 py-2">
+                <div class="flex-1">
+                    <label for="rate_limit" class="text-sm">リクエスト(1分)</label>
+                    <input type="number" id="rate_limit" class="w-full border border-gray-300 rounded p-1" bind:value={data.chat.limit.minute.request} />
+                </div>
+                <div class="flex-1">
+                    <label for="rate_limit" class="text-sm">トークン(1分)</label>
+                    <input type="number" id="rate_limit" class="w-full border border-gray-300 rounded p-1" bind:value={data.chat.limit.minute.token} />
+                </div>
+            </div>
         {/if}
 
         <!-- チャット履歴のリセット -->

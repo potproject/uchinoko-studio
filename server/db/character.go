@@ -31,6 +31,11 @@ func CharacterInitConfig() data.CharacterConfig {
 			Type:         "openai",
 			Model:        "gpt-3.5-turbo",
 			SystemPrompt: "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly.",
+			Limit: data.CharacterConfigChatLimit{
+				Day:    data.CharacterConfigChatLimitType{Request: 0, Token: 0},
+				Hour:   data.CharacterConfigChatLimitType{Request: 0, Token: 0},
+				Minute: data.CharacterConfigChatLimitType{Request: 0, Token: 0},
+			},
 		},
 	}
 }
