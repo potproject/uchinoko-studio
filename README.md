@@ -31,7 +31,7 @@ See Article(Japanese Only): https://blog.potproject.net/2023/12/24/ai-web-uchino
 * Mobile Browser Support(iOS Safari, Android Chrome)
 * Japanese Support(for now...)
 * Chat-based LLM Support: [OpenAI GPT(Cloud)](https://openai.com/gpt-4),[Anthropic Claude(Cloud)](https://www.anthropic.com/claude),[Cohere Command(Cloud)](https://cohere.com/command),[Gemini(Cloud)](https://gemini.google.com),Local LLM(OpenAI `/v1/chat/completions` Compatible)
-* Speach-To-Text Support: [OpenAI Speech to Text API(Cloud)](https://platform.openai.com/docs/guides/speech-to-text),[Google Speech to Text API(Cloud)](https://cloud.google.com/speech-to-text),[SpeechRecognition(Web API)](https://developer.mozilla.org/docs/Web/API/SpeechRecognition)
+* Speach-To-Text Support: [OpenAI Speech to Text API(Cloud)](https://platform.openai.com/docs/guides/speech-to-text),[Google Speech to Text API(Cloud)](https://cloud.google.com/speech-to-text),[Vosk Server(local)](https://github.com/alphacep/vosk-server),[SpeechRecognition(Web API)](https://developer.mozilla.org/docs/Web/API/SpeechRecognition)
 * Text-To-Speech Support: [Bert-Vits2(local)](https://github.com/fishaudio/Bert-VITS2), [Style-Bert-VITS2(local)](https://github.com/litagin02/Style-Bert-VITS2), [VOICEVOX(local)](https://voicevox.hiroshiba.jp/), [Google Text To Speech API(Cloud)](https://cloud.google.com/text-to-speech),  [OpenAI Speech API(Cloud)](https://platform.openai.com/docs/guides/speech-to-text)
 * More bugs...
 
@@ -50,6 +50,7 @@ __!WARNING! このアプリケーションはまだ開発中であり、正常�
 
 * OpenAI Speech to Text API(Cloud): `OPENAI_SPEECH_TO_TEXT_API_KEY`
 * Google Speech to Text API(Cloud): `GOOGLE_SPEECH_TO_TEXT_API_KEY`
+* Vosk Server: `VOSK_SERVER_ENDPOINT`
 * SpeechRecognition(Web API): none
 
 ### Chat-based LLM(Cloud)
