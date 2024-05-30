@@ -24,7 +24,8 @@ See Article(Japanese Only): https://blog.potproject.net/2023/12/24/ai-web-uchino
 ## Features
 
 * Real-time Voice Conversation
-* Multiple speakers (Experimental)
+* Multiple Speakers (Experimental)
+* Image Support (Experimental)
 * __Fast Response(Maybe 1 second or less)__
 * [Tailscale](https://tailscale.com/) Support
 * Run on Browser(Google Chrome Supported)
