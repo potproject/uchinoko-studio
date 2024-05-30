@@ -32,7 +32,7 @@ type styleBertVits2SynthesisRequestBody struct {
 	SilenceAfter    float64         `json:"silenceAfter,omitempty"`
 }
 
-func styleBertVits2TTS(endpoint string, model string, modelFile string, speaker string, text string) ([]byte, error) {
+func styleBertVits2(endpoint string, model string, modelFile string, speaker string, text string) ([]byte, error) {
 	client := new(http.Client)
 	g2pQuery := endpoint + styleBertVits2G2pEndpoint
 	g2pReqBody := styleBertVits2G2pRequestBody{Text: text}

@@ -1,18 +1,5 @@
 package data
 
-type GeneralConfig struct {
-	Language      string `json:"language"`
-	Transcription struct {
-		Type        string `json:"type"`
-		Method      string `json:"method"`
-		AutoSetting struct {
-			Threshold       float64 `json:"threshold"`
-			SilentThreshold float64 `json:"silentThreshold"`
-			AudioMinLength  float64 `json:"audioMinLength"`
-		} `json:"autoSetting"`
-	} `json:"transcription"`
-}
-
 type CharacterConfigList struct {
 	Characters []CharacterConfig `json:"characters"`
 }
@@ -47,19 +34,19 @@ type CharacterConfigVoiceBehavior struct {
 }
 
 type CharacterConfigChat struct {
-	Type         string `json:"type"`
-	Model        string `json:"model"`
-	SystemPrompt string `json:"systemPrompt"`
+	Type         string                   `json:"type"`
+	Model        string                   `json:"model"`
+	SystemPrompt string                   `json:"systemPrompt"`
+	Limit        CharacterConfigChatLimit `json:"limit"`
 }
 
-type ChatMessage struct {
-	Chat []ChatCompletionMessage
+type CharacterConfigChatLimit struct {
+	Day    CharacterConfigChatLimitType `json:"day"`
+	Hour   CharacterConfigChatLimitType `json:"hour"`
+	Minute CharacterConfigChatLimitType `json:"minute"`
 }
 
-type ChatCompletionMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
+type CharacterConfigChatLimitType struct {
+	Request int64 `json:"request"`
+	Token   int64 `json:"token"`
 }
-
-const ChatCompletionMessageRoleAssistant = "assistant"
-const ChatCompletionMessageRoleUser = "user"

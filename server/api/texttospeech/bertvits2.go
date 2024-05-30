@@ -9,7 +9,7 @@ import (
 
 const bertvits2VoiceEndpoint = "voice"
 
-func bertVits2TTS(endpoint string, modelId string, speakerId string, text string) ([]byte, error) {
+func bertVits2(endpoint string, modelId string, speakerId string, text string) ([]byte, error) {
 	client := new(http.Client)
 
 	voiceQuery := endpoint + bertvits2VoiceEndpoint + "?model_id=" + modelId + "&speaker_id=" + speakerId + "&sdp_ratio=0.2&noise=0.1&noisew=1&length=0.9&language=JP&auto_translate=false&auto_split=false&emotion=0"

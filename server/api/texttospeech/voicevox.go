@@ -14,7 +14,7 @@ type Request struct {
 	Text string `json:"text"`
 }
 
-func voicevoxTTS(endpoint string, speaker string, text string) ([]byte, error) {
+func voicevox(endpoint string, speaker string, text string) ([]byte, error) {
 	client := new(http.Client)
 	audioQuery := endpoint + voicevoxAudioQueryEndpoint + "?speaker=" + speaker + "&text=" + url.QueryEscape(text)
 

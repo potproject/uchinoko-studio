@@ -22,7 +22,7 @@ func Route(static embed.FS) *fiber.App {
 	app.Get("/v1/chat/:id", controller.GetChat)
 	app.Delete("/v1/chat/:id", controller.DeleteChat)
 	app.Use("/v1/ws/talk", controller.WS)
-	app.Get("/v1/ws/talk/:id/:characterId/:fileType", controller.WSTalk())
+	app.Get("/v1/ws/talk/:id/:characterId", controller.WSTalk())
 
 	app.Get("/v1/config/general", controller.GetGeneralConfig)
 	app.Post("/v1/config/general", controller.PostGeneralConfig)

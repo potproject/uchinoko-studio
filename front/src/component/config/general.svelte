@@ -63,12 +63,13 @@
                     <select id="transcription" class="w-full border border-gray-300 rounded p-1" bind:value={data.transcription.type}>
                         <option value="openai_speech_to_text">OpenAI Speech to Text API</option>
                         <option value="google_speech_to_text">Google Speech to Text</option>
+                        <option value="vosk_server">Vosk Server</option>
                         <option value="speech_recognition">SpeechRecognition</option>
                     </select>
                 </div>
             </div>
 
-            {#if data.transcription.type === "openai_speech_to_text" || data.transcription.type === "google_speech_to_text"}
+            {#if data.transcription.type !== "speech_recognition"}
             <div class="flex items-center px-4 py-2">
                 <div class="flex-1">
                     <label for="method" class="text-sm">音声認識方法</label>

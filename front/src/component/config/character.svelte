@@ -164,9 +164,11 @@
                         <div class="flex-1">
                             <label for="voice" class="text-sm">音声設定</label>
                             <select id="voice" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].type}>
+                                <option value="voicevox">VOICEVOX</option>
                                 <option value="bertvits2">Bert-VITS2(FastAPI)</option>
                                 <option value="stylebertvits2">Style-Bert-VITS2(FastAPI)</option>
-                                <option value="voicevox">VOICEVOX</option>
+                                <option value="google-text-to-speech">Google Text to Speech API</option>
+                                <option value="openai-speech">OpenAI Speech API</option>
                             </select>
                         </div>
                     </div>
@@ -175,6 +177,14 @@
                             <div class="flex-1">
                                 <label for="model_id" class="text-sm">キャラクター識別子</label>
                                 <input type="text" id="model_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].identification} />
+                            </div>
+                        </div>
+                    {/if}
+                    {#if data.voice[index].type === "voicevox"}
+                        <div class="flex items-center px-4 py-2">
+                            <div class="flex-1">
+                                <label for="speaker_id" class="text-sm">スピーカーID</label>
+                                <input type="text" id="speaker_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].speakerId} />
                             </div>
                         </div>
                     {/if}
@@ -212,13 +222,48 @@
                         </div>
                     </div>
                     {/if}
-                    {#if data.voice[index].type === "voicevox"}
-                        <div class="flex items-center px-4 py-2">
-                            <div class="flex-1">
-                                <label for="speaker_id" class="text-sm">スピーカーID</label>
-                                <input type="text" id="speaker_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].speakerId} />
-                            </div>
+                    {#if data.voice[index].type === "google-text-to-speech"}
+                    <div class="flex items-center px-4 py-2">
+                        <div class="flex-1">
+                            <label for="gender" class="text-sm">性別</label>
+                            <select id="gender" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].speakerId}>
+                                <option value="MALE">男性</option>
+                                <option value="FEMALE">女性</option>
+                                <option value="NEUTRAL">ナチュラル</option>
+                                <option value="">指定なし</option>
+                            </select>
                         </div>
+                    </div>
+                    <div class="flex items-center px-4 py-2">
+                        <div class="flex-1">
+                            <label for="model_id" class="text-sm">音声名</label>
+                            <input type="text" id="model_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].modelId} />
+                        </div>
+                    </div>
+                    {/if}
+                    {#if data.voice[index].type === "openai-speech"}
+                    <div class="flex items-center px-4 py-2">
+                        <div class="flex-1">
+                            <label for="model" class="text-sm">モデル</label>
+                            <select id="model" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].modelId}>
+                                <option value="tts-1">tts-1</option>
+                                <option value="tts-1-hd">tts-1-hd</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex items-center px-4 py-2">
+                        <div class="flex-1">
+                            <label for="voice" class="text-sm">ボイス</label>
+                            <select id="voice" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].speakerId}>
+                                <option value="alloy">alloy</option>
+                                <option value="echo">echo</option>
+                                <option value="fable">fable</option>
+                                <option value="onyx">onyx</option>
+                                <option value="nova">nova</option>
+                                <option value="shimmer">shimmer</option>
+                            </select>
+                        </div>
+                    </div>
                     {/if}
                     {#if index > 0}
                         <div class="flex justify-between items-center p-4">
@@ -234,7 +279,7 @@
             {#if data.multiVoice}
             <div class="flex justify-between items-center p-4">
                 <button class="border border-blue-500 text-blue-500 bg-white rounded-md px-4 py-2 hover:bg-blue-500 hover:text-white" on:click={() => 
-                    data.voice = [...data.voice, { type: "bertvits2", modelId: "", speakerId: "", identification: "", modelFile: "" ,image: "", backgroundImagePath: "", behavior: []}]
+                    data.voice = [...data.voice, { type: "voicevox", modelId: "", speakerId: "1", identification: "", modelFile: "" ,image: "", backgroundImagePath: "", behavior: []}]
                 }>
                     <i class="las la-plus"></i> 追加
                 </button>
@@ -295,6 +340,7 @@
                         {/if}
                         {#if data.chat.type === "gemini"}
                             <option value="gemini-1.5-pro-latest">Gemini 1.5 Pro</option>
+                            <option value="gemini-1.5-flash-latest">Gemini 1.5 Flash</option>
                             <option value="gemini-pro">Gemini Pro</option>
                         {/if}
                     </datalist>
@@ -307,6 +353,38 @@
                     <textarea id="system_prompt" 
                      rows="10"
                      class="w-full border border-gray-300 rounded p-1 resize-y" bind:value={data.chat.systemPrompt}></textarea>
+                </div>
+            </div>
+            <!-- レートリミット -->
+            <div class="text-xl px-2 py-2 border-b border-gray-300 flex items-center mb-2 mx-4 mt-4">レートリミット(0で無効)</div>
+            <div class="flex items-center px-4 py-2">
+                <div class="flex-1">
+                    <label for="rate_limit" class="text-sm">リクエスト(1日)</label>
+                    <input type="number" id="rate_limit" class="w-full border border-gray-300 rounded p-1" bind:value={data.chat.limit.day.request} />
+                </div>
+                <div class="flex-1">
+                    <label for="rate_limit" class="text-sm">トークン(1日)</label>
+                    <input type="number" id="rate_limit" class="w-full border border-gray-300 rounded p-1" bind:value={data.chat.limit.day.token} />
+                </div>
+            </div>
+            <div class="flex items-center px-4 py-2">
+                <div class="flex-1">
+                    <label for="rate_limit" class="text-sm">リクエスト(1時間)</label>
+                    <input type="number" id="rate_limit" class="w-full border border-gray-300 rounded p-1" bind:value={data.chat.limit.hour.request} />
+                </div>
+                <div class="flex-1">
+                    <label for="rate_limit" class="text-sm">トークン(1時間)</label>
+                    <input type="number" id="rate_limit" class="w-full border border-gray-300 rounded p-1" bind:value={data.chat.limit.hour.token} />
+                </div>
+            </div>
+            <div class="flex items-center px-4 py-2">
+                <div class="flex-1">
+                    <label for="rate_limit" class="text-sm">リクエスト(1分)</label>
+                    <input type="number" id="rate_limit" class="w-full border border-gray-300 rounded p-1" bind:value={data.chat.limit.minute.request} />
+                </div>
+                <div class="flex-1">
+                    <label for="rate_limit" class="text-sm">トークン(1分)</label>
+                    <input type="number" id="rate_limit" class="w-full border border-gray-300 rounded p-1" bind:value={data.chat.limit.minute.token} />
                 </div>
             </div>
         {/if}

@@ -7,6 +7,8 @@ type TextMessage = {
 
 export class SocketContext{
     private socket: WebSocket;
+
+    public mimeType: string = 'audio/wav';
     
     public onConnected: () => void = () => {};
     public onBinary: (data: ArrayBuffer) => void = () => {};
@@ -50,7 +52,7 @@ export class SocketContext{
                 console.log('chat-response-chunk', data.text);
                 this.onChatResponseChunk(data.text);
             } else if (data.type === 'finish') {
-                console.log('finish');
+                console.log('finish', data.text);
                 this.onFinish();
             } else if (data.type === 'error') {
                 console.log('error', data.text);
@@ -63,22 +65,20 @@ export class SocketContext{
         }
     }
 
-    public static async connect(selectCharacter: CharacterConfig): Promise<{socket:SocketContext, mimeType: string}> {
+    public static async connect(selectCharacter: CharacterConfig): Promise<SocketContext> {
         const wsTLS = location.protocol === 'https:' ? 'wss' : 'ws';
-        const mimeType = 'audio/wav';
-        const extension = 'wav';
     
-        const url = `${wsTLS}://${location.host}/v1/ws/talk/${selectCharacter.general.id}/${selectCharacter.general.id}/${extension}`;
+        const url = `${wsTLS}://${location.host}/v1/ws/talk/${selectCharacter.general.id}/${selectCharacter.general.id}`;
         const socket = new SocketContext(url);
         await new Promise(resolve => {
             socket.onConnected = () => {
                 resolve(socket);
             }
         });
-        return {socket, mimeType};
+        return socket;
     }
 
-    public sendBinary(data: any){
+    public sendBinary(data: string | ArrayBufferLike | ArrayBufferView | Blob){
         this.socket.send(data);
     }
 

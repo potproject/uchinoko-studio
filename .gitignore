@@ -1,4 +1,5 @@
 .env
+env.txt
 server/database
 server/static
 server/images

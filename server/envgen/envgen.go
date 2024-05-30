@@ -51,6 +51,13 @@ func (s setter) GOOGLE_SPEECH_TO_TEXT_API_KEY(value string) {
 	env.GOOGLE_SPEECH_TO_TEXT_API_KEY = value
 	return
 }
+func (g getter) GOOGLE_TEXT_TO_SPEECH_API_KEY() string {
+	return env.GOOGLE_TEXT_TO_SPEECH_API_KEY
+}
+func (s setter) GOOGLE_TEXT_TO_SPEECH_API_KEY(value string) {
+	env.GOOGLE_TEXT_TO_SPEECH_API_KEY = value
+	return
+}
 func (g getter) HOST() string {
 	return env.HOST
 }
@@ -77,6 +84,13 @@ func (g getter) OPENAI_LOCAL_API_KEY() string {
 }
 func (s setter) OPENAI_LOCAL_API_KEY(value string) {
 	env.OPENAI_LOCAL_API_KEY = value
+	return
+}
+func (g getter) OPENAI_SPEECH_API_KEY() string {
+	return env.OPENAI_SPEECH_API_KEY
+}
+func (s setter) OPENAI_SPEECH_API_KEY(value string) {
+	env.OPENAI_SPEECH_API_KEY = value
 	return
 }
 func (g getter) OPENAI_SPEECH_TO_TEXT_API_KEY() string {
@@ -142,6 +156,13 @@ func (s setter) VOICEVOX_ENDPOINT(value string) {
 	env.VOICEVOX_ENDPOINT = value
 	return
 }
+func (g getter) VOSK_SERVER_ENDPOINT() string {
+	return env.VOSK_SERVER_ENDPOINT
+}
+func (s setter) VOSK_SERVER_ENDPOINT(value string) {
+	env.VOSK_SERVER_ENDPOINT = value
+	return
+}
 
 type environment struct {
 	ANTHROPIC_API_KEY             string
@@ -150,10 +171,12 @@ type environment struct {
 	DB_FILE_PATH                  string
 	GEMINI_API_KEY                string
 	GOOGLE_SPEECH_TO_TEXT_API_KEY string
+	GOOGLE_TEXT_TO_SPEECH_API_KEY string
 	HOST                          string
 	OPENAI_API_KEY                string
 	OPENAI_LOCAL_API_ENDPOINT     string
 	OPENAI_LOCAL_API_KEY          string
+	OPENAI_SPEECH_API_KEY         string
 	OPENAI_SPEECH_TO_TEXT_API_KEY string
 	PORT                          int32
 	STYLEBERTVIT2_ENDPOINT        string
@@ -163,6 +186,7 @@ type environment struct {
 	TAILSCALE_HOSTNAME            string
 	TAILSCALE_PORT                int32
 	VOICEVOX_ENDPOINT             string
+	VOSK_SERVER_ENDPOINT          string
 }
 
 var env environment
@@ -177,10 +201,12 @@ func Load() error {
 	DB_FILE_PATH := os.Getenv("DB_FILE_PATH")
 	GEMINI_API_KEY := os.Getenv("GEMINI_API_KEY")
 	GOOGLE_SPEECH_TO_TEXT_API_KEY := os.Getenv("GOOGLE_SPEECH_TO_TEXT_API_KEY")
+	GOOGLE_TEXT_TO_SPEECH_API_KEY := os.Getenv("GOOGLE_TEXT_TO_SPEECH_API_KEY")
 	HOST := os.Getenv("HOST")
 	OPENAI_API_KEY := os.Getenv("OPENAI_API_KEY")
 	OPENAI_LOCAL_API_ENDPOINT := os.Getenv("OPENAI_LOCAL_API_ENDPOINT")
 	OPENAI_LOCAL_API_KEY := os.Getenv("OPENAI_LOCAL_API_KEY")
+	OPENAI_SPEECH_API_KEY := os.Getenv("OPENAI_SPEECH_API_KEY")
 	OPENAI_SPEECH_TO_TEXT_API_KEY := os.Getenv("OPENAI_SPEECH_TO_TEXT_API_KEY")
 	PORT__S := os.Getenv("PORT")
 	PORT__64, err := strconv.ParseInt(PORT__S, 10, 32)
@@ -224,6 +250,7 @@ func Load() error {
 	}
 	TAILSCALE_PORT := int32(TAILSCALE_PORT__64)
 	VOICEVOX_ENDPOINT := os.Getenv("VOICEVOX_ENDPOINT")
+	VOSK_SERVER_ENDPOINT := os.Getenv("VOSK_SERVER_ENDPOINT")
 	env = environment{
 		ANTHROPIC_API_KEY:             ANTHROPIC_API_KEY,
 		BERTVITS2_ENDPOINT:            BERTVITS2_ENDPOINT,
@@ -231,10 +258,12 @@ func Load() error {
 		DB_FILE_PATH:                  DB_FILE_PATH,
 		GEMINI_API_KEY:                GEMINI_API_KEY,
 		GOOGLE_SPEECH_TO_TEXT_API_KEY: GOOGLE_SPEECH_TO_TEXT_API_KEY,
+		GOOGLE_TEXT_TO_SPEECH_API_KEY: GOOGLE_TEXT_TO_SPEECH_API_KEY,
 		HOST:                          HOST,
 		OPENAI_API_KEY:                OPENAI_API_KEY,
 		OPENAI_LOCAL_API_ENDPOINT:     OPENAI_LOCAL_API_ENDPOINT,
 		OPENAI_LOCAL_API_KEY:          OPENAI_LOCAL_API_KEY,
+		OPENAI_SPEECH_API_KEY:         OPENAI_SPEECH_API_KEY,
 		OPENAI_SPEECH_TO_TEXT_API_KEY: OPENAI_SPEECH_TO_TEXT_API_KEY,
 		PORT:                          PORT,
 		STYLEBERTVIT2_ENDPOINT:        STYLEBERTVIT2_ENDPOINT,
@@ -244,6 +273,7 @@ func Load() error {
 		TAILSCALE_HOSTNAME:            TAILSCALE_HOSTNAME,
 		TAILSCALE_PORT:                TAILSCALE_PORT,
 		VOICEVOX_ENDPOINT:             VOICEVOX_ENDPOINT,
+		VOSK_SERVER_ENDPOINT:          VOSK_SERVER_ENDPOINT,
 	}
 	return err
 }
@@ -255,10 +285,12 @@ type getterInterface interface {
 	DB_FILE_PATH() string
 	GEMINI_API_KEY() string
 	GOOGLE_SPEECH_TO_TEXT_API_KEY() string
+	GOOGLE_TEXT_TO_SPEECH_API_KEY() string
 	HOST() string
 	OPENAI_API_KEY() string
 	OPENAI_LOCAL_API_ENDPOINT() string
 	OPENAI_LOCAL_API_KEY() string
+	OPENAI_SPEECH_API_KEY() string
 	OPENAI_SPEECH_TO_TEXT_API_KEY() string
 	PORT() int32
 	STYLEBERTVIT2_ENDPOINT() string
@@ -268,6 +300,7 @@ type getterInterface interface {
 	TAILSCALE_HOSTNAME() string
 	TAILSCALE_PORT() int32
 	VOICEVOX_ENDPOINT() string
+	VOSK_SERVER_ENDPOINT() string
 }
 type getter struct {
 	getterInterface
@@ -286,10 +319,12 @@ type setterInterface interface {
 	DB_FILE_PATH() string
 	GEMINI_API_KEY() string
 	GOOGLE_SPEECH_TO_TEXT_API_KEY() string
+	GOOGLE_TEXT_TO_SPEECH_API_KEY() string
 	HOST() string
 	OPENAI_API_KEY() string
 	OPENAI_LOCAL_API_ENDPOINT() string
 	OPENAI_LOCAL_API_KEY() string
+	OPENAI_SPEECH_API_KEY() string
 	OPENAI_SPEECH_TO_TEXT_API_KEY() string
 	PORT() int32
 	STYLEBERTVIT2_ENDPOINT() string
@@ -299,6 +334,7 @@ type setterInterface interface {
 	TAILSCALE_HOSTNAME() string
 	TAILSCALE_PORT() int32
 	VOICEVOX_ENDPOINT() string
+	VOSK_SERVER_ENDPOINT() string
 }
 type setter struct {
 	setterInterface
