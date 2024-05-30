@@ -355,6 +355,13 @@
                      class="w-full border border-gray-300 rounded p-1 resize-y" bind:value={data.chat.systemPrompt}></textarea>
                 </div>
             </div>
+            <!-- 最大履歴保持数 -->
+            <div class="flex items-center px-4 py-2">
+                <div class="flex-1">
+                    <label for="max_history" class="text-sm">最大履歴保持数(0で無限)</label>
+                    <input type="number" id="max_history" class="w-full border border-gray-300 rounded p-1" bind:value={data.chat.maxHistory} />
+                </div>
+            </div>
             <!-- レートリミット -->
             <div class="text-xl px-2 py-2 border-b border-gray-300 flex items-center mb-2 mx-4 mt-4">レートリミット(0で無効)</div>
             <div class="flex items-center px-4 py-2">

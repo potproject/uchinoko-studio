@@ -19,5 +19,10 @@ func GetGeneralConfig(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return c.JSON(config)
+	err = c.JSON(config)
+	if err != nil {
+		return err
+	}
+	c.Status(fiber.StatusOK)
+	return nil
 }

@@ -187,7 +187,7 @@ func WSTalk() fiber.Handler {
 			wg.Add(1)
 			go func() {
 				var err error
-				tokens, err = runChatStream(id, voices, character.MultiVoice, requestText, requestImage, chatType, getChatApiKey(chatType), chatSystemPropmt, chatModel, chunkMessage)
+				tokens, err = runChatStream(id, voices, character.MultiVoice, requestText, requestImage, chatType, getChatApiKey(chatType), chatSystemPropmt, character.Chat.MaxHistory, chatModel, chunkMessage)
 				if err != nil {
 					sendError(c, err)
 				}
@@ -230,6 +230,8 @@ func WSTalk() fiber.Handler {
 			close(chatDone)
 			close(ttsDone)
 		}
+	}, websocket.Config{
+		EnableCompression: true,
 	})
 }
 
@@ -280,11 +282,15 @@ func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, changeV
 	}
 }
 
-func runChatStream(id string, voices []data.CharacterConfigVoice, multi bool, requestText string, requestImage *data.Image, chatType string, apiKey string, chatSystemPropmt string, chatModel string, chunkMessage chan api.ChunkMessage) (*data.Tokens, error) {
+func runChatStream(id string, voices []data.CharacterConfigVoice, multi bool, requestText string, requestImage *data.Image, chatType string, apiKey string, chatSystemPropmt string, maxHistory int64, chatModel string, chunkMessage chan api.ChunkMessage) (*data.Tokens, error) {
 	var t *data.Tokens
 	cm, _, err := db.GetChatMessage(id)
 	if err != nil {
 		return t, err
+	}
+
+	if maxHistory > 0 {
+		cm.Chat = cm.Chat[len(cm.Chat)-int(maxHistory):]
 	}
 
 	var chatStream chat.ChatStream

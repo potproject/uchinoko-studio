@@ -37,6 +37,13 @@ func (s setter) DB_FILE_PATH(value string) {
 	env.DB_FILE_PATH = value
 	return
 }
+func (g getter) DEBUG() bool {
+	return env.DEBUG
+}
+func (s setter) DEBUG(value bool) {
+	env.DEBUG = value
+	return
+}
 func (g getter) GEMINI_API_KEY() string {
 	return env.GEMINI_API_KEY
 }
@@ -107,6 +114,13 @@ func (s setter) PORT(value int32) {
 	env.PORT = value
 	return
 }
+func (g getter) READ_ONLY() bool {
+	return env.READ_ONLY
+}
+func (s setter) READ_ONLY(value bool) {
+	env.READ_ONLY = value
+	return
+}
 func (g getter) STYLEBERTVIT2_ENDPOINT() string {
 	return env.STYLEBERTVIT2_ENDPOINT
 }
@@ -169,6 +183,7 @@ type environment struct {
 	BERTVITS2_ENDPOINT            string
 	COHERE_API_KEY                string
 	DB_FILE_PATH                  string
+	DEBUG                         bool
 	GEMINI_API_KEY                string
 	GOOGLE_SPEECH_TO_TEXT_API_KEY string
 	GOOGLE_TEXT_TO_SPEECH_API_KEY string
@@ -179,6 +194,7 @@ type environment struct {
 	OPENAI_SPEECH_API_KEY         string
 	OPENAI_SPEECH_TO_TEXT_API_KEY string
 	PORT                          int32
+	READ_ONLY                     bool
 	STYLEBERTVIT2_ENDPOINT        string
 	TAILSCALE_ENABLED             bool
 	TAILSCALE_ENABLED_TLS         bool
@@ -199,6 +215,15 @@ func Load() error {
 	BERTVITS2_ENDPOINT := os.Getenv("BERTVITS2_ENDPOINT")
 	COHERE_API_KEY := os.Getenv("COHERE_API_KEY")
 	DB_FILE_PATH := os.Getenv("DB_FILE_PATH")
+	DEBUG := false
+	DEBUG__S := os.Getenv("DEBUG")
+	if strings.ToLower(DEBUG__S) == "true" {
+		DEBUG = true
+	} else if strings.ToLower(DEBUG__S) == "false" {
+		DEBUG = false
+	} else {
+		return errors.New("DEBUG: " + "cannot use " + DEBUG__S + " as type bool in assignment")
+	}
 	GEMINI_API_KEY := os.Getenv("GEMINI_API_KEY")
 	GOOGLE_SPEECH_TO_TEXT_API_KEY := os.Getenv("GOOGLE_SPEECH_TO_TEXT_API_KEY")
 	GOOGLE_TEXT_TO_SPEECH_API_KEY := os.Getenv("GOOGLE_TEXT_TO_SPEECH_API_KEY")
@@ -214,6 +239,15 @@ func Load() error {
 		return errors.New("PORT: " + err.Error())
 	}
 	PORT := int32(PORT__64)
+	READ_ONLY := false
+	READ_ONLY__S := os.Getenv("READ_ONLY")
+	if strings.ToLower(READ_ONLY__S) == "true" {
+		READ_ONLY = true
+	} else if strings.ToLower(READ_ONLY__S) == "false" {
+		READ_ONLY = false
+	} else {
+		return errors.New("READ_ONLY: " + "cannot use " + READ_ONLY__S + " as type bool in assignment")
+	}
 	STYLEBERTVIT2_ENDPOINT := os.Getenv("STYLEBERTVIT2_ENDPOINT")
 	TAILSCALE_ENABLED := false
 	TAILSCALE_ENABLED__S := os.Getenv("TAILSCALE_ENABLED")
@@ -256,6 +290,7 @@ func Load() error {
 		BERTVITS2_ENDPOINT:            BERTVITS2_ENDPOINT,
 		COHERE_API_KEY:                COHERE_API_KEY,
 		DB_FILE_PATH:                  DB_FILE_PATH,
+		DEBUG:                         DEBUG,
 		GEMINI_API_KEY:                GEMINI_API_KEY,
 		GOOGLE_SPEECH_TO_TEXT_API_KEY: GOOGLE_SPEECH_TO_TEXT_API_KEY,
 		GOOGLE_TEXT_TO_SPEECH_API_KEY: GOOGLE_TEXT_TO_SPEECH_API_KEY,
@@ -266,6 +301,7 @@ func Load() error {
 		OPENAI_SPEECH_API_KEY:         OPENAI_SPEECH_API_KEY,
 		OPENAI_SPEECH_TO_TEXT_API_KEY: OPENAI_SPEECH_TO_TEXT_API_KEY,
 		PORT:                          PORT,
+		READ_ONLY:                     READ_ONLY,
 		STYLEBERTVIT2_ENDPOINT:        STYLEBERTVIT2_ENDPOINT,
 		TAILSCALE_ENABLED:             TAILSCALE_ENABLED,
 		TAILSCALE_ENABLED_TLS:         TAILSCALE_ENABLED_TLS,
@@ -283,6 +319,7 @@ type getterInterface interface {
 	BERTVITS2_ENDPOINT() string
 	COHERE_API_KEY() string
 	DB_FILE_PATH() string
+	DEBUG() bool
 	GEMINI_API_KEY() string
 	GOOGLE_SPEECH_TO_TEXT_API_KEY() string
 	GOOGLE_TEXT_TO_SPEECH_API_KEY() string
@@ -293,6 +330,7 @@ type getterInterface interface {
 	OPENAI_SPEECH_API_KEY() string
 	OPENAI_SPEECH_TO_TEXT_API_KEY() string
 	PORT() int32
+	READ_ONLY() bool
 	STYLEBERTVIT2_ENDPOINT() string
 	TAILSCALE_ENABLED() bool
 	TAILSCALE_ENABLED_TLS() bool
@@ -317,6 +355,7 @@ type setterInterface interface {
 	BERTVITS2_ENDPOINT() string
 	COHERE_API_KEY() string
 	DB_FILE_PATH() string
+	DEBUG() bool
 	GEMINI_API_KEY() string
 	GOOGLE_SPEECH_TO_TEXT_API_KEY() string
 	GOOGLE_TEXT_TO_SPEECH_API_KEY() string
@@ -327,6 +366,7 @@ type setterInterface interface {
 	OPENAI_SPEECH_API_KEY() string
 	OPENAI_SPEECH_TO_TEXT_API_KEY() string
 	PORT() int32
+	READ_ONLY() bool
 	STYLEBERTVIT2_ENDPOINT() string
 	TAILSCALE_ENABLED() bool
 	TAILSCALE_ENABLED_TLS() bool

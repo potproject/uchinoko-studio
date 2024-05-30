@@ -21,6 +21,7 @@ export type CharacterConfig = {
         type: string;
         model: string;
         systemPrompt: string;
+        maxHistory: number;
         limit:{
             day: {
                 request: number;
