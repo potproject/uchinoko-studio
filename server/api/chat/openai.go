@@ -3,7 +3,6 @@ package chat
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net/url"
@@ -80,7 +79,7 @@ func OpenAIChatStreamMain(ctx context.Context, c *openai.Client, voices []data.C
 	defer stream.Close()
 
 	charChannel := make(chan rune)
-	done := make(chan bool)
+	done := make(chan error)
 
 	defer close(charChannel)
 	defer close(done)
@@ -94,10 +93,11 @@ func OpenAIChatStreamMain(ctx context.Context, c *openai.Client, voices []data.C
 				}
 			}
 			if errors.Is(err, io.EOF) {
+				done <- nil
 				break
 			}
 			if err != nil {
-				fmt.Printf("\nStream error: %v\n", err)
+				done <- err
 				break
 			}
 			if response.Choices == nil || len(response.Choices) == 0 {
@@ -108,7 +108,6 @@ func OpenAIChatStreamMain(ctx context.Context, c *openai.Client, voices []data.C
 				charChannel <- c
 			}
 		}
-		done <- true
 	}()
 
 	cr, err := chatReceiver(charChannel, done, multi, voices, chunkMessage, text, image, cm)

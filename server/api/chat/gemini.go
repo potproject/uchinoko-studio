@@ -81,7 +81,7 @@ func GeminiChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 	)
 
 	charChannel := make(chan rune)
-	done := make(chan bool)
+	done := make(chan error)
 
 	defer close(charChannel)
 	defer close(done)
@@ -95,10 +95,11 @@ func GeminiChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 				}
 			}
 			if err == iterator.Done {
+				done <- nil
 				break
 			}
 			if err != nil {
-				fmt.Printf("\nStream error: %v\n", err)
+				done <- err
 				break
 			}
 			gres := geminiResponse(response)
@@ -110,7 +111,6 @@ func GeminiChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 				charChannel <- c
 			}
 		}
-		done <- true
 	}()
 
 	cr, err := chatReceiver(charChannel, done, multi, voices, chunkMessage, text, image, cm)

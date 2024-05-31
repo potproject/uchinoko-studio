@@ -24,7 +24,7 @@ type ChatStream func(
 
 func chatReceiver(
 	charChannel chan rune,
-	done chan bool,
+	done chan error,
 	multi bool,
 	voices []data.CharacterConfigVoice,
 	chunkMessage chan api.ChunkMessage,
@@ -77,7 +77,10 @@ func chatReceiver(
 				}
 				bufferText = ""
 			}
-		case <-done:
+		case err := <-done:
+			if err != nil {
+				return nil, err
+			}
 			chunkMessage <- api.TextChunkMessage{
 				Text:  bufferText,
 				Voice: voice,

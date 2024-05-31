@@ -3,7 +3,6 @@ package chat
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 
 	cohere "github.com/cohere-ai/cohere-go/v2"
@@ -49,7 +48,7 @@ func CohereChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 	defer stream.Close()
 
 	charChannel := make(chan rune)
-	done := make(chan bool)
+	done := make(chan error)
 
 	defer close(charChannel)
 	defer close(done)
@@ -57,10 +56,11 @@ func CohereChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 		for {
 			response, err := stream.Recv()
 			if errors.Is(err, io.EOF) {
+				done <- nil
 				break
 			}
 			if err != nil {
-				fmt.Printf("\nStream error: %v\n", err)
+				done <- err
 				break
 			}
 			if response.TextGeneration == nil {
@@ -71,7 +71,6 @@ func CohereChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 				charChannel <- c
 			}
 		}
-		done <- true
 	}()
 
 	cr, err := chatReceiver(charChannel, done, multi, voices, chunkMessage, text, image, cm)
