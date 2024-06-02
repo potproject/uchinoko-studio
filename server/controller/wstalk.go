@@ -289,7 +289,7 @@ func runChatStream(id string, voices []data.CharacterConfigVoice, multi bool, re
 		return t, err
 	}
 
-	if maxHistory > 0 {
+	if maxHistory > 0 && int64(len(cm.Chat)) > maxHistory {
 		cm.Chat = cm.Chat[len(cm.Chat)-int(maxHistory):]
 	}
 

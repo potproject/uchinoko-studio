@@ -13,7 +13,7 @@
     import { RecognitionContent } from "$lib/RecognitionContent";
     import type { RecordingContentInterface } from "$lib/RecordingContentInterface";
     import ChatMyImgMsg from "./chat-my-img-msg.svelte";
-    import { ImageResize } from "$lib/ImageResize";
+    import { ImageContext } from "$lib/ImageContext";
 
     let initLoading = true;
     let stopMic = false;
@@ -21,13 +21,14 @@
     let socket: SocketContext;
     let playing: PlayingContext;
     let recording: RecordingContentInterface;
+    let image: ImageContext;
     let messages: Message[] = [];
 
     export let audio: AudioContext;
     export let media: MediaStream;
     export let selectCharacter: CharacterConfig;
     export let generalConfig: GeneralConfig;
-    let backgroundImage: { path: string, characterChange: boolean } = { path: "", characterChange: false };
+    let backgroundImage: { path: string; characterChange: boolean } = { path: "", characterChange: false };
 
     const speakDisabled = (disabled: boolean) => {
         if (stopMic || initLoading) {
@@ -62,35 +63,25 @@
         updateChat();
     };
 
+    image = new ImageContext();
+    image.onLoadStart = (file: File) => {
+        addMessage({
+            type: "my-img",
+            text: "画像をアップロード中...",
+            img: URL.createObjectURL(file),
+            loading: true,
+            speaking: false,
+            chunk: false,
+            voiceIndex: null,
+        });
+    };
+    image.onLoadEnd = (arrayBuffer: ArrayBuffer) => {
+        socket.sendBinary(arrayBuffer);
+    };
     const uploadImage = async () => {
         stopMic = true;
         speakDisabled(stopMic);
-        const input = document.createElement("input");
-        input.type = "file";
-        input.accept = "image/jpeg, image/png";
-        input.onchange = async () => {
-            if (!input.files || input.files.length === 0) {
-                return;
-            }
-            const file = input.files[0];
-            const reader = new FileReader();
-            reader.onload = async () => {
-                const arrayBuffer = reader.result as ArrayBuffer;
-                addMessage({
-                    type: "my-img",
-                    text: "画像をアップロード中...",
-                    img: URL.createObjectURL(file),
-                    loading: true,
-                    speaking: false,
-                    chunk: false,
-                    voiceIndex: null,
-                });
-                const resizeArrayBuffer = await ImageResize.run(arrayBuffer);
-                socket.sendBinary(resizeArrayBuffer);
-            };
-            reader.readAsArrayBuffer(file);
-        };
-        input.click();
+        image.upload();
     };
 
     (async () => {
@@ -173,10 +164,9 @@
                         });
                         backgroundImage = { path: "", characterChange: false };
                         tick().then(() => {
-                            backgroundImage = 
-                            {
+                            backgroundImage = {
                                 path: selectCharacter.voice.find((v) => v.identification === chunkMessage.text)?.backgroundImagePath ?? "",
-                                characterChange: true
+                                characterChange: true,
                             };
                         });
                         continue;
@@ -263,7 +253,6 @@
             socket.sendBinary(event.data);
         };
 
-        /** @ts-ignore */
         recording.onText = (text: string) => {
             socket.sendText(text);
         };
@@ -306,9 +295,9 @@
 <div class="w-full h-full">
     <div class="flex flex-col md:flex-row md:justify-center justify-end w-full h-full">
         {#if backgroundImage.path !== ""}
-        <div class="flex justify-end items-start md:items-end h-full pt-0 absolute md:static z-0 md:w-80">
-            <img src={"images/" + backgroundImage.path} alt="avatar" class={"w-full max-h-full " + (backgroundImage.characterChange ? "animate-slide-in-bck-bottom" : "")} />
-        </div>
+            <div class="flex justify-end items-start md:items-end h-full pt-0 absolute md:static z-0 md:w-80">
+                <img src={"images/" + backgroundImage.path} alt="avatar" class={"w-full max-h-full " + (backgroundImage.characterChange ? "animate-slide-in-bck-bottom" : "")} />
+            </div>
         {/if}
         <div class="flex flex-col z-10 md:w-256">
             <div class="py-2 px-4 h-80 md:h-full overflow-y-scroll hidden-scrollbar" bind:this={chatarea}>
