@@ -120,9 +120,19 @@ func getChatApiKey(chatType string) string {
 	return ""
 }
 
+func WSTalkCompressed() fiber.Handler {
+	return websocket.New(WSTalk(), websocket.Config{
+		EnableCompression: true,
+	})
+}
+
+func WSTalkPlain() fiber.Handler {
+	return websocket.New(WSTalk())
+}
+
 // Support File Types: mp3, wav, webm, ogg, jpg, png
-func WSTalk() fiber.Handler {
-	return websocket.New(func(c *websocket.Conn) {
+func WSTalk() func(*websocket.Conn) {
+	return func(c *websocket.Conn) {
 		id := c.Params("id")
 		characterId := c.Params("characterId")
 
@@ -230,9 +240,7 @@ func WSTalk() fiber.Handler {
 			close(chatDone)
 			close(ttsDone)
 		}
-	}, websocket.Config{
-		EnableCompression: true,
-	})
+	}
 }
 
 func detectBinaryFileType(data []byte) (string, string, error) {
