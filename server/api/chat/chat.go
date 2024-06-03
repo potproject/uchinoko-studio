@@ -97,7 +97,7 @@ func chatReceiver(
 				},
 				data.ChatCompletionMessage{
 					Role:    data.ChatCompletionMessageRoleAssistant,
-					Content: strings.Trim(allText, "\n"),
+					Content: data.GenericTrim(allText),
 					Image:   nil,
 				},
 			), nil

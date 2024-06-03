@@ -8,7 +8,7 @@
     import type { CharacterConfig } from "../types/character";
     import type { GeneralConfig } from "../types/general";
     import ChatError from "./chat-error.svelte";
-    import type { Message, ChunkMessage } from "../types/message";
+    import { type Message, type ChunkMessage, MessageConstants } from "../types/message";
     import { RecordingPushToTalkContext } from "$lib/RecordingPushToTalkContent";
     import { RecognitionContent } from "$lib/RecognitionContent";
     import type { RecordingContentInterface } from "$lib/RecordingContentInterface";
@@ -48,11 +48,15 @@
     };
 
     const addMessage = (message: Message) => {
+        message.text = message.text.trim();
         messages = [...messages, message];
         updateChat();
     };
 
     const changeLastMessage = (message: Partial<Message>) => {
+        if (message.text !== undefined){
+            message.text = message.text.trim();
+        }
         messages = [
             ...messages.slice(0, messages.length - 1),
             {
@@ -67,7 +71,7 @@
     image.onLoadStart = (file: File) => {
         addMessage({
             type: "my-img",
-            text: "画像をアップロード中...",
+            text: MessageConstants.uploadImage,
             img: URL.createObjectURL(file),
             loading: true,
             speaking: false,
@@ -89,7 +93,7 @@
         socket.onClosed = () => {
             addMessage({
                 type: "error",
-                text: "接続が切断されました。再度ページを読み込んでください。",
+                text: MessageConstants.disconnected,
                 loading: false,
                 speaking: false,
                 chunk: false,
@@ -107,7 +111,7 @@
         };
 
         socket.onChatRequest = (text) => {
-            changeLastMessage({ text: text.trim(), loading: false, speaking: false });
+            changeLastMessage({ text: text, loading: false, speaking: false });
         };
 
         socket.onChatResponseChangeCharacter = (text) => {
@@ -148,7 +152,7 @@
                     case "change-character":
                         if (messages[messages.length - 1].chunk && messages[messages.length - 1].type === "your") {
                             changeLastMessage({
-                                text: messages[messages.length - 1].text.trim(),
+                                text: messages[messages.length - 1].text,
                                 loading: false,
                                 speaking: false,
                                 chunk: false,
@@ -156,7 +160,7 @@
                         }
                         addMessage({
                             type: "your",
-                            text: "",
+                            text: MessageConstants.empty,
                             loading: true,
                             speaking: true,
                             chunk: true,
@@ -176,7 +180,7 @@
                     case "chat":
                         if (messages[messages.length - 1].chunk) {
                             changeLastMessage({
-                                text: (messages[messages.length - 1].text + chunkMessage.text).trim(),
+                                text: messages[messages.length - 1].text + chunkMessage.text,
                                 loading: true,
                                 speaking: true,
                                 chunk: true,
@@ -185,7 +189,7 @@
                         }
                         addMessage({
                             type: "your",
-                            text: chunkMessage.text.trim(),
+                            text: chunkMessage.text,
                             loading: true,
                             speaking: true,
                             chunk: true,
@@ -223,7 +227,7 @@
         recording.onSpeakingStart = () => {
             addMessage({
                 type: "my",
-                text: "話し中...",
+                text: MessageConstants.speakingStart,
                 loading: false,
                 speaking: true,
                 chunk: false,
@@ -241,7 +245,7 @@
                 return;
             }
             changeLastMessage({
-                text: "音声認識中...",
+                text: MessageConstants.speakingEnd,
                 loading: true,
                 speaking: false,
                 chunk: false,
