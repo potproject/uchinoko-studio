@@ -91,7 +91,7 @@
         <div class="flex items-center px-4 py-2">
             <!-- 名前 -->
             <div class="flex-1">
-                <label for="name" class="text-sm">キャラクター名</label>
+                <label for="name" class="text-sm">名前</label>
                 <input type="text" id="name" class="w-full border border-gray-300 rounded p-1" bind:value={data.general.name} />
             </div>
         </div>
@@ -118,6 +118,12 @@
             </div>  
             {#each data.voice as _, index}
                 <div class="border border-gray-300 rounded p-2 m-2">
+                    <div class="flex items-center px-4 py-2">
+                        <div class="flex-1">
+                            <label for="name" class="text-sm">キャラクター名</label>
+                            <input type="text" id="name" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].name} />
+                        </div>
+                    </div>
                     <div class="flex items-center px-4 py-2">
                         <!-- キャラクター画像 -->
                         <div class="flex-1">
@@ -279,7 +285,7 @@
             {#if data.multiVoice}
             <div class="flex justify-between items-center p-4">
                 <button class="border border-blue-500 text-blue-500 bg-white rounded-md px-4 py-2 hover:bg-blue-500 hover:text-white" on:click={() => 
-                    data.voice = [...data.voice, { type: "voicevox", modelId: "", speakerId: "1", identification: "", modelFile: "" ,image: "", backgroundImagePath: "", behavior: []}]
+                    data.voice = [...data.voice, { name:"", type: "voicevox", modelId: "", speakerId: "1", identification: "", modelFile: "" ,image: "", backgroundImagePath: "", behavior: []}]
                 }>
                     <i class="las la-plus"></i> 追加
                 </button>

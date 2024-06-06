@@ -318,7 +318,7 @@
                     {:else if msg.type === "my-img"}
                         <ChatMyImgMsg message={msg.text} image={msg.img} loading={msg.loading} />
                     {:else if msg.type === "your"}
-                        <ChatYourMsg message={msg.text} loading={msg.loading} speaking={msg.speaking} img={msg.voiceIndex === null ? null : selectCharacter.voice[msg.voiceIndex].image} />
+                        <ChatYourMsg name={msg.voiceIndex !== null ? selectCharacter.voice[msg.voiceIndex].name : ""} message={msg.text} loading={msg.loading} speaking={msg.speaking} img={msg.voiceIndex === null ? null : selectCharacter.voice[msg.voiceIndex].image} />
                     {:else if msg.type === "error"}
                         <ChatError message={msg.text} />
                     {/if}

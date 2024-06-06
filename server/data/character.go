@@ -17,6 +17,7 @@ type CharacterConfigGeneral struct {
 }
 
 type CharacterConfigVoice struct {
+	Name                string                         `json:"name"`
 	Type                string                         `json:"type"`
 	Identification      string                         `json:"identification"`
 	ModelID             string                         `json:"modelId"`

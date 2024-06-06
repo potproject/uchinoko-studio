@@ -17,6 +17,7 @@ func CharacterInitConfig() data.CharacterConfig {
 		MultiVoice: false,
 		Voice: []data.CharacterConfigVoice{
 			{
+				Name:                "Default",
 				Type:                "voicevox",
 				Identification:      "",
 				ModelID:             "",

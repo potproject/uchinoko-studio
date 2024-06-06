@@ -5,6 +5,7 @@ export type CharacterConfig = {
     };
     multiVoice: boolean;
     voice: {
+        name: string;
         type: "voicevox"| "bertvits2" | "stylebertvits2" | "google-text-to-speech" | "openai-speech";
         image: string;
         identification: string;
