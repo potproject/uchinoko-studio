@@ -68,7 +68,12 @@ export class SocketContext{
     public static async connect(selectCharacter: CharacterConfig): Promise<SocketContext> {
         const wsTLS = location.protocol === 'https:' ? 'wss' : 'ws';
     
-        const url = `${wsTLS}://${location.host}/v1/ws/talk/${selectCharacter.general.id}/${selectCharacter.general.id}`;
+        // chromeの場合はcompressを有効にする
+        const ua = window.navigator.userAgent.toLowerCase();
+        const isChrome = ua.indexOf('chrome') != -1 && ua.indexOf('edge') == -1;
+        const compressed = isChrome ? '/compressed' : '';
+
+        const url = `${wsTLS}://${location.host}/v1/ws/talk/${selectCharacter.general.id}/${selectCharacter.general.id}${compressed}`;
         const socket = new SocketContext(url);
         await new Promise(resolve => {
             socket.onConnected = () => {

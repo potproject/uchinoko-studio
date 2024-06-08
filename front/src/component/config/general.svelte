@@ -35,7 +35,7 @@
 
 <div class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 py-4">
     <div class="bg-white rounded-lg shadow-lg max-w-lg w-full max-h-full overflow-auto my-10 mx-4">
-        <div class="bg-white shadow-lg rounded-3xl w-128">
+        <div class="bg-white shadow-lg rounded-3xl w-full">
             <div class="card-header p-4 flex m-2">
                 <h1 class="text-2xl font-bold flex-1">
                     <i class="las la-cog text-2xl mr-2"></i>

@@ -12,12 +12,12 @@ type CharacterConfig struct {
 }
 
 type CharacterConfigGeneral struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Image string `json:"image"`
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 type CharacterConfigVoice struct {
+	Name                string                         `json:"name"`
 	Type                string                         `json:"type"`
 	Identification      string                         `json:"identification"`
 	ModelID             string                         `json:"modelId"`
@@ -37,6 +37,7 @@ type CharacterConfigChat struct {
 	Type         string                   `json:"type"`
 	Model        string                   `json:"model"`
 	SystemPrompt string                   `json:"systemPrompt"`
+	MaxHistory   int64                    `json:"maxHistory"`
 	Limit        CharacterConfigChatLimit `json:"limit"`
 }
 

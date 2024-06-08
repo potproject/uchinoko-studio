@@ -17,8 +17,13 @@ func GetChat(c *fiber.Ctx) error {
 		// No Content
 		return c.SendStatus(fiber.StatusNoContent)
 	}
-	//return message
-	return c.JSON(d)
+	// return message
+	err = c.JSON(d)
+	if err != nil {
+		return err
+	}
+	c.Status(fiber.StatusOK)
+	return nil
 
 }
 

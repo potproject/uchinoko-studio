@@ -17,6 +17,7 @@ func CharacterInitConfig() data.CharacterConfig {
 		MultiVoice: false,
 		Voice: []data.CharacterConfigVoice{
 			{
+				Name:                "Default",
 				Type:                "voicevox",
 				Identification:      "",
 				ModelID:             "",
@@ -31,6 +32,7 @@ func CharacterInitConfig() data.CharacterConfig {
 			Type:         "openai",
 			Model:        "gpt-3.5-turbo",
 			SystemPrompt: "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly.",
+			MaxHistory:   0,
 			Limit: data.CharacterConfigChatLimit{
 				Day:    data.CharacterConfigChatLimitType{Request: 0, Token: 0},
 				Hour:   data.CharacterConfigChatLimitType{Request: 0, Token: 0},

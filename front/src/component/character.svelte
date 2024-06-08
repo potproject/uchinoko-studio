@@ -11,7 +11,6 @@
 
 <!-- キャラクター画像と名前 -->
 <div class="overflow-x-auto flex items-center bg-gray-100 py-4 px-2 w-full mt-2">
-    <!-- 10個のキャラクターを表示する -->
     {#each characters.characters as character, i}
         <div class="flex items-center px-2 mx-6 flex-col w-28">
             <!-- キャラクター画像をクリックすると、キャラクター設定モーダルを表示する -->
@@ -32,7 +31,6 @@
                 ></i>
             </div>
 
-            <!-- キャラクター名 -->
             <div class={"text-sm truncate w-28 mt-3 text-center " + (selectCharacterIndex === i ? "text-blue-500" : "text-gray-500")}>{character.general.name}</div>
         </div>
     {/each}

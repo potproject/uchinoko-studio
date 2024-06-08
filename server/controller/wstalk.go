@@ -120,9 +120,19 @@ func getChatApiKey(chatType string) string {
 	return ""
 }
 
+func WSTalkCompressed() fiber.Handler {
+	return websocket.New(WSTalk(), websocket.Config{
+		EnableCompression: true,
+	})
+}
+
+func WSTalkPlain() fiber.Handler {
+	return websocket.New(WSTalk())
+}
+
 // Support File Types: mp3, wav, webm, ogg, jpg, png
-func WSTalk() fiber.Handler {
-	return websocket.New(func(c *websocket.Conn) {
+func WSTalk() func(*websocket.Conn) {
+	return func(c *websocket.Conn) {
 		id := c.Params("id")
 		characterId := c.Params("characterId")
 
@@ -187,7 +197,7 @@ func WSTalk() fiber.Handler {
 			wg.Add(1)
 			go func() {
 				var err error
-				tokens, err = runChatStream(id, voices, character.MultiVoice, requestText, requestImage, chatType, getChatApiKey(chatType), chatSystemPropmt, chatModel, chunkMessage)
+				tokens, err = runChatStream(id, voices, character.MultiVoice, requestText, requestImage, chatType, getChatApiKey(chatType), chatSystemPropmt, character.Chat.MaxHistory, chatModel, chunkMessage)
 				if err != nil {
 					sendError(c, err)
 				}
@@ -230,7 +240,7 @@ func WSTalk() fiber.Handler {
 			close(chatDone)
 			close(ttsDone)
 		}
-	})
+	}
 }
 
 func detectBinaryFileType(data []byte) (string, string, error) {
@@ -280,11 +290,15 @@ func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, changeV
 	}
 }
 
-func runChatStream(id string, voices []data.CharacterConfigVoice, multi bool, requestText string, requestImage *data.Image, chatType string, apiKey string, chatSystemPropmt string, chatModel string, chunkMessage chan api.ChunkMessage) (*data.Tokens, error) {
+func runChatStream(id string, voices []data.CharacterConfigVoice, multi bool, requestText string, requestImage *data.Image, chatType string, apiKey string, chatSystemPropmt string, maxHistory int64, chatModel string, chunkMessage chan api.ChunkMessage) (*data.Tokens, error) {
 	var t *data.Tokens
 	cm, _, err := db.GetChatMessage(id)
 	if err != nil {
 		return t, err
+	}
+
+	if maxHistory > 0 && int64(len(cm.Chat)) > maxHistory {
+		cm.Chat = cm.Chat[len(cm.Chat)-int(maxHistory):]
 	}
 
 	var chatStream chat.ChatStream

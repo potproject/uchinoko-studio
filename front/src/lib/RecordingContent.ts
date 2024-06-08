@@ -46,6 +46,12 @@ export class RecordingContext implements RecordingContentInterface {
 
     public changeRecordingAllow(check: boolean) {
         this.isRecordingAllow = check;
+        const state = this.mediaRecorder.getState();
+        if (state === 'recording') {
+            this.mediaRecorder.stopRecording();
+            this.onSpeakingEnd(true);
+            return;
+        }
     }
 
     async init() {
@@ -65,7 +71,6 @@ export class RecordingContext implements RecordingContentInterface {
                 this.recordStartTime = Date.now();
                 this.onSpeakingStart();
             } else {
-                
                 const state = this.mediaRecorder.getState();
                 if (state === 'recording') {
                     this.recordStopTime = Date.now();

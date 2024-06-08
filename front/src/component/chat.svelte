@@ -8,12 +8,12 @@
     import type { CharacterConfig } from "../types/character";
     import type { GeneralConfig } from "../types/general";
     import ChatError from "./chat-error.svelte";
-    import type { Message, ChunkMessage } from "../types/message";
+    import { type Message, type ChunkMessage, MessageConstants } from "../types/message";
     import { RecordingPushToTalkContext } from "$lib/RecordingPushToTalkContent";
     import { RecognitionContent } from "$lib/RecognitionContent";
     import type { RecordingContentInterface } from "$lib/RecordingContentInterface";
     import ChatMyImgMsg from "./chat-my-img-msg.svelte";
-    import { ImageResize } from "$lib/ImageResize";
+    import { ImageContext } from "$lib/ImageContext";
 
     let initLoading = true;
     let stopMic = false;
@@ -21,13 +21,14 @@
     let socket: SocketContext;
     let playing: PlayingContext;
     let recording: RecordingContentInterface;
+    let image: ImageContext;
     let messages: Message[] = [];
 
     export let audio: AudioContext;
     export let media: MediaStream;
     export let selectCharacter: CharacterConfig;
     export let generalConfig: GeneralConfig;
-    let backgroundImage: { path: string, characterChange: boolean } = { path: "", characterChange: false };
+    let backgroundImage: { path: string; characterChange: boolean } = { path: "", characterChange: false };
 
     const speakDisabled = (disabled: boolean) => {
         if (stopMic || initLoading) {
@@ -47,11 +48,15 @@
     };
 
     const addMessage = (message: Message) => {
+        message.text = message.text.trim();
         messages = [...messages, message];
         updateChat();
     };
 
     const changeLastMessage = (message: Partial<Message>) => {
+        if (message.text !== undefined){
+            message.text = message.text.trim();
+        }
         messages = [
             ...messages.slice(0, messages.length - 1),
             {
@@ -62,35 +67,25 @@
         updateChat();
     };
 
+    image = new ImageContext();
+    image.onLoadStart = (file: File) => {
+        addMessage({
+            type: "my-img",
+            text: MessageConstants.uploadImage,
+            img: URL.createObjectURL(file),
+            loading: true,
+            speaking: false,
+            chunk: false,
+            voiceIndex: null,
+        });
+    };
+    image.onLoadEnd = (arrayBuffer: ArrayBuffer) => {
+        socket.sendBinary(arrayBuffer);
+    };
     const uploadImage = async () => {
         stopMic = true;
         speakDisabled(stopMic);
-        const input = document.createElement("input");
-        input.type = "file";
-        input.accept = "image/jpeg, image/png";
-        input.onchange = async () => {
-            if (!input.files || input.files.length === 0) {
-                return;
-            }
-            const file = input.files[0];
-            const reader = new FileReader();
-            reader.onload = async () => {
-                const arrayBuffer = reader.result as ArrayBuffer;
-                addMessage({
-                    type: "my-img",
-                    text: "画像をアップロード中...",
-                    img: URL.createObjectURL(file),
-                    loading: true,
-                    speaking: false,
-                    chunk: false,
-                    voiceIndex: null,
-                });
-                const resizeArrayBuffer = await ImageResize.run(arrayBuffer);
-                socket.sendBinary(resizeArrayBuffer);
-            };
-            reader.readAsArrayBuffer(file);
-        };
-        input.click();
+        image.upload();
     };
 
     (async () => {
@@ -98,7 +93,7 @@
         socket.onClosed = () => {
             addMessage({
                 type: "error",
-                text: "接続が切断されました。再度ページを読み込んでください。",
+                text: MessageConstants.disconnected,
                 loading: false,
                 speaking: false,
                 chunk: false,
@@ -116,7 +111,7 @@
         };
 
         socket.onChatRequest = (text) => {
-            changeLastMessage({ text: text.trim(), loading: false, speaking: false });
+            changeLastMessage({ text: text, loading: false, speaking: false });
         };
 
         socket.onChatResponseChangeCharacter = (text) => {
@@ -157,7 +152,7 @@
                     case "change-character":
                         if (messages[messages.length - 1].chunk && messages[messages.length - 1].type === "your") {
                             changeLastMessage({
-                                text: messages[messages.length - 1].text.trim(),
+                                text: messages[messages.length - 1].text,
                                 loading: false,
                                 speaking: false,
                                 chunk: false,
@@ -165,7 +160,7 @@
                         }
                         addMessage({
                             type: "your",
-                            text: "",
+                            text: MessageConstants.empty,
                             loading: true,
                             speaking: true,
                             chunk: true,
@@ -173,10 +168,9 @@
                         });
                         backgroundImage = { path: "", characterChange: false };
                         tick().then(() => {
-                            backgroundImage = 
-                            {
+                            backgroundImage = {
                                 path: selectCharacter.voice.find((v) => v.identification === chunkMessage.text)?.backgroundImagePath ?? "",
-                                characterChange: true
+                                characterChange: true,
                             };
                         });
                         continue;
@@ -186,7 +180,7 @@
                     case "chat":
                         if (messages[messages.length - 1].chunk) {
                             changeLastMessage({
-                                text: (messages[messages.length - 1].text + chunkMessage.text).trim(),
+                                text: messages[messages.length - 1].text + chunkMessage.text,
                                 loading: true,
                                 speaking: true,
                                 chunk: true,
@@ -195,7 +189,7 @@
                         }
                         addMessage({
                             type: "your",
-                            text: chunkMessage.text.trim(),
+                            text: chunkMessage.text,
                             loading: true,
                             speaking: true,
                             chunk: true,
@@ -233,7 +227,7 @@
         recording.onSpeakingStart = () => {
             addMessage({
                 type: "my",
-                text: "話し中...",
+                text: MessageConstants.speakingStart,
                 loading: false,
                 speaking: true,
                 chunk: false,
@@ -251,7 +245,7 @@
                 return;
             }
             changeLastMessage({
-                text: "音声認識中...",
+                text: MessageConstants.speakingEnd,
                 loading: true,
                 speaking: false,
                 chunk: false,
@@ -263,7 +257,6 @@
             socket.sendBinary(event.data);
         };
 
-        /** @ts-ignore */
         recording.onText = (text: string) => {
             socket.sendText(text);
         };
@@ -306,9 +299,9 @@
 <div class="w-full h-full">
     <div class="flex flex-col md:flex-row md:justify-center justify-end w-full h-full">
         {#if backgroundImage.path !== ""}
-        <div class="flex justify-end items-start md:items-end h-full pt-0 absolute md:static z-0 md:w-80">
-            <img src={"images/" + backgroundImage.path} alt="avatar" class={"w-full max-h-full " + (backgroundImage.characterChange ? "animate-slide-in-bck-bottom" : "")} />
-        </div>
+            <div class="flex justify-end items-start md:items-end h-full pt-0 absolute md:static z-0 md:w-80">
+                <img src={"images/" + backgroundImage.path} alt="avatar" class={"w-full max-h-full " + (backgroundImage.characterChange ? "animate-slide-in-bck-bottom" : "")} />
+            </div>
         {/if}
         <div class="flex flex-col z-10 md:w-256">
             <div class="py-2 px-4 h-80 md:h-full overflow-y-scroll hidden-scrollbar" bind:this={chatarea}>
@@ -325,7 +318,7 @@
                     {:else if msg.type === "my-img"}
                         <ChatMyImgMsg message={msg.text} image={msg.img} loading={msg.loading} />
                     {:else if msg.type === "your"}
-                        <ChatYourMsg message={msg.text} loading={msg.loading} speaking={msg.speaking} img={msg.voiceIndex === null ? null : selectCharacter.voice[msg.voiceIndex].image} />
+                        <ChatYourMsg name={msg.voiceIndex !== null ? selectCharacter.voice[msg.voiceIndex].name : ""} message={msg.text} loading={msg.loading} speaking={msg.speaking} img={msg.voiceIndex === null ? null : selectCharacter.voice[msg.voiceIndex].image} />
                     {:else if msg.type === "error"}
                         <ChatError message={msg.text} />
                     {/if}

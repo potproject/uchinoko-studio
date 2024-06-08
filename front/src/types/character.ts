@@ -5,6 +5,7 @@ export type CharacterConfig = {
     };
     multiVoice: boolean;
     voice: {
+        name: string;
         type: "voicevox"| "bertvits2" | "stylebertvits2" | "google-text-to-speech" | "openai-speech";
         image: string;
         identification: string;
@@ -21,6 +22,7 @@ export type CharacterConfig = {
         type: string;
         model: string;
         systemPrompt: string;
+        maxHistory: number;
         limit:{
             day: {
                 request: number;

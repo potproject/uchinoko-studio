@@ -3,7 +3,6 @@ package chat
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 
@@ -62,7 +61,7 @@ func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, mult
 	defer stream.Close()
 
 	charChannel := make(chan rune)
-	done := make(chan bool)
+	done := make(chan error)
 
 	defer close(charChannel)
 	defer close(done)
@@ -74,10 +73,11 @@ func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, mult
 				OutputTokens: response.Usage.OutputTokens,
 			}
 			if errors.Is(err, io.EOF) {
+				done <- nil
 				break
 			}
 			if err != nil {
-				fmt.Printf("\nStream error: %v\n", err)
+				done <- err
 				break
 			}
 			if response.Content == nil || len(response.Content) == 0 {
@@ -88,7 +88,6 @@ func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, mult
 				charChannel <- c
 			}
 		}
-		done <- true
 	}()
 	cr, err := chatReceiver(charChannel, done, multi, voices, chunkMessage, text, image, cm)
 	return cr, t, err
