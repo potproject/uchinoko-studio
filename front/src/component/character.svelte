@@ -16,7 +16,7 @@
             <!-- キャラクター画像をクリックすると、キャラクター設定モーダルを表示する -->
             <div class="relative">
                 <img
-                    src={character.voice[0].image}
+                    src={"images/"+character.voice[0].image}
                     alt={character.general.name}
                     class={"w-24 h-24 rounded-full border shadow-sm bg-white cursor-pointer hover:shadow-md border-2 " + (selectCharacterIndex === i ? "border-blue-500 shadow-md" : "border-gray-300")}
                     on:click={() => (dispatch("selectCharacter", { index: i }))}

@@ -10,26 +10,6 @@
 
     export let data: CharacterConfig;
 
-    const uploadImage = (index: number) => {
-        // 画像アップロードの処理
-        // ファイル選択
-        const input = document.createElement("input");
-        input.type = "file";
-        input.accept = "image/*";
-        // ファイル選択時の処理
-        input.onchange = async (e) => {
-            // @ts-ignore
-            const file = input.files[0];
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                // base64エンコードした画像をdataURLとして取得
-                data.voice[index].image = reader.result as string;
-            };
-            reader.readAsDataURL(file);
-        };
-        input.click();
-    };
-
     const onReset = () => {
         if (window.confirm("チャット履歴をリセットしますか？")) {
             fetch(`/v1/chat/${data.general.id}`, {
@@ -127,15 +107,21 @@
                     <div class="flex items-center px-4 py-2">
                         <!-- キャラクター画像 -->
                         <div class="flex-1">
-                            <label for="image" class="text-sm">キャラクター画像</label>
-                            <img src={data.voice[index].image} alt="キャラクター画像" class="w-24 h-24 rounded-full border shadow-sm bg-white cursor-pointer hover:shadow-md border-2" on:click={() => uploadImage(index)} />
+                            <label for="image" class="text-sm">キャラクターアイコン画像</label>
+                            <img src={"images/"+data.voice[index].image} alt="キャラクター画像" class="w-24 h-24 rounded-full border shadow-sm bg-white cursor-pointer hover:shadow-md border-2" />
+                            <div class="flex items-center py-1">
+                                <p class="text-xs text-gray-500">images/</p>
+                                <input type="text" id="image" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].image} placeholder="画像パス" />
+                            </div>
                         </div>
                     </div>
                     <div class="flex items-center px-4 py-2">
                         <div class="flex-1">
                             <label for="backgroundImage" class="text-sm">立ち絵画像</label>
-                            <input type="text" id="backgroundImage" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].backgroundImagePath} placeholder="画像パス" />
-                            <p class="text-xs text-gray-500">※ imagesフォルダ内に画像を配置してください</p>
+                            <div class="flex items-center py-1">
+                                <p class="text-xs text-gray-500">images/</p>
+                                <input type="text" id="backgroundImage" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].backgroundImagePath} placeholder="画像パス" />
+                            </div>
                         </div>
                     </div>
                     <div class="flex items-center px-4 py-2">
@@ -153,6 +139,7 @@
                                         <input type="text" class="w-full border border-gray-300 rounded p-1 mx-2" placeholder="識別子">
                                     </div>
                                     <div class="flex items-center space-x-2 w-2/5">
+                                        <p class="text-xs text-gray-500">images/</p>
                                         <input type="text" class="w-full border border-gray-300 rounded p-1 mx-2" placeholder="画像パス">
                                     </div>
                                 </div>
@@ -163,7 +150,6 @@
                                     <i class="las la-plus"></i>
                                 </button>
                             </div>
-                            <p class="text-xs text-gray-500">※ imagesフォルダ内に画像を配置してください</p>
                         </div>
                     </div>
                     <div class="flex items-center px-4 py-2">
