@@ -57,6 +57,13 @@
                     </select>
                 </div>
             </div>
+            <div class="flex items-center px-4 py-2 justify-between">
+                <div class="flex-1 items-center justify-between">
+                    <!-- centered -->
+                    <input type="checkbox" id="soundEffect" class="mr-2 justify-center items-center" bind:checked={data.soundEffect}>
+                    <label for="soundEffect" class="text-sm">効果音を再生する</label>
+                </div>
+            </div> 
             <div class="flex items-center px-4 py-2">
                 <div class="flex-1">
                     <label for="transcription" class="text-sm">Speech to text</label>

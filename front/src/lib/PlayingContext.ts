@@ -35,6 +35,14 @@ export class PlayingContext {
         this.onSpeakingEnd();
     }
 
+    playAudio(path: string) {
+        fetch(path)
+            .then(response => response.arrayBuffer())
+            .then(arrayBuffer => {
+                this.playWAV(arrayBuffer);
+            });
+    }
+
     playWAV(arrayBuffer: ArrayBuffer) {
         if (!this.playing) {
             this.onSpeakingStart();

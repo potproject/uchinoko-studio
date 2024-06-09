@@ -107,6 +107,9 @@
 
         socket.onFinish = () => {
             // 再生後停止指示
+            if (generalConfig.soundEffect) {
+                playing.playAudio("audio/ka.mp3");
+            }
             playing.sendFinishAction();
         };
 
@@ -238,6 +241,9 @@
             return;
         };
         recording.onSpeakingEnd = (ignore) => {
+            if(generalConfig.soundEffect){
+                playing.playAudio("audio/pi.mp3");
+            }
             // 最後のメッセージを更新
             if (ignore) {
                 messages = messages.slice(0, messages.length - 1);

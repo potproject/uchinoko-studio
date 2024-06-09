@@ -2,6 +2,7 @@ package data
 
 type GeneralConfig struct {
 	Language      string `json:"language"`
+	SoundEffect   bool   `json:"soundEffect"`
 	Transcription struct {
 		Type        string `json:"type"`
 		Method      string `json:"method"`
