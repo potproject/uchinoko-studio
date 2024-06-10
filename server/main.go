@@ -34,23 +34,23 @@ func dbSetup() {
 	db.Start()
 }
 
+func exists(filename string) bool {
+	_, err := os.Stat(filename)
+	return err == nil
+}
+
 func envSetup() {
 	// Load .env or env.txt file
 
 	envFile := ".env"
-	_, err := os.Stat(envFile)
+	if !exists(envFile) {
+		envFile = ".env.txt"
+	}
+	err := godotenv.Load(envFile)
 	if err != nil {
-		envFile = "env.txt"
-		_, err = os.Stat(envFile)
-		if err != nil {
-			return
-		}
+		log.Println("Not loading .env file")
 	}
 
-	err = godotenv.Load(envFile)
-	if err != nil {
-		return
-	}
 	// Setup envgen package from environment variables
 	err = envgen.Load()
 	if err != nil {
@@ -72,7 +72,7 @@ func openBrowser(url string) {
 		err = fmt.Errorf("unsupported platform")
 	}
 	if err != nil {
-		log.Fatal(err)
+		log.Println("Not Open Browser")
 	}
 
 }
