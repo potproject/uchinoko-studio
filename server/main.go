@@ -43,13 +43,13 @@ func envSetup() {
 		envFile = "env.txt"
 		_, err = os.Stat(envFile)
 		if err != nil {
-			log.Fatal("Error loading .env or env.txt file")
+			return
 		}
 	}
 
 	err = godotenv.Load(envFile)
 	if err != nil {
-		log.Fatal("Error loading .env or env.txt file")
+		return
 	}
 	// Setup envgen package from environment variables
 	err = envgen.Load()

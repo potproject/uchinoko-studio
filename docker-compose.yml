@@ -4,7 +4,8 @@ services:
   web:
     build: .
     ports:
-      - "0.0.0.0:8080"
+      - "8080"
     volumes:
-      - .:/images
-      - .:/database
+      - ./server/images:/app/images
+      - ./server/database:/app/database
+    env_file: "./server/.env"
