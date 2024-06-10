@@ -5,7 +5,9 @@ WORKDIR /app
 
 COPY . .
 
-RUN cd front && npm install && npm run build
+RUN npm install -g pnpm
+
+RUN cd front && pnpm install && pnpm build
 
 # Stage 2: Build the backend
 FROM golang:1.22-alpine AS backend-builder
