@@ -12,16 +12,15 @@ RUN cd front && pnpm install && pnpm build
 # Stage 2: Build the backend
 FROM golang:1.22-alpine AS backend-builder
 
-COPY . .
+WORKDIR /app
 
-# Set working directory
-WORKDIR /app/server
+COPY . .
 
 # Copy backend source code
 COPY --from=frontend-builder /app/server/static /app/server/static
 
 # Build the Go application
-RUN go build -o uchinoko .
+RUN cd server && go build -o uchinoko main.go
 
 # Stage 3: Create final image
 FROM alpine:latest
