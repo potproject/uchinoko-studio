@@ -4,7 +4,7 @@ services:
   uchinoko:
     build: .
     ports:
-      - "15000"
+      - "15000:15000"
     volumes:
       - ./server/images:/app/images
       - ./server/database:/app/database
