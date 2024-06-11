@@ -44,7 +44,7 @@ func envSetup() {
 
 	envFile := ".env"
 	if !exists(envFile) {
-		envFile = ".env.txt"
+		envFile = "env.txt"
 	}
 	err := godotenv.Load(envFile)
 	if err != nil {
