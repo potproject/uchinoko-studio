@@ -124,9 +124,9 @@
         >
             <div class="card-header p-4 flex m-2">
                 <h1 class="text-3xl font-bold flex-1">Uchinoko Studio(β)</h1>
-                <div class="flex items-center text-gray-300 hover:text-gray-800 cursor-pointer" on:click={() => (showConfig = !showConfig)}>
+                <!-- <div class="flex items-center text-gray-300 hover:text-gray-800 cursor-pointer" on:click={() => (showConfig = !showConfig)}>
                     <i class="las la-cog text-4xl mr-2"></i>
-                </div>
+                </div> -->
             </div>
             <!-- 利用規約欄 Textarea -->
             <div class="card-body p-3 m-2">
