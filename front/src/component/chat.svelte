@@ -14,6 +14,7 @@
     import type { RecordingContentInterface } from "$lib/RecordingContentInterface";
     import ChatMyImgMsg from "./chat-my-img-msg.svelte";
     import { ImageContext } from "$lib/ImageContext";
+    import { getID } from "$lib/GetId";
 
     let initLoading = true;
     let stopMic = false;
@@ -89,7 +90,7 @@
     };
 
     (async () => {
-        socket = await SocketContext.connect(selectCharacter);
+        socket = await SocketContext.connect(getID(), selectCharacter.general.id);
         socket.onClosed = () => {
             addMessage({
                 type: "error",
@@ -268,7 +269,7 @@
         };
 
         // old message load
-        const res = await fetch(`/v1/chat/${selectCharacter.general.id}`, {
+        const res = await fetch(`/v1/chat/${getID()}/${selectCharacter.general.id}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",

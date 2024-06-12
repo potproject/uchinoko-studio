@@ -1,6 +1,7 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
     import type { CharacterConfig } from "../../types/character";
+    import { getID } from "$lib/GetId";
     const dispatch = createEventDispatcher();
 
     let showVoice = false;
@@ -12,7 +13,7 @@
 
     const onReset = () => {
         if (window.confirm("チャット履歴をリセットしますか？")) {
-            fetch(`/v1/chat/${data.general.id}`, {
+            fetch(`/v1/chat/${getID()}/${data.general.id}`, {
                 method: "DELETE",
             }).finally(() => {
                 location.reload();

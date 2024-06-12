@@ -8,8 +8,9 @@ import (
 func GetChat(c *fiber.Ctx) error {
 	//get id
 	id := c.Params("id")
+	characterId := c.Params("characterId")
 	//get message
-	d, init, err := db.GetChatMessage(id)
+	d, init, err := db.GetChatMessage(id, characterId)
 	if err != nil {
 		return err
 	}
@@ -30,8 +31,9 @@ func GetChat(c *fiber.Ctx) error {
 func DeleteChat(c *fiber.Ctx) error {
 	//get id
 	id := c.Params("id")
+	characterId := c.Params("characterId")
 	//delete message
-	err := db.DeleteChatMessage(id)
+	err := db.DeleteChatMessage(id, characterId)
 	if err != nil {
 		return err
 	}

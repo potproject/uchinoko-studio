@@ -150,7 +150,7 @@
                     <span>キャラクター選択</span>
                 </h2>
                 <div class="flex items-center">
-                    <Character selectCharacterIndex={selectCharacterIndex} 
+                    <Character selectCharacterIndex={selectCharacterIndex}
                     on:selectCharacter={(e) => {
                         selectCharacterIndex = e.detail.index;
                     }}

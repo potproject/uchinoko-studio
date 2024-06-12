@@ -14,8 +14,8 @@ func initChatMessage() data.ChatMessage {
 	}
 }
 
-func PutChatMessage(id string, cM data.ChatMessage) error {
-	key := []byte(id + "/chatmessage")
+func PutChatMessage(id string, characterId string, cM data.ChatMessage) error {
+	key := []byte(id + "/" + characterId + "/chatmessage")
 	value, err := json.Marshal(cM)
 	if err != nil {
 		return err
@@ -23,8 +23,8 @@ func PutChatMessage(id string, cM data.ChatMessage) error {
 	return put(key, value)
 }
 
-func GetChatMessage(id string) (cm data.ChatMessage, empty bool, err error) {
-	key := []byte(id + "/chatmessage")
+func GetChatMessage(id string, characterId string) (cm data.ChatMessage, empty bool, err error) {
+	key := []byte(id + "/" + characterId + "/chatmessage")
 	value, err := get(key)
 	if err == leveldb.ErrNotFound {
 		return initChatMessage(), true, nil
@@ -39,7 +39,7 @@ func GetChatMessage(id string) (cm data.ChatMessage, empty bool, err error) {
 	return cM, false, nil
 }
 
-func DeleteChatMessage(id string) error {
-	key := []byte(id + "/chatmessage")
+func DeleteChatMessage(id string, characterId string) error {
+	key := []byte(id + "/" + characterId + "/chatmessage")
 	return delete(key)
 }
