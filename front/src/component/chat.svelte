@@ -83,6 +83,20 @@
     image.onLoadEnd = (arrayBuffer: ArrayBuffer) => {
         socket.sendBinary(arrayBuffer);
     };
+
+    const refreshChat = async () => {
+        if(globalThis.confirm("チャットをリセットしますか？返答が上手くいかない場合に使用してください。")){
+            fetch(`/v1/chat/${getID()}/${selectCharacter.general.id}`, {
+                method: "DELETE",
+            }).finally(() => {
+                messages = [];
+                updateChat();
+            }).catch((e) => {
+                console.error(e);
+                alert("エラーが発生しました");
+            });
+        }
+    };
     const uploadImage = async () => {
         stopMic = true;
         speakDisabled(stopMic);
@@ -333,8 +347,11 @@
             </div>
             <div class="py-4">
                 <div class="flex justify-center items-center space-x-2">
+                    <button class="btn text-white font-bold py-2 px-4 rounded-full bg-gray-500 hover:bg-gray-600 disabled:opacity-50" disabled={speaking} on:click={refreshChat}>
+                        <i class="las text-2xl la-folder-minus"></i>
+                    </button>
                     <button class="btn text-white font-bold py-2 px-4 rounded-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50" disabled={speaking} on:click={uploadImage}>
-                        <i class="las la-file-image"></i>
+                        <i class="las text-2xl la-file-image"></i>
                     </button>
                     <button
                         class="btn text-white font-bold py-2 px-4 rounded-full
