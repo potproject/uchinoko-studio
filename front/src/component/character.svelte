@@ -52,7 +52,7 @@
                     <div class="w-full flex items-center">
                         <img src={"images/"+character.voice[0].backgroundImagePath} alt={character.general.name} class="w-1/2 h-full rounded-lg" />
                         <div class="w-1/2 ml-4">
-                            アシスタントAI: デフォルト(コードネーム:ai-default-01)<br>
+                            アシスタントAI: デフォルト(コードネーム:ai-default-01) CV:VOICEVOX 猫使ビィ<br>
                             性格: 前向き、元気、純粋、子供っぽい<br>
                             好きな物: おいしいもの、ゲーム、アニメ、漫画、おしゃべり<br>
                             カスタムとの関係は、双子の姉。
@@ -64,7 +64,7 @@
                     <div class="w-full flex items-center">
                         <img src={"images/"+character.voice[0].backgroundImagePath} alt={character.general.name} class="w-1/2 h-full rounded-lg" />
                         <div class="w-1/2 ml-4">
-                            アシスタントAI: カスタム(コードネーム:ai-custom-01)<br>
+                            アシスタントAI: カスタム(コードネーム:ai-custom-01) CV:VOICEVOX 小夜/SAYO<br>
                             性格: 物静か、大人しい、皮肉屋、クール<br>
                             好きな物: 静かな場所、読書、映画<br>
                             デフォルトとの関係は、双子の妹。
