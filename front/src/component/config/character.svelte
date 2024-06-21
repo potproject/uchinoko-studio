@@ -319,6 +319,7 @@
                             <option value="gpt-3.5-turbo-1106">GPT-3.5 Turbo(1106)</option>
                         {/if}
                         {#if data.chat.type === "anthropic"}
+                            <option value="claude-3-5-sonnet-20240620">Claude 3.5 Sonnet(20240620)</option>
                             <option value="claude-3-opus-20240229">Claude 3 Opus(20240229)</option>
                             <option value="claude-3-sonnet-20240229">Claude 3 Sonnet(20240229)</option>
                             <option value="claude-3-haiku-20240307">Claude 3 Haiku(20240307)</option>
