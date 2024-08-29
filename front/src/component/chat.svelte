@@ -15,6 +15,7 @@
     import ChatMyImgMsg from "./chat-my-img-msg.svelte";
     import { ImageContext } from "$lib/ImageContext";
     import { getID } from "$lib/GetId";
+    import { ScreenCapture } from "$lib/ScreenCapture";
 
     let initLoading = true;
     let stopMic = false;
@@ -24,6 +25,7 @@
     let recording: RecordingContentInterface;
     let image: ImageContext;
     let messages: Message[] = [];
+    let screenCapture: ScreenCapture = new ScreenCapture();
 
     export let audio: AudioContext;
     export let media: MediaStream;
@@ -84,6 +86,17 @@
         socket.sendBinary(arrayBuffer);
     };
 
+
+    // 画面キャプチャ
+    const enableScreenCapture = async () => {
+        if(screenCapture.stream?.active){
+            screenCapture.stopCapture();
+            return;
+        }
+        screenCapture.startCapture();
+        return;
+    };
+
     const refreshChat = async () => {
         if(globalThis.confirm("チャットをリセットしますか？返答が上手くいかない場合に使用してください。")){
             fetch(`/v1/chat/${getID()}/${selectCharacter.general.id}`, {
@@ -97,6 +110,7 @@
             });
         }
     };
+
     const uploadImage = async () => {
         stopMic = true;
         speakDisabled(stopMic);
@@ -347,6 +361,11 @@
             </div>
             <div class="py-4">
                 <div class="flex justify-center items-center space-x-2">
+                    <button 
+                        class="btn text-white font-bold py-2 px-4 rounded-full bg-gray-500 hover:bg-gray-600"
+                        on:click={enableScreenCapture}>
+                        <i class="las text-2xl la-desktop"></i>
+                    </button>                    
                     <button class="btn text-white font-bold py-2 px-4 rounded-full bg-gray-500 hover:bg-gray-600 disabled:opacity-50" disabled={speaking} on:click={refreshChat}>
                         <i class="las text-2xl la-folder-minus"></i>
                     </button>
