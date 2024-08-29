@@ -82,8 +82,8 @@
             voiceIndex: null,
         });
     };
-    image.onLoadEnd = (arrayBuffer: ArrayBuffer) => {
-        socket.sendBinary(arrayBuffer);
+    image.onLoadEnd = (mimeType:string, arrayBuffer: ArrayBuffer) => {
+        socket.sendBinary(mimeType, arrayBuffer, "image.png");
     };
 
 
@@ -289,7 +289,7 @@
             return;
         };
         recording.onDataAvailable = (event) => {
-            socket.sendBinary(event.data);
+            socket.sendBinary("audio/wav", event.data, "audio.wav");
         };
 
         recording.onText = (text: string) => {
