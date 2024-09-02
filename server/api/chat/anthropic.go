@@ -42,9 +42,15 @@ func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, mult
 					},
 				},
 			}
+			if v.Content != "" {
+				anthropicChatMessages[i].ContentTypeText = []claude.RequestBodyMessagesMessagesContentTypeText{
+					{
+						Text: v.Content,
+					},
+				}
+			}
 		}
 	}
-
 	body := claude.RequestBodyMessages{
 		Model:     model,
 		MaxTokens: 4096,

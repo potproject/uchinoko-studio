@@ -54,6 +54,12 @@ func OpenAIChatStreamMain(ctx context.Context, c *openai.Client, voices []data.C
 					},
 				},
 			}
+			if v.Content != "" {
+				openaiChatMessages[i].MultiContent = append(openaiChatMessages[i].MultiContent, openai.ChatMessagePart{
+					Type: openai.ChatMessagePartTypeText,
+					Text: v.Content,
+				})
+			}
 		}
 	}
 

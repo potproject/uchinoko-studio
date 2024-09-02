@@ -66,18 +66,19 @@ func GeminiChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 	}
 	cs.History = geminiContents
 
-	var part gemini.Part
-	if image == nil {
-		part = gemini.Text(text)
-	} else {
-		part = gemini.Blob{
+	var parts []gemini.Part
+	if text != "" {
+		parts = append(parts, gemini.Text(text))
+	}
+	if image != nil {
+		parts = append(parts, gemini.Blob{
 			MIMEType: image.MediaType(),
 			Data:     image.Data,
-		}
+		})
 	}
 	iter := cs.SendMessageStream(
 		ctx,
-		part,
+		parts...,
 	)
 
 	charChannel := make(chan rune)

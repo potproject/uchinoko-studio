@@ -12,13 +12,14 @@
     import { RecordingPushToTalkContext } from "$lib/RecordingPushToTalkContent";
     import { RecognitionContent } from "$lib/RecognitionContent";
     import type { RecordingContentInterface } from "$lib/RecordingContentInterface";
-    import ChatMyImgMsg from "./chat-my-img-msg.svelte";
     import { ImageContext } from "$lib/ImageContext";
     import { getID } from "$lib/GetId";
     import { ScreenCapture } from "$lib/ScreenCapture";
+    import Tooltip from "./tooltip/tooltip.svelte";
 
     let initLoading = true;
     let stopMic = false;
+    let startScreenCapture = false;
 
     let socket: SocketContext;
     let playing: PlayingContext;
@@ -57,7 +58,7 @@
     };
 
     const changeLastMessage = (message: Partial<Message>) => {
-        if (message.text !== undefined){
+        if (message.text !== undefined) {
             message.text = message.text.trim();
         }
         messages = [
@@ -73,7 +74,7 @@
     image = new ImageContext();
     image.onLoadStart = (file: File) => {
         addMessage({
-            type: "my-img",
+            type: "my",
             text: MessageConstants.uploadImage,
             img: URL.createObjectURL(file),
             loading: true,
@@ -82,32 +83,42 @@
             voiceIndex: null,
         });
     };
-    image.onLoadEnd = (mimeType:string, arrayBuffer: ArrayBuffer) => {
+    image.onLoadEnd = (mimeType: string, arrayBuffer: ArrayBuffer) => {
         socket.sendBinary(mimeType, arrayBuffer, "image.png");
     };
 
-
     // 画面キャプチャ
     const enableScreenCapture = async () => {
-        if(screenCapture.stream?.active){
+        screenCapture.onEnded = () => {
+            startScreenCapture = false;
+        };
+        if (screenCapture.stream?.active) {
             screenCapture.stopCapture();
+            startScreenCapture = false;
             return;
         }
-        screenCapture.startCapture();
+        try {
+            await screenCapture.startCapture();
+            startScreenCapture = true;
+        } catch (e) {
+            console.error(e);
+        }
         return;
     };
 
     const refreshChat = async () => {
-        if(globalThis.confirm("チャットをリセットしますか？返答が上手くいかない場合に使用してください。")){
+        if (globalThis.confirm("チャットをリセットしますか？返答が上手くいかない場合に使用してください。")) {
             fetch(`/v1/chat/${getID()}/${selectCharacter.general.id}`, {
                 method: "DELETE",
-            }).finally(() => {
-                messages = [];
-                updateChat();
-            }).catch((e) => {
-                console.error(e);
-                alert("エラーが発生しました");
-            });
+            })
+                .finally(() => {
+                    messages = [];
+                    updateChat();
+                })
+                .catch((e) => {
+                    console.error(e);
+                    alert("エラーが発生しました");
+                });
         }
     };
 
@@ -270,7 +281,7 @@
             return;
         };
         recording.onSpeakingEnd = (ignore) => {
-            if(generalConfig.soundEffect){
+            if (generalConfig.soundEffect) {
                 playing.playAudio("audio/pi.mp3");
             }
             // 最後のメッセージを更新
@@ -289,6 +300,31 @@
             return;
         };
         recording.onDataAvailable = (event) => {
+            // screenが有効な場合は、画面を送信
+            if (screenCapture.stream?.active) {
+                const imageWithSound = async () => {
+                    const image = await screenCapture.capture();
+                    changeLastMessage({
+                        img: URL.createObjectURL(image),
+                    });
+                    socket.sendBinaries([
+                        {
+                            contentType: "image/jpeg",
+                            data: image,
+                            filename: "screen.jpg",
+                        },
+                        {
+                            contentType: "audio/wav",
+                            data: event.data,
+                            filename: "audio.wav",
+                        },
+                    ]);
+                    return;
+                };
+                imageWithSound();
+                return;
+            }
+
             socket.sendBinary("audio/wav", event.data, "audio.wav");
         };
 
@@ -349,11 +385,15 @@
                 {/if}
                 {#each messages as msg}
                     {#if msg.type === "my"}
-                        <ChatMyMsg message={msg.text} loading={msg.loading} speaking={msg.speaking} />
-                    {:else if msg.type === "my-img"}
-                        <ChatMyImgMsg message={msg.text} image={msg.img} loading={msg.loading} />
+                        <ChatMyMsg message={msg.text} image={msg.img} loading={msg.loading} speaking={msg.speaking} />
                     {:else if msg.type === "your"}
-                        <ChatYourMsg name={msg.voiceIndex !== null ? selectCharacter.voice[msg.voiceIndex].name : ""} message={msg.text} loading={msg.loading} speaking={msg.speaking} img={msg.voiceIndex === null ? null : "images/"+selectCharacter.voice[msg.voiceIndex].image} />
+                        <ChatYourMsg
+                            name={msg.voiceIndex !== null ? selectCharacter.voice[msg.voiceIndex].name : ""}
+                            message={msg.text}
+                            loading={msg.loading}
+                            speaking={msg.speaking}
+                            img={msg.voiceIndex === null ? null : "images/" + selectCharacter.voice[msg.voiceIndex].image}
+                        />
                     {:else if msg.type === "error"}
                         <ChatError message={msg.text} />
                     {/if}
@@ -361,29 +401,38 @@
             </div>
             <div class="py-4">
                 <div class="flex justify-center items-center space-x-2">
-                    <button 
-                        class="btn text-white font-bold py-2 px-4 rounded-full bg-gray-500 hover:bg-gray-600"
-                        on:click={enableScreenCapture}>
-                        <i class="las text-2xl la-desktop"></i>
-                    </button>                    
-                    <button class="btn text-white font-bold py-2 px-4 rounded-full bg-gray-500 hover:bg-gray-600 disabled:opacity-50" disabled={speaking} on:click={refreshChat}>
-                        <i class="las text-2xl la-folder-minus"></i>
-                    </button>
-                    <button class="btn text-white font-bold py-2 px-4 rounded-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50" disabled={speaking} on:click={uploadImage}>
-                        <i class="las text-2xl la-file-image"></i>
-                    </button>
-                    <button
-                        class="btn text-white font-bold py-2 px-4 rounded-full
+                    <Tooltip text="画面共有">
+                        <button
+                            class="btn text-white font-bold py-2 px-4 rounded-full
+                        {!startScreenCapture ? 'bg-gray-500 hover:bg-gray-600' : 'bg-red-500 hover:bg-red-600'}"
+                            on:click={enableScreenCapture}
+                        >
+                            <i class="las text-2xl la-desktop"></i>
+                        </button>
+                    </Tooltip>
+                    <Tooltip text="チャット履歴をリセットする">
+                        <button class="btn text-white font-bold py-2 px-4 rounded-full bg-gray-500 hover:bg-gray-600 disabled:opacity-50" disabled={speaking} on:click={refreshChat}>
+                            <i class="las text-2xl la-folder-minus"></i>
+                        </button>
+                    </Tooltip>
+                    <Tooltip text="画像をアップロード">
+                        <button class="btn text-white font-bold py-2 px-4 rounded-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50" disabled={speaking} on:click={uploadImage}>
+                            <i class="las text-2xl la-file-image"></i>
+                        </button>
+                    </Tooltip>
+                    <Tooltip text="音声ミュート">
+                        <button
+                            class="btn text-white font-bold py-2 px-4 rounded-full
                     {!stopMic ? 'bg-blue-500 hover:bg-blue-600' : 'bg-red-500 hover:bg-red-600'}
                     "
-                        on:click={() => {
-                            stopMic = !stopMic;
-                            speakDisabled(stopMic);
-                        }}
-                    >
-                        <i class="las text-2xl {!stopMic ? 'la-microphone' : 'la-microphone-slash'}"></i>
-                    </button>
-
+                            on:click={() => {
+                                stopMic = !stopMic;
+                                speakDisabled(stopMic);
+                            }}
+                        >
+                            <i class="las text-2xl {!stopMic ? 'la-microphone' : 'la-microphone-slash'}"></i>
+                        </button>
+                    </Tooltip>
                 </div>
             </div>
         </div>

@@ -1,6 +1,9 @@
+import { ImageResize } from "./ImageResize";
+
 export class ScreenCapture {
     private capturePromise: Promise<File> | null = null;
     public stream: MediaStream | null = null;
+    public onEnded: (() => void) | null = null;
 
     constructor() {
       if (!this.isSupported()) {
@@ -11,6 +14,12 @@ export class ScreenCapture {
     public async startCapture() {
         if (!this.stream) {
             this.stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+            this.stream.getTracks()[0].onended = () => {
+                if (this.onEnded) {
+                    this.onEnded();
+                }
+                this.stream = null;
+            }
         }
     }
 
@@ -55,11 +64,13 @@ export class ScreenCapture {
               reject(new Error("Blobの生成に失敗しました。"));
               return;
             }
-            const file = new File([blob], 'screen-capture.png', { type: 'image/png' });
-            resolve(file);
+            blob.arrayBuffer().then((arrayBuffer) => arrayBuffer)
+            .then((arrayBuffer) => {
+              return ImageResize.run(arrayBuffer);
+            }).then((resizeArrayBuffer) => {
+              resolve(new File([resizeArrayBuffer], 'screen-capture.jpg', { type: 'image/jpeg' }));
+            });
           }, 'image/png');
-          
-          track?.stop();
         } catch (err) {
           reject(err);
         } finally {
