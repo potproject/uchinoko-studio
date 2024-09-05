@@ -31,6 +31,7 @@
     export let audio: AudioContext;
     export let media: MediaStream;
     export let selectCharacter: CharacterConfig;
+    export let audioOutputDevicesCharacters: string[];
     export let generalConfig: GeneralConfig;
     let backgroundImage: { path: string; characterChange: boolean } = { path: "", characterChange: false };
 
@@ -201,18 +202,22 @@
                                 chunk: false,
                             });
                         }
+                        const voiceIndex = selectCharacter.voice.findIndex((v) => v.identification === chunkMessage.text);
+                        if (generalConfig.characterOutputChange && audioOutputDevicesCharacters.length > 0 && audioOutputDevicesCharacters[voiceIndex]) {
+                            playing.changeOutputDevice(audioOutputDevicesCharacters[voiceIndex]);
+                        }
                         addMessage({
                             type: "your",
                             text: MessageConstants.empty,
                             loading: true,
                             speaking: true,
                             chunk: true,
-                            voiceIndex: selectCharacter.voice.findIndex((v) => v.identification === chunkMessage.text),
+                            voiceIndex,
                         });
                         backgroundImage = { path: "", characterChange: false };
                         tick().then(() => {
                             backgroundImage = {
-                                path: selectCharacter.voice.find((v) => v.identification === chunkMessage.text)?.backgroundImagePath ?? "",
+                                path: selectCharacter.voice[voiceIndex]?.backgroundImagePath ?? "",
                                 characterChange: true,
                             };
                         });
