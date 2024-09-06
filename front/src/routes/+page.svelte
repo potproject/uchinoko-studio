@@ -9,16 +9,18 @@
     let audio: AudioContext;
     let mediaStream: MediaStream;
     let selectCharacter: CharacterConfig;
+    let audioOutputDevicesCharacters: string[];
     let general: GeneralConfig;
 
     const changeRoute = (newRoute: "start" | "chat") => {
         route = newRoute;
     }
 
-    const onStart = (e: CustomEvent<{ audio: AudioContext, mediaStream: MediaStream ,selectCharacter: CharacterConfig, general: GeneralConfig }>) => {
+    const onStart = (e: CustomEvent<{ audio: AudioContext, mediaStream: MediaStream ,selectCharacter: CharacterConfig, audioOutputDevicesCharacters: string[], general: GeneralConfig }>) => {
         audio = e.detail.audio;
         mediaStream = e.detail.mediaStream;
         selectCharacter = e.detail.selectCharacter;
+        audioOutputDevicesCharacters = e.detail.audioOutputDevicesCharacters;
         general = e.detail.general;
         changeRoute("chat");
     }
@@ -29,6 +31,6 @@
     <Start on:start={onStart} />
     {/if}
     {#if route === "chat"}
-    <Chat audio={audio} media={mediaStream} selectCharacter={selectCharacter} generalConfig={general} />
+    <Chat audio={audio} media={mediaStream} selectCharacter={selectCharacter} audioOutputDevicesCharacters={audioOutputDevicesCharacters} generalConfig={general} />
     {/if}
 </main>

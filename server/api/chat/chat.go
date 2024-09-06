@@ -85,7 +85,7 @@ func chatReceiver(
 				Text:  bufferText,
 				Voice: voice,
 			}
-			if image != nil {
+			if image != nil && text == "" {
 				text = "image"
 			}
 			return append(

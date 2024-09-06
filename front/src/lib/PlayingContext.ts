@@ -15,6 +15,17 @@ export class PlayingContext {
         this.audioContext = AudioContext;
     }
 
+    async changeOutputDevice(deviceId: string) {
+        console.log('changeOutputDevice', deviceId);
+        /** @ts-ignore */
+        if (!this.audioContext.setSinkId) {
+            console.error('setSinkId is not supported');
+            return;
+        }
+        /** @ts-ignore */
+        await this.audioContext.setSinkId(deviceId);
+    }
+
     getAudioContext() {
         return this.audioContext;
     }
