@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"sync"
 
 	"github.com/gofiber/contrib/websocket"
@@ -37,33 +39,77 @@ const (
 	FinishOutputType            = "finish"
 )
 
+type MultipartMessage struct {
+	Parts []MultipartMessagePart `json:"parts"`
+}
+
+type MultipartMessagePart struct {
+	Filename    string `json:"filename"`
+	ContentType string `json:"content-type"`
+	Data        []byte `json:"data"`
+}
+
+func parseMultipartMessage(message []byte) ([]MultipartMessagePart, error) {
+	boundary := "boundaryUchinoko"
+	reader := multipart.NewReader(bytes.NewReader(message), boundary)
+	var parts []MultipartMessagePart
+
+	for {
+		part, err := reader.NextPart()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(part)
+		fileData := MultipartMessagePart{
+			Filename:    part.FileName(),
+			ContentType: part.Header.Get("Content-Type"),
+			Data:        buf.Bytes(),
+		}
+
+		parts = append(parts, fileData)
+	}
+
+	return parts, nil
+}
+
 func messageProcess(mt int, msg []byte, language string, typeTranscription string, apiKey string) (text string, image *data.Image, err error) {
 	if mt == websocket.BinaryMessage {
-		discreteType, extension, err := detectBinaryFileType(msg)
+		mm, err := parseMultipartMessage(msg)
 		if err != nil {
 			return "", nil, err
 		}
-		if discreteType == "audio" {
-			if typeTranscription == "google_speech_to_text" {
-				text, err = speechtotext.GoSpeech(apiKey, msg, extension, language)
-				return text, nil, err
-			}
-			if typeTranscription == "openai_speech_to_text" {
-				text, err = speechtotext.OpenAISpeech(apiKey, msg, extension, language)
-				return text, nil, err
-			}
-			if typeTranscription == "vosk_server" {
-				text, err = speechtotext.VoskServer(apiKey, msg, extension, language)
-				return text, nil, err
-			}
-		}
 
-		if discreteType == "image" {
-			return "", &data.Image{
-				Extension: extension,
-				Data:      msg,
-			}, nil
+		var text string
+		var image *data.Image
+		for _, m := range mm {
+			discreteType, extension, err := detectBinaryFileType(m.ContentType)
+			if err != nil {
+				return "", nil, err
+			}
+
+			switch true {
+			case discreteType == "image":
+				image = &data.Image{
+					Extension: extension,
+					Data:      m.Data,
+				}
+			case discreteType == "audio" && typeTranscription == "google_speech_to_text":
+				text, err = speechtotext.GoSpeech(apiKey, m.Data, extension, language)
+			case discreteType == "audio" && typeTranscription == "openai_speech_to_text":
+				text, err = speechtotext.OpenAISpeech(apiKey, m.Data, extension, language)
+			case discreteType == "audio" && typeTranscription == "vosk_server":
+				text, err = speechtotext.VoskServer(apiKey, m.Data, extension, language)
+			}
+			if err != nil {
+				return "", nil, err
+			}
 		}
+		return text, image, err
 	}
 	if mt == websocket.TextMessage {
 		textInput := TextInput{}
@@ -152,8 +198,6 @@ func WSTalk() func(*websocket.Conn) {
 		chatModel := character.Chat.Model
 		chatSystemPropmt := character.Chat.SystemPrompt
 
-		voices := character.Voice
-
 		format := "wav"
 
 		wsSendTextMessage(c, ConnectionOutputType, format)
@@ -197,7 +241,7 @@ func WSTalk() func(*websocket.Conn) {
 			wg.Add(1)
 			go func() {
 				var err error
-				tokens, err = runChatStream(id, voices, character.MultiVoice, requestText, requestImage, chatType, getChatApiKey(chatType), chatSystemPropmt, character.Chat.MaxHistory, chatModel, chunkMessage)
+				tokens, err = runChatStream(id, character, character.MultiVoice, requestText, requestImage, chatType, getChatApiKey(chatType), chatSystemPropmt, character.Chat.MaxHistory, chatModel, chunkMessage)
 				if err != nil {
 					sendError(c, err)
 				}
@@ -243,23 +287,19 @@ func WSTalk() func(*websocket.Conn) {
 	}
 }
 
-func detectBinaryFileType(data []byte) (string, string, error) {
-	if len(data) < 12 {
-		return "", "", fmt.Errorf("file size is too small")
-	}
-
-	switch {
-	case bytes.HasPrefix(data, []byte{0x4F, 0x67, 0x67, 0x53}):
-		return "audio", "ogg", nil
-	case bytes.HasPrefix(data, []byte{0x52, 0x49, 0x46, 0x46}) && bytes.Contains(data[:12], []byte{0x57, 0x41, 0x56, 0x45}):
-		return "audio", "wav", nil
-	case bytes.HasPrefix(data, []byte{0xFF, 0xFB, 0x90}) || bytes.HasPrefix(data, []byte{0xFF, 0xFA, 0x90}) || bytes.HasPrefix(data, []byte{0x49, 0x44, 0x33}):
+func detectBinaryFileType(contentType string) (string, string, error) {
+	switch contentType {
+	case "audio/mpeg":
 		return "audio", "mp3", nil
-	case bytes.HasPrefix(data, []byte{0x1A, 0x45, 0xDF, 0xA3}): // or mkv
+	case "audio/wav":
+		return "audio", "wav", nil
+	case "audio/webm":
 		return "audio", "webm", nil
-	case bytes.HasPrefix(data, []byte{0xFF, 0xD8}):
+	case "audio/ogg":
+		return "audio", "ogg", nil
+	case "image/jpeg":
 		return "image", "jpg", nil
-	case bytes.HasPrefix(data, []byte{0x89, 0x50, 0x4E, 0x47}):
+	case "image/png":
 		return "image", "png", nil
 	default:
 		return "", "", fmt.Errorf("unsupported file type")
@@ -290,9 +330,9 @@ func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, changeV
 	}
 }
 
-func runChatStream(id string, voices []data.CharacterConfigVoice, multi bool, requestText string, requestImage *data.Image, chatType string, apiKey string, chatSystemPropmt string, maxHistory int64, chatModel string, chunkMessage chan api.ChunkMessage) (*data.Tokens, error) {
+func runChatStream(id string, characterConfig data.CharacterConfig, multi bool, requestText string, requestImage *data.Image, chatType string, apiKey string, chatSystemPropmt string, maxHistory int64, chatModel string, chunkMessage chan api.ChunkMessage) (*data.Tokens, error) {
 	var t *data.Tokens
-	cm, _, err := db.GetChatMessage(id)
+	cm, _, err := db.GetChatMessage(id, characterConfig.General.ID)
 	if err != nil {
 		return t, err
 	}
@@ -323,14 +363,15 @@ func runChatStream(id string, voices []data.CharacterConfigVoice, multi bool, re
 		chatStream = chat.OpenAILocalChatStream
 	}
 
-	ncm, t, err := chatStream(apiKey, voices, multi, chatSystemPropmt, chatModel, cm.Chat, requestText, requestImage, chunkMessage)
+	ncm, t, err := chatStream(apiKey, characterConfig.Voice, multi, chatSystemPropmt, chatModel, cm.Chat, requestText, requestImage, chunkMessage)
 	if err != nil {
 		return t, err
 	}
 
-	err = db.PutChatMessage(id, data.ChatMessage{
-		Chat: ncm,
-	})
+	err = db.PutChatMessage(id, characterConfig.General.ID,
+		data.ChatMessage{
+			Chat: ncm,
+		})
 
 	if err != nil {
 		return t, err

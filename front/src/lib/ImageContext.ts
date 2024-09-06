@@ -2,7 +2,7 @@ import { ImageResize } from "./ImageResize";
 
 export class ImageContext {
     public onLoadStart: (file: File) => void = (file: File) => {};
-    public onLoadEnd: (arrayBuffer: ArrayBuffer) => void = (arrayBuffer: ArrayBuffer) => {};
+    public onLoadEnd: (mimeType: string, arrayBuffer: ArrayBuffer) => void = (mimeType: string, arrayBuffer: ArrayBuffer) => {};
     async upload() {
         const input = globalThis.document.createElement("input");
         input.type = "file";
@@ -17,7 +17,7 @@ export class ImageContext {
                 const arrayBuffer = reader.result as ArrayBuffer;
                 this.onLoadStart(file);
                 const resizeArrayBuffer = await ImageResize.run(arrayBuffer);
-                this.onLoadEnd(resizeArrayBuffer);
+                this.onLoadEnd(file.type, resizeArrayBuffer);
             };
             reader.readAsArrayBuffer(file);
         };

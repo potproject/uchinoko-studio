@@ -30,7 +30,7 @@ func CharacterInitConfig() data.CharacterConfig {
 		},
 		Chat: data.CharacterConfigChat{
 			Type:         "openai",
-			Model:        "gpt-3.5-turbo",
+			Model:        "gpt-4o-mini",
 			SystemPrompt: "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly.",
 			MaxHistory:   0,
 			Limit: data.CharacterConfigChatLimit{

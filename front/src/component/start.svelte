@@ -16,10 +16,18 @@
     let selectCharacterIndex: number|undefined = undefined;
     let showCharacterConfig: CharacterConfig | undefined = undefined;
 
-    let characters: CharacterConfigList = { characters: [] };
-    let general: GeneralConfig = { language: "ja-JP", transcription: { type: "openai_speech_to_text", method: "auto" , autoSetting: { threshold: 0.02, silentThreshold: 1, audioMinLength: 1.3 } } };
+    let audioOutputDevices: MediaDeviceInfo[] = [];
+    let audioOutputDevicesCharacters: string[] = [];
 
-    let slientAudio: HTMLAudioElement;
+    let characters: CharacterConfigList = { characters: [] };
+    let general: GeneralConfig = {
+        language: "ja-JP", 
+        soundEffect: true,
+        characterOutputChange: false,
+        transcription: { type: "openai_speech_to_text", method: "auto", autoSetting: { threshold: 0.02, silentThreshold: 1, audioMinLength: 1.3 } },
+    };
+
+    let audioElement: HTMLAudioElement;
     let mediaStream: MediaStream;
 
     onMount(async () => {
@@ -42,11 +50,11 @@
         start = true;
         // 音声アンロック
         const audio = new AudioContext();
-        const source = audio.createMediaElementSource(slientAudio);
+        const source = audio.createMediaElementSource(audioElement);
         source.connect(audio.destination);
-        slientAudio.play();
+        audioElement.play();
 
-        slientAudio.onended = () => {
+        audioElement.onended = () => {
             if (selectCharacterIndex === undefined) {
                 return;
             }
@@ -54,6 +62,7 @@
                 audio,
                 mediaStream,
                 selectCharacter: characters.characters[selectCharacterIndex],
+                audioOutputDevicesCharacters,
                 general,
             });
         };
@@ -65,6 +74,9 @@
                 audio: true,
             });
             micOk = true;
+
+            const devices = await globalThis.navigator.mediaDevices.enumerateDevices();
+            audioOutputDevices = devices.filter((d) => d.kind === "audiooutput");
         } catch (e) {
             micOk = false;
         }
@@ -112,7 +124,7 @@
                 data={showCharacterConfig}
             />
         {/if}
-        <audio src="/audio/silent.mp3" preload="auto" class="hidden" bind:this={slientAudio}></audio>
+        <audio src="/audio/silent.mp3" preload="auto" class="hidden" bind:this={audioElement}></audio>
         <div
             class="card bg-white shadow-lg rounded-3xl h-auto mx-auto border border-cyan-600 border-opacity-50 border-2 w-96 md:w-128 {start
                 ? 'animate-scale-out-horizontal'
@@ -146,7 +158,7 @@
                     <span>キャラクター選択</span>
                 </h2>
                 <div class="flex items-center">
-                    <Character selectCharacterIndex={selectCharacterIndex} 
+                    <Character selectCharacterIndex={selectCharacterIndex}
                     on:selectCharacter={(e) => {
                         selectCharacterIndex = e.detail.index;
                     }}
@@ -201,6 +213,21 @@
                 {/if}
                 {#if !audioOk || !wsOk}
                     <div class="text-red-500 text-sm">このブラウザでは、このサービスが正常に動作しない可能性があります。推奨するブラウザは、Google ChromeまたはiOS Safariとなります。</div>
+                {/if}
+                {#if general.characterOutputChange && selectCharacterIndex !== undefined}
+                    <div class="border border-gray-300 rounded-md p-2 mt-2">
+                        {#each characters.characters[selectCharacterIndex].voice as voice, index}
+                            <div class="flex-1 p-2">
+                                <label for="voiceOutput" class="text-sm flex items-center"><i class="las la-volume-up text-xl mr-1"></i>{voice.name}</label>
+                                <select id="voiceOutput" class="w-full border border-gray-300 rounded p-1" bind:value={audioOutputDevicesCharacters[index]}>
+                                    <option value="">システムのデフォルト</option>
+                                    {#each audioOutputDevices as device}
+                                    <option value={device.deviceId}>{device.label}</option>
+                                    {/each}
+                                </select>
+                            </div>
+                        {/each}
+                    </div>
                 {/if}
                 <!-- ボタン -->
                 <div class="card-footer p-4 flex m-2 justify-center items-center">

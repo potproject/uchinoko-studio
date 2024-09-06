@@ -40,8 +40,8 @@ func debugRoutes(app *fiber.App) {
 }
 
 func userRoutes(app *fiber.App) {
-	app.Get("/v1/chat/:id", controller.GetChat)
-	app.Delete("/v1/chat/:id", controller.DeleteChat)
+	app.Get("/v1/chat/:id/:characterId", controller.GetChat)
+	app.Delete("/v1/chat/:id/:characterId", controller.DeleteChat)
 	app.Use("/v1/ws/talk/:id/:characterId", controller.WS)
 	app.Get("/v1/ws/talk/:id/:characterId", controller.WSTalkPlain())
 	app.Use("/v1/ws/talk/:id/:characterId/compressed", controller.WS)

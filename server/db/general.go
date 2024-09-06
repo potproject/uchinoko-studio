@@ -9,8 +9,9 @@ import (
 
 func generalInitConfig() data.GeneralConfig {
 	return data.GeneralConfig{
-		Language:    "ja-JP",
-		SoundEffect: true,
+		Language:              "ja-JP",
+		SoundEffect:           true,
+		CharacterOutputChange: false,
 		Transcription: struct {
 			Type        string `json:"type"`
 			Method      string `json:"method"`

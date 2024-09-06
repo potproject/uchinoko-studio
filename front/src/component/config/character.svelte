@@ -1,6 +1,7 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
     import type { CharacterConfig } from "../../types/character";
+    import { getID } from "$lib/GetId";
     const dispatch = createEventDispatcher();
 
     let showVoice = false;
@@ -12,7 +13,7 @@
 
     const onReset = () => {
         if (window.confirm("チャット履歴をリセットしますか？")) {
-            fetch(`/v1/chat/${data.general.id}`, {
+            fetch(`/v1/chat/${getID()}/${data.general.id}`, {
                 method: "DELETE",
             }).finally(() => {
                 location.reload();
@@ -306,18 +307,14 @@
                     <datalist id="model_list">
                         {#if data.chat.type === "openai"}
                             <option value="gpt-4o">GPT-4o</option>
+                            <option value="gpt-4o-mini">GPT-4o Mini</option>
                             <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                            <option value="gpt-4-turbo-2024-04-09">GPT-4 Turbo(2024-04-09)</option>
-                            <option value="gpt-4-turbo-preview">GPT-4 Turbo Preview</option>
-                            <option value="gpt-4-0125-preview">GPT-4 Turbo(0125-preview)</option>
-                            <option value="gpt-4-1106-preview">GPT-4 Turbo(1106-preview)</option>
                             <option value="gpt-4">GPT-4</option>
                             <option value="gpt-4-32k">GPT-4 32k</option>
-                            <option value="gpt-3.5-turbo-0125">GPT-3.5 Turbo(0125)</option>
                             <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                            <option value="gpt-3.5-turbo-1106">GPT-3.5 Turbo(1106)</option>
                         {/if}
                         {#if data.chat.type === "anthropic"}
+                            <option value="claude-3-5-sonnet-20240620">Claude 3.5 Sonnet(20240620)</option>
                             <option value="claude-3-opus-20240229">Claude 3 Opus(20240229)</option>
                             <option value="claude-3-sonnet-20240229">Claude 3 Sonnet(20240229)</option>
                             <option value="claude-3-haiku-20240307">Claude 3 Haiku(20240307)</option>
@@ -331,6 +328,7 @@
                             <option value="command-light">Command Light</option>
                         {/if}
                         {#if data.chat.type === "gemini"}
+                            <option value="gemini-1.5-pro-exp-0801">Gemini 1.5 Pro Experimental 0801</option>
                             <option value="gemini-1.5-pro-latest">Gemini 1.5 Pro</option>
                             <option value="gemini-1.5-flash-latest">Gemini 1.5 Flash</option>
                             <option value="gemini-pro">Gemini Pro</option>

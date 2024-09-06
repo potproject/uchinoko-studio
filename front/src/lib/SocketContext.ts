@@ -6,6 +6,8 @@ type TextMessage = {
 };
 
 export class SocketContext{
+    private boundary = 'boundaryUchinoko';
+
     private socket: WebSocket;
 
     public mimeType: string = 'audio/wav';
@@ -65,7 +67,7 @@ export class SocketContext{
         }
     }
 
-    public static async connect(selectCharacter: CharacterConfig): Promise<SocketContext> {
+    public static async connect(id: string, charactorId: string): Promise<SocketContext> {
         const wsTLS = location.protocol === 'https:' ? 'wss' : 'ws';
     
         // chromeの場合はcompressを有効にする
@@ -73,7 +75,7 @@ export class SocketContext{
         const isChrome = ua.indexOf('chrome') != -1 && ua.indexOf('edge') == -1;
         const compressed = isChrome ? '/compressed' : '';
 
-        const url = `${wsTLS}://${location.host}/v1/ws/talk/${selectCharacter.general.id}/${selectCharacter.general.id}${compressed}`;
+        const url = `${wsTLS}://${location.host}/v1/ws/talk/${id}/${charactorId}${compressed}`;
         const socket = new SocketContext(url);
         await new Promise(resolve => {
             socket.onConnected = () => {
@@ -83,12 +85,34 @@ export class SocketContext{
         return socket;
     }
 
-    public sendBinary(data: string | ArrayBufferLike | ArrayBufferView | Blob){
-        this.socket.send(data);
+    public sendBinary(contentType: string, data: string | ArrayBufferLike | ArrayBufferView | Blob, filename: string){
+        const multipartMessage = this.createMultipartMessage(this.boundary, [{ contentType, data, filename }]);
+        this.socket.send(multipartMessage);
+    }
+
+    public sendBinaries(data: { contentType: string, data: string | ArrayBufferLike | ArrayBufferView | Blob, filename: string }[]){
+        const multipartMessage = this.createMultipartMessage(this.boundary, data);
+        this.socket.send(multipartMessage);
     }
 
     public sendText(text: string){
         const data = JSON.stringify({text});
         this.socket.send(data);
+    }
+
+    private createMultipartMessage(boundary: string, parts: { contentType: string, data: string | ArrayBufferLike | ArrayBufferView | Blob, filename?: string }[]): Blob {
+        const multipartParts = parts.map(part => {
+            let headers = `--${boundary}\r\n`;
+            headers += `Content-Type: ${part.contentType}\r\n`;
+            if (part.filename) {
+                headers += `Content-Disposition: attachment; filename="${part.filename}"\r\n`;
+            }
+            headers += `\r\n`;
+    
+            return new Blob([headers, part.data, '\r\n'], { type: part.contentType });
+        });
+        multipartParts.push(new Blob([`--${boundary}--\r\n`], { type: 'text/plain' }));
+    
+        return new Blob(multipartParts, { type: 'multipart/mixed; boundary=' + boundary });
     }
 }  
