@@ -147,10 +147,11 @@
         };
 
         socket.onFinish = () => {
-            // 再生後停止指示
-            if (generalConfig.soundEffect) {
-                playing.playAudio("audio/ka.mp3");
-            }
+            setTimeout(() => {
+                if (generalConfig.soundEffect) {
+                    playing.playAudio("audio/ka.mp3");
+                }
+            }, 300);
             playing.sendFinishAction();
         };
 
