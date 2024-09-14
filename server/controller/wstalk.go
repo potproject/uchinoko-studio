@@ -279,12 +279,6 @@ func WSTalk() func(*websocket.Conn) {
 
 			jsonTokens, _ := json.Marshal(tokens)
 			wsSendTextMessage(c, FinishOutputType, string(jsonTokens))
-			if envgen.Get().VRCHAT_OSC_ENABLED() {
-				err = osc.SendChatBoxMessage(envgen.Get().VRCHAT_OSC_HOST(), envgen.Get().VRCHAT_OSC_PORT(), requestText)
-				if err != nil {
-					sendError(c, err)
-				}
-			}
 
 			close(chunkMessage)
 			close(chunkAudio)
@@ -332,6 +326,12 @@ func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, changeV
 			wsSendTextMessage(c, ChatResponseChangeBehavior, b.ImagePath)
 		case <-ttsDone:
 			wsSendTextMessage(c, ChatResponseOutputType, text)
+			if envgen.Get().VRCHAT_OSC_ENABLED() {
+				err := osc.SendChatBoxMessage(envgen.Get().VRCHAT_OSC_HOST(), envgen.Get().VRCHAT_OSC_PORT(), text)
+				if err != nil {
+					sendError(c, err)
+				}
+			}
 			return
 		}
 	}
