@@ -177,6 +177,27 @@ func (s setter) VOSK_SERVER_ENDPOINT(value string) {
 	env.VOSK_SERVER_ENDPOINT = value
 	return
 }
+func (g getter) VRCHAT_OSC_ENABLED() bool {
+	return env.VRCHAT_OSC_ENABLED
+}
+func (s setter) VRCHAT_OSC_ENABLED(value bool) {
+	env.VRCHAT_OSC_ENABLED = value
+	return
+}
+func (g getter) VRCHAT_OSC_HOST() string {
+	return env.VRCHAT_OSC_HOST
+}
+func (s setter) VRCHAT_OSC_HOST(value string) {
+	env.VRCHAT_OSC_HOST = value
+	return
+}
+func (g getter) VRCHAT_OSC_PORT() int32 {
+	return env.VRCHAT_OSC_PORT
+}
+func (s setter) VRCHAT_OSC_PORT(value int32) {
+	env.VRCHAT_OSC_PORT = value
+	return
+}
 
 type environment struct {
 	ANTHROPIC_API_KEY             string
@@ -203,6 +224,9 @@ type environment struct {
 	TAILSCALE_PORT                int32
 	VOICEVOX_ENDPOINT             string
 	VOSK_SERVER_ENDPOINT          string
+	VRCHAT_OSC_ENABLED            bool
+	VRCHAT_OSC_HOST               string
+	VRCHAT_OSC_PORT               int32
 }
 
 var env environment
@@ -285,6 +309,22 @@ func Load() error {
 	TAILSCALE_PORT := int32(TAILSCALE_PORT__64)
 	VOICEVOX_ENDPOINT := os.Getenv("VOICEVOX_ENDPOINT")
 	VOSK_SERVER_ENDPOINT := os.Getenv("VOSK_SERVER_ENDPOINT")
+	VRCHAT_OSC_ENABLED := false
+	VRCHAT_OSC_ENABLED__S := os.Getenv("VRCHAT_OSC_ENABLED")
+	if strings.ToLower(VRCHAT_OSC_ENABLED__S) == "true" {
+		VRCHAT_OSC_ENABLED = true
+	} else if strings.ToLower(VRCHAT_OSC_ENABLED__S) == "false" {
+		VRCHAT_OSC_ENABLED = false
+	} else {
+		return errors.New("VRCHAT_OSC_ENABLED: " + "cannot use " + VRCHAT_OSC_ENABLED__S + " as type bool in assignment")
+	}
+	VRCHAT_OSC_HOST := os.Getenv("VRCHAT_OSC_HOST")
+	VRCHAT_OSC_PORT__S := os.Getenv("VRCHAT_OSC_PORT")
+	VRCHAT_OSC_PORT__64, err := strconv.ParseInt(VRCHAT_OSC_PORT__S, 10, 32)
+	if err != nil {
+		return errors.New("VRCHAT_OSC_PORT: " + err.Error())
+	}
+	VRCHAT_OSC_PORT := int32(VRCHAT_OSC_PORT__64)
 	env = environment{
 		ANTHROPIC_API_KEY:             ANTHROPIC_API_KEY,
 		BERTVITS2_ENDPOINT:            BERTVITS2_ENDPOINT,
@@ -310,6 +350,9 @@ func Load() error {
 		TAILSCALE_PORT:                TAILSCALE_PORT,
 		VOICEVOX_ENDPOINT:             VOICEVOX_ENDPOINT,
 		VOSK_SERVER_ENDPOINT:          VOSK_SERVER_ENDPOINT,
+		VRCHAT_OSC_ENABLED:            VRCHAT_OSC_ENABLED,
+		VRCHAT_OSC_HOST:               VRCHAT_OSC_HOST,
+		VRCHAT_OSC_PORT:               VRCHAT_OSC_PORT,
 	}
 	return err
 }
@@ -339,6 +382,9 @@ type getterInterface interface {
 	TAILSCALE_PORT() int32
 	VOICEVOX_ENDPOINT() string
 	VOSK_SERVER_ENDPOINT() string
+	VRCHAT_OSC_ENABLED() bool
+	VRCHAT_OSC_HOST() string
+	VRCHAT_OSC_PORT() int32
 }
 type getter struct {
 	getterInterface
@@ -375,6 +421,9 @@ type setterInterface interface {
 	TAILSCALE_PORT() int32
 	VOICEVOX_ENDPOINT() string
 	VOSK_SERVER_ENDPOINT() string
+	VRCHAT_OSC_ENABLED() bool
+	VRCHAT_OSC_HOST() string
+	VRCHAT_OSC_PORT() int32
 }
 type setter struct {
 	setterInterface

@@ -17,6 +17,7 @@ import (
 	"github.com/potproject/uchinoko-studio/data"
 	"github.com/potproject/uchinoko-studio/db"
 	"github.com/potproject/uchinoko-studio/envgen"
+	"github.com/potproject/uchinoko-studio/osc"
 )
 
 type TextInput struct {
@@ -278,6 +279,12 @@ func WSTalk() func(*websocket.Conn) {
 
 			jsonTokens, _ := json.Marshal(tokens)
 			wsSendTextMessage(c, FinishOutputType, string(jsonTokens))
+			if envgen.Get().VRCHAT_OSC_ENABLED() {
+				err = osc.SendChatBoxMessage(envgen.Get().VRCHAT_OSC_HOST(), envgen.Get().VRCHAT_OSC_PORT(), requestText)
+				if err != nil {
+					sendError(c, err)
+				}
+			}
 
 			close(chunkMessage)
 			close(chunkAudio)
