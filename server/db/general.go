@@ -9,6 +9,7 @@ import (
 
 func generalInitConfig() data.GeneralConfig {
 	return data.GeneralConfig{
+		Background:            "blue",
 		Language:              "ja-JP",
 		SoundEffect:           true,
 		CharacterOutputChange: false,

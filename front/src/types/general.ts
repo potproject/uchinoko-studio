@@ -1,4 +1,5 @@
 export type GeneralConfig = {
+    background: string;
     language: "ja-JP";
     soundEffect: boolean;
     characterOutputChange: boolean;

@@ -1,6 +1,7 @@
 package data
 
 type GeneralConfig struct {
+	Background            string `json:"background"`
 	Language              string `json:"language"`
 	SoundEffect           bool   `json:"soundEffect"`
 	CharacterOutputChange bool   `json:"characterOutputChange"`

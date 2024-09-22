@@ -45,6 +45,28 @@
                     <i class="las la-times text-2xl"></i>
                 </div>
             </div>
+            <!-- 表示設定 -->
+            <h2 class="text-xl px-2 py-2 border-b border-gray-300 flex items-center mb-2 mx-4 mt-4">
+                <i class="las la-desktop text-2xl mr-2"></i>
+                表示設定
+            </h2>
+            <div class="flex items-center px-4 py-2">
+                <div class="flex-1">
+                    <label for="background" class="text-sm">背景色</label>
+                    <div class="flex items-center space-x-2 mt-1">
+                        <button class={"w-6 h-6 rounded bg-blue-500 hover:ring-4 ring-offset-2 ring-blue-300 " + (data.background === "blue" ? "ring" : "")} on:click={() => data.background = "blue"}></button>
+                        <button class={"w-6 h-6 rounded bg-red-500 hover:ring-4 ring-offset-2 ring-red-300 " + (data.background === "red" ? "ring" : "")} on:click={() => data.background = "red"}></button>
+                        <button class={"w-6 h-6 rounded bg-green-500 hover:ring-4 ring-offset-2 ring-green-300 " + (data.background === "green" ? "ring" : "")} on:click={() => data.background = "green"}></button>
+                        <button class={"w-6 h-6 rounded bg-yellow-500 hover:ring-4 ring-offset-2 ring-yellow-300 " + (data.background === "yellow" ? "ring" : "")} on:click={() => data.background = "yellow"}></button>
+                        <button class={"w-6 h-6 rounded bg-purple-500 hover:ring-4 ring-offset-2 ring-purple-300 " + (data.background === "purple" ? "ring" : "")} on:click={() => data.background = "purple"}></button>
+                        <button class={"w-6 h-6 rounded bg-pink-500 hover:ring-4 ring-offset-2 ring-pink-300 " + (data.background === "pink" ? "ring" : "")} on:click={() => data.background = "pink"}></button>
+                        <button class={"w-6 h-6 rounded bg-indigo-500 hover:ring-4 ring-offset-2 ring-indigo-300 " + (data.background === "indigo" ? "ring" : "")} on:click={() => data.background = "indigo"}></button>
+                        <button class={"w-6 h-6 rounded bg-gray-500 hover:ring-4 ring-offset-2 ring-gray-300 " + (data.background === "gray" ? "ring" : "")} on:click={() => data.background = "gray"}></button>
+                        <button class={"w-6 h-6 rounded bg-orange-500 hover:ring-4 ring-offset-2 ring-orange-300 " + (data.background === "orange" ? "ring" : "")} on:click={() => data.background = "orange"}></button>
+                        <button class={"w-6 h-6 rounded bg-teal-500 hover:ring-4 ring-offset-2 ring-teal-300 " + (data.background === "teal" ? "ring" : "")} on:click={() => data.background = "teal"}></button>
+                    </div>
+                </div>
+            </div>
             <h2 class="text-xl px-2 py-2 border-b border-gray-300 flex items-center mb-2 mx-4 mt-4">
                 <i class="las la-microphone text-2xl mr-2"></i>
                 入力設定
