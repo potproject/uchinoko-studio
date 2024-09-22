@@ -2,6 +2,7 @@
     import { createEventDispatcher, onMount } from "svelte";
     import ConfigModal from "./config/general.svelte";
     import ConfigCharacterModal from "./config/character.svelte";
+    import ConfigEnvModal from "./config/env.svelte";
     import Character from "./character.svelte";
     import type { CharacterConfig, CharacterConfigList } from "../types/character";
     import type { GeneralConfig } from "../types/general";
@@ -13,8 +14,9 @@
     let webRtcOk = false;
     let start = false;
 
-    let showConfig = false;
     let selectCharacterIndex: number|undefined = undefined;
+    let showGeneralConfig = false;
+    let showEnvConfig = false;
     let showCharacterConfig: CharacterConfig | undefined = undefined;
 
     let audioOutputDevices: MediaDeviceInfo[] = [];
@@ -92,8 +94,11 @@
 
 <div class="max-h-[90vh] overflow-y-auto">
     <div>
-        {#if showConfig}
-            <ConfigModal on:close={() => (showConfig = false)} data={general} />
+        {#if showGeneralConfig}
+            <ConfigModal on:close={() => (showGeneralConfig = false)} data={general} />
+        {/if}
+        {#if showEnvConfig}
+            <ConfigEnvModal on:close={() => (showEnvConfig = false)} />
         {/if}
         {#if showCharacterConfig !== undefined}
             <ConfigCharacterModal
@@ -125,8 +130,11 @@
         >
             <div class="card-header p-4 flex m-2">
                 <h1 class="text-3xl font-bold flex-1">Uchinoko Studio(β)</h1>
-                <div class="flex items-center text-gray-300 hover:text-gray-800 cursor-pointer" on:click={() => (showConfig = !showConfig)}>
+                <div class="flex items-center text-gray-300 hover:text-gray-800 cursor-pointer" on:click={() => (showGeneralConfig = !showGeneralConfig)}>
                     <i class="las la-cog text-4xl mr-2"></i>
+                </div>
+                <div class="flex items-center text-gray-300 hover:text-gray-800 cursor-pointer" on:click={() => (showEnvConfig = !showEnvConfig)}>
+                    <i class="las la-database text-4xl mr-2"></i>
                 </div>
             </div>
             <!-- 利用規約欄 Textarea -->
