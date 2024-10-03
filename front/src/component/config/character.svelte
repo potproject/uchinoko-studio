@@ -328,10 +328,14 @@
                             <option value="command-light">Command Light</option>
                         {/if}
                         {#if data.chat.type === "gemini"}
+                            <option value="gemini-1.5-pro-002">Gemini 1.5 Pro 002</option>
+                            <option value="gemini-1.5-pro-001">Gemini 1.5 Pro 001</option>
                             <option value="gemini-1.5-pro-exp-0827">Gemini 1.5 Pro Experimental 0827</option>
                             <option value="gemini-1.5-pro-latest">Gemini 1.5 Pro Latest</option>
+                            <option value="gemini-1.5-flash-002">Gemini 1.5 Flash 002</option>
+                            <option value="gemini-1.5-flash-001">Gemini 1.5 Flash 001</option>
                             <option value="gemini-1.5-flash-exp-0827">Gemini 1.5 Flash Experimental 0827</option>
-                            <option value="gemini-1.5-flash-8b-exp-0827">Gemini 1.5 8B Flash Experimental 0827</option>
+                            <option value="gemini-1.5-flash-8b-exp-0924">Gemini 1.5 8B Flash Experimental 0924</option>
                             <option value="gemini-1.5-flash-latest">Gemini 1.5 Flash Latest</option>
                             <option value="gemini-pro">Gemini Pro</option>
                         {/if}
