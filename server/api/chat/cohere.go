@@ -11,7 +11,7 @@ import (
 	"github.com/potproject/uchinoko-studio/data"
 )
 
-func CohereChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, *data.Tokens, error) {
+func CohereChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, ttsOptimization bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, *data.Tokens, error) {
 	ctx := context.Background()
 	// Tokens is Not Implemented
 	var t *data.Tokens
@@ -73,6 +73,6 @@ func CohereChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 		}
 	}()
 
-	cr, err := chatReceiver(charChannel, done, multi, voices, chunkMessage, text, image, cm)
+	cr, err := chatReceiver(charChannel, done, multi, ttsOptimization, voices, chunkMessage, text, image, cm)
 	return cr, t, err
 }

@@ -14,6 +14,7 @@ type ChatStream func(
 	string, // apiKey
 	[]data.CharacterConfigVoice, // voices
 	bool, // multi
+	bool, // ttsOptimization
 	string, // chatSystemPropmt
 	string, // model
 	[]data.ChatCompletionMessage, // messages
@@ -26,6 +27,7 @@ func chatReceiver(
 	charChannel chan rune,
 	done chan error,
 	multi bool,
+	ttsOptimization bool,
 	voices []data.CharacterConfigVoice,
 	chunkMessage chan api.ChunkMessage,
 	text string,
@@ -62,14 +64,26 @@ func chatReceiver(
 			if multi {
 				for i, v := range voiceIndentifications {
 					if strings.Contains(bufferText, v) {
-						bufferText = strings.Replace(bufferText, v, "", -1)
+						// vより前の文字列を取得
+						text := strings.Split(bufferText, v)[0]
+						if text != "" {
+							chunkMessage <- api.TextChunkMessage{
+								Text:  text,
+								Voice: voice,
+							}
+						}
+						// vより後の文字列を取得
+						bufferText = strings.Split(bufferText, v)[1]
 						voice = voices[i]
 						break
 					}
 				}
 			}
 
-			contain := strings.Contains(chars, string(c))
+			contain := false
+			if ttsOptimization {
+				contain = strings.Contains(chars, string(c))
+			}
 			if contain && utf8.RuneCountInString(bufferText) > 1 {
 				chunkMessage <- api.TextChunkMessage{
 					Text:  bufferText,

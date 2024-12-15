@@ -1,9 +1,11 @@
 package data
 
 type GeneralConfig struct {
+	Background            string `json:"background"`
 	Language              string `json:"language"`
 	SoundEffect           bool   `json:"soundEffect"`
 	CharacterOutputChange bool   `json:"characterOutputChange"`
+	EnableTTSOptimization bool   `json:"enableTTSOptimization"`
 	Transcription         struct {
 		Type        string `json:"type"`
 		Method      string `json:"method"`

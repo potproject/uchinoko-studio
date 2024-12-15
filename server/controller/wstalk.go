@@ -241,7 +241,7 @@ func WSTalk() func(*websocket.Conn) {
 			wg.Add(1)
 			go func() {
 				var err error
-				tokens, err = runChatStream(id, character, character.MultiVoice, requestText, requestImage, chatType, getChatApiKey(chatType), chatSystemPropmt, character.Chat.MaxHistory, chatModel, chunkMessage)
+				tokens, err = runChatStream(id, character, character.MultiVoice, general.EnableTTSOptimization, requestText, requestImage, chatType, getChatApiKey(chatType), chatSystemPropmt, character.Chat.MaxHistory, chatModel, chunkMessage)
 				if err != nil {
 					sendError(c, err)
 				}
@@ -330,7 +330,7 @@ func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, changeV
 	}
 }
 
-func runChatStream(id string, characterConfig data.CharacterConfig, multi bool, requestText string, requestImage *data.Image, chatType string, apiKey string, chatSystemPropmt string, maxHistory int64, chatModel string, chunkMessage chan api.ChunkMessage) (*data.Tokens, error) {
+func runChatStream(id string, characterConfig data.CharacterConfig, multi bool, ttsOptimization bool, requestText string, requestImage *data.Image, chatType string, apiKey string, chatSystemPropmt string, maxHistory int64, chatModel string, chunkMessage chan api.ChunkMessage) (*data.Tokens, error) {
 	var t *data.Tokens
 	cm, _, err := db.GetChatMessage(id, characterConfig.General.ID)
 	if err != nil {
@@ -363,7 +363,7 @@ func runChatStream(id string, characterConfig data.CharacterConfig, multi bool, 
 		chatStream = chat.OpenAILocalChatStream
 	}
 
-	ncm, t, err := chatStream(apiKey, characterConfig.Voice, multi, chatSystemPropmt, chatModel, cm.Chat, requestText, requestImage, chunkMessage)
+	ncm, t, err := chatStream(apiKey, characterConfig.Voice, multi, ttsOptimization, chatSystemPropmt, chatModel, cm.Chat, requestText, requestImage, chunkMessage)
 	if err != nil {
 		return t, err
 	}

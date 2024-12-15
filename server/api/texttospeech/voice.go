@@ -29,6 +29,9 @@ func getApiKey(voiceType string) string {
 	if voiceType == "openai-speech" {
 		return envgen.Get().OPENAI_SPEECH_API_KEY()
 	}
+	if voiceType == "nijivoice" {
+		return envgen.Get().NIJIVOICE_API_KEY()
+	}
 	return ""
 }
 
@@ -63,6 +66,9 @@ func TTSStream(general data.GeneralConfig, chunkMessage <-chan api.ChunkMessage,
 				}
 				if t.Voice.Type == "stylebertvits2" {
 					bin, err = styleBertVits2(getVoiceEndpoint(t.Voice.Type), t.Voice.ModelID, t.Voice.ModelFile, t.Voice.SpeakerID, t.Text)
+				}
+				if t.Voice.Type == "nijivoice" {
+					bin, err = nijivoice(getApiKey(t.Voice.Type), t.Voice.SpeakerID, t.Text)
 				}
 				if t.Voice.Type == "google-text-to-speech" {
 					bin, err = goSpeech(getApiKey(t.Voice.Type), general.Language, t.Voice.SpeakerID, t.Voice.ModelID, t.Text)

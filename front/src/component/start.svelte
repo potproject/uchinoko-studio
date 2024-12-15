@@ -2,6 +2,7 @@
     import { createEventDispatcher, onMount } from "svelte";
     import ConfigModal from "./config/general.svelte";
     import ConfigCharacterModal from "./config/character.svelte";
+    import ConfigEnvModal from "./config/env.svelte";
     import Character from "./character.svelte";
     import type { CharacterConfig, CharacterConfigList } from "../types/character";
     import type { GeneralConfig } from "../types/general";
@@ -10,23 +11,19 @@
     let micOk: boolean | undefined = undefined;
     let audioOk = false;
     let wsOk = false;
+    let webRtcOk = false;
     let start = false;
 
-    let showConfig = false;
     let selectCharacterIndex: number|undefined = undefined;
+    let showGeneralConfig = false;
+    let showEnvConfig = false;
     let showCharacterConfig: CharacterConfig | undefined = undefined;
 
     let audioOutputDevices: MediaDeviceInfo[] = [];
     let audioOutputDevicesCharacters: string[] = [];
 
     let characters: CharacterConfigList = { characters: [] };
-    let general: GeneralConfig = {
-        language: "ja-JP", 
-        soundEffect: true,
-        characterOutputChange: false,
-        transcription: { type: "openai_speech_to_text", method: "auto", autoSetting: { threshold: 0.02, silentThreshold: 1, audioMinLength: 1.3 } },
-    };
-
+    export let general: GeneralConfig;
     let audioElement: HTMLAudioElement;
     let mediaStream: MediaStream;
 
@@ -41,9 +38,6 @@
         if (characters.characters.length > 0) {
             selectCharacterIndex = 0;
         }
-
-        const ResGeneral = await fetch("/v1/config/general");
-        general = await ResGeneral.json();
     });
 
     let onClick = () => {
@@ -63,7 +57,6 @@
                 mediaStream,
                 selectCharacter: characters.characters[selectCharacterIndex],
                 audioOutputDevicesCharacters,
-                general,
             });
         };
     };
@@ -90,6 +83,8 @@
     const checkWs = () => {
         // @ts-ignore
         wsOk = !!(globalThis.WebSocket || globalThis.MozWebSocket);
+        // @ts-ignore
+        webRtcOk = !!(globalThis.RTCPeerConnection || globalThis.mozRTCPeerConnection || globalThis.webkitRTCPeerConnection);
     };
 
     checkMic();
@@ -97,10 +92,13 @@
     checkWs();
 </script>
 
-<div class="flex items-center justify-center w-full h-full">
+<div class="max-h-[90vh] overflow-y-auto">
     <div>
-        {#if showConfig}
-            <ConfigModal on:close={() => (showConfig = false)} data={general} />
+        {#if showGeneralConfig}
+            <ConfigModal on:close={() => (showGeneralConfig = false)} data={general} />
+        {/if}
+        {#if showEnvConfig}
+            <ConfigEnvModal on:close={() => (showEnvConfig = false)} />
         {/if}
         {#if showCharacterConfig !== undefined}
             <ConfigCharacterModal
@@ -132,8 +130,11 @@
         >
             <div class="card-header p-4 flex m-2">
                 <h1 class="text-3xl font-bold flex-1">Uchinoko Studio(β)</h1>
-                <div class="flex items-center text-gray-300 hover:text-gray-800 cursor-pointer" on:click={() => (showConfig = !showConfig)}>
+                <div class="flex items-center text-gray-300 hover:text-gray-800 cursor-pointer" on:click={() => (showGeneralConfig = !showGeneralConfig)}>
                     <i class="las la-cog text-4xl mr-2"></i>
+                </div>
+                <div class="flex items-center text-gray-300 hover:text-gray-800 cursor-pointer" on:click={() => (showEnvConfig = !showEnvConfig)}>
+                    <i class="las la-database text-4xl mr-2"></i>
                 </div>
             </div>
             <!-- 利用規約欄 Textarea -->
@@ -192,7 +193,7 @@
             </div>
 
             <div class="card-body p-3 m-2">
-                <h2 class="text-2xl font-bold {micOk && audioOk && wsOk ? 'text-green-600' : 'text-red-600'}">
+                <h2 class="text-2xl font-bold {micOk && audioOk && wsOk && webRtcOk ? 'text-green-600' : 'text-red-600'}">
                     <i class="las {micOk && audioOk && wsOk ? 'la-check' : 'la-times'}"></i>
                     <span>動作チェック</span>
                 </h2>
@@ -204,14 +205,14 @@
                     <i class="las la-volume-up text-2xl mr-1"></i>
                     <span class="">スピーカー</span>
                 </div>
-                <div class="flex items-center ml-2 {wsOk ? 'text-green-500' : 'text-red-500'}">
+                <div class="flex items-center ml-2 {wsOk && webRtcOk ? 'text-green-500' : 'text-red-500'}">
                     <i class="las la-wifi text-2xl mr-1"></i>
                     <span class="">ネットワーク</span>
                 </div>
                 {#if !micOk}
                     <div class="text-red-500 text-sm">マイクの権限を「許可する」に設定しないと、音声認識ができません。このサービスを利用するには、マイクの権限を許可してください。</div>
                 {/if}
-                {#if !audioOk || !wsOk}
+                {#if !audioOk || !wsOk || !webRtcOk}
                     <div class="text-red-500 text-sm">このブラウザでは、このサービスが正常に動作しない可能性があります。推奨するブラウザは、Google ChromeまたはiOS Safariとなります。</div>
                 {/if}
                 {#if general.characterOutputChange && selectCharacterIndex !== undefined}

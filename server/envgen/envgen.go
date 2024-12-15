@@ -72,6 +72,13 @@ func (s setter) HOST(value string) {
 	env.HOST = value
 	return
 }
+func (g getter) NIJIVOICE_API_KEY() string {
+	return env.NIJIVOICE_API_KEY
+}
+func (s setter) NIJIVOICE_API_KEY(value string) {
+	env.NIJIVOICE_API_KEY = value
+	return
+}
 func (g getter) OPENAI_API_KEY() string {
 	return env.OPENAI_API_KEY
 }
@@ -188,6 +195,7 @@ type environment struct {
 	GOOGLE_SPEECH_TO_TEXT_API_KEY string
 	GOOGLE_TEXT_TO_SPEECH_API_KEY string
 	HOST                          string
+	NIJIVOICE_API_KEY             string
 	OPENAI_API_KEY                string
 	OPENAI_LOCAL_API_ENDPOINT     string
 	OPENAI_LOCAL_API_KEY          string
@@ -228,6 +236,7 @@ func Load() error {
 	GOOGLE_SPEECH_TO_TEXT_API_KEY := os.Getenv("GOOGLE_SPEECH_TO_TEXT_API_KEY")
 	GOOGLE_TEXT_TO_SPEECH_API_KEY := os.Getenv("GOOGLE_TEXT_TO_SPEECH_API_KEY")
 	HOST := os.Getenv("HOST")
+	NIJIVOICE_API_KEY := os.Getenv("NIJIVOICE_API_KEY")
 	OPENAI_API_KEY := os.Getenv("OPENAI_API_KEY")
 	OPENAI_LOCAL_API_ENDPOINT := os.Getenv("OPENAI_LOCAL_API_ENDPOINT")
 	OPENAI_LOCAL_API_KEY := os.Getenv("OPENAI_LOCAL_API_KEY")
@@ -295,6 +304,7 @@ func Load() error {
 		GOOGLE_SPEECH_TO_TEXT_API_KEY: GOOGLE_SPEECH_TO_TEXT_API_KEY,
 		GOOGLE_TEXT_TO_SPEECH_API_KEY: GOOGLE_TEXT_TO_SPEECH_API_KEY,
 		HOST:                          HOST,
+		NIJIVOICE_API_KEY:             NIJIVOICE_API_KEY,
 		OPENAI_API_KEY:                OPENAI_API_KEY,
 		OPENAI_LOCAL_API_ENDPOINT:     OPENAI_LOCAL_API_ENDPOINT,
 		OPENAI_LOCAL_API_KEY:          OPENAI_LOCAL_API_KEY,
@@ -324,6 +334,7 @@ type getterInterface interface {
 	GOOGLE_SPEECH_TO_TEXT_API_KEY() string
 	GOOGLE_TEXT_TO_SPEECH_API_KEY() string
 	HOST() string
+	NIJIVOICE_API_KEY() string
 	OPENAI_API_KEY() string
 	OPENAI_LOCAL_API_ENDPOINT() string
 	OPENAI_LOCAL_API_KEY() string
@@ -360,6 +371,7 @@ type setterInterface interface {
 	GOOGLE_SPEECH_TO_TEXT_API_KEY() string
 	GOOGLE_TEXT_TO_SPEECH_API_KEY() string
 	HOST() string
+	NIJIVOICE_API_KEY() string
 	OPENAI_API_KEY() string
 	OPENAI_LOCAL_API_ENDPOINT() string
 	OPENAI_LOCAL_API_KEY() string
