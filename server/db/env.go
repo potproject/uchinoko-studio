@@ -22,6 +22,7 @@ func envInitConfig() data.EnvConfig {
 		OPENAI_LOCAL_API_ENDPOINT:     "",
 		VOICEVOX_ENDPOINT:             "",
 		BERTVITS2_ENDPOINT:            "",
+		NIJIVOICE_API_KEY:             "",
 		STYLEBERTVIT2_ENDPOINT:        "",
 		GOOGLE_TEXT_TO_SPEECH_API_KEY: "",
 		OPENAI_SPEECH_API_KEY:         "",

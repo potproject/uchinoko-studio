@@ -138,6 +138,14 @@
                     isSet: false,
                 },
                 {
+                    key: "NIJIVOICE_API_KEY",
+                    name: "にじボイスAPIキー",
+                    description: "Style-Bert-VITS2の音声合成サービス用APIキー",
+                    link: "https://nijivoice.com",
+                    value: "",
+                    isSet: false,
+                },
+                {
                     key: "GOOGLE_TEXT_TO_SPEECH_API_KEY",
                     name: "Google Text to Speech API Key",
                     description: "GoogleのText-to-Speech(音声合成)サービス用APIキー",

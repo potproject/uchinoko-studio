@@ -16,6 +16,7 @@
         language: "ja-JP", 
         soundEffect: true,
         characterOutputChange: false,
+        enableTTSOptimization: false,
         transcription: { type: "openai_speech_to_text", method: "auto", autoSetting: { threshold: 0.02, silentThreshold: 1, audioMinLength: 1.3 } },
     };
 
