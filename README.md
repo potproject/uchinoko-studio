@@ -102,7 +102,7 @@ OPENAI_LOCAL_API_ENDPOINT=http://localhost:11434/
 
 ### Requirements
 
-* Go (Tested on 1.22.2/win-amd64)
+* Go (Tested on 1.23.4/win-amd64)
 * Node.js (Tested on 20.11.1/win-amd64)
 * pnpm
 
