@@ -64,7 +64,7 @@
                     <div class="w-full flex items-center">
                         <img src={"images/"+character.voice[0].backgroundImagePath} alt={character.general.name} class="w-1/4 h-full rounded-lg" />
                         <div class="w-3/4 ml-4">
-                            アシスタントAI: カスタム(コードネーム:ai-custom-01) CV:VOICEVOX 小夜/SAYO<br>
+                            アシスタントAI: カスタム(コードネーム:ai-custom-02)<br>
                             性格: 物静か、大人しい、皮肉屋、クール<br>
                             好きな物: 静かな場所、読書、映画<br>
                             デフォルトとの関係は、双子の妹。
@@ -87,7 +87,7 @@
                     <div class="w-full flex items-center mt-4">
                         <img src={"images/"+character.voice[1].backgroundImagePath} alt={character.general.name} class="w-1/4 h-full rounded-lg" />
                         <div class="w-3/4 ml-4">
-                            アシスタントAI: カスタム(コードネーム:ai-custom-01)<br>
+                            アシスタントAI: カスタム(コードネーム:ai-custom-02)<br>
                             性格: 物静か、大人しい、皮肉屋、クール<br>
                             双子の妹。
                         </div>
