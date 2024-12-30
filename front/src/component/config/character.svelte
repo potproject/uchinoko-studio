@@ -160,6 +160,7 @@
                                 <option value="voicevox">VOICEVOX</option>
                                 <option value="bertvits2">Bert-VITS2(FastAPI)</option>
                                 <option value="stylebertvits2">Style-Bert-VITS2(FastAPI)</option>
+                                <option value="nijivoice">にじボイス API</option>
                                 <option value="google-text-to-speech">Google Text to Speech API</option>
                                 <option value="openai-speech">OpenAI Speech API</option>
                             </select>
@@ -211,6 +212,14 @@
                     <div class="flex items-center px-4 py-2">
                         <div class="flex-1">
                             <label for="speaker_id" class="text-sm">話者</label>
+                            <input type="text" id="speaker_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].speakerId} />
+                        </div>
+                    </div>
+                    {/if}
+                    {#if data.voice[index].type === "nijivoice"}
+                    <div class="flex items-center px-4 py-2">
+                        <div class="flex-1">
+                            <label for="speaker_id" class="text-sm">ボイスアクターID</label>
                             <input type="text" id="speaker_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].speakerId} />
                         </div>
                     </div>
@@ -307,18 +316,15 @@
                     <datalist id="model_list">
                         {#if data.chat.type === "openai"}
                             <option value="gpt-4o">GPT-4o</option>
+                            <option value="gpt-4o-mini">GPT-4o Mini</option>
                             <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                            <option value="gpt-4-turbo-2024-04-09">GPT-4 Turbo(2024-04-09)</option>
-                            <option value="gpt-4-turbo-preview">GPT-4 Turbo Preview</option>
-                            <option value="gpt-4-0125-preview">GPT-4 Turbo(0125-preview)</option>
-                            <option value="gpt-4-1106-preview">GPT-4 Turbo(1106-preview)</option>
                             <option value="gpt-4">GPT-4</option>
                             <option value="gpt-4-32k">GPT-4 32k</option>
-                            <option value="gpt-3.5-turbo-0125">GPT-3.5 Turbo(0125)</option>
                             <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                            <option value="gpt-3.5-turbo-1106">GPT-3.5 Turbo(1106)</option>
                         {/if}
                         {#if data.chat.type === "anthropic"}
+                            <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet(20241022)</option>
+                            <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku(20241022)</option>
                             <option value="claude-3-opus-20240229">Claude 3 Opus(20240229)</option>
                             <option value="claude-3-sonnet-20240229">Claude 3 Sonnet(20240229)</option>
                             <option value="claude-3-haiku-20240307">Claude 3 Haiku(20240307)</option>
@@ -332,8 +338,14 @@
                             <option value="command-light">Command Light</option>
                         {/if}
                         {#if data.chat.type === "gemini"}
-                            <option value="gemini-1.5-pro-latest">Gemini 1.5 Pro</option>
-                            <option value="gemini-1.5-flash-latest">Gemini 1.5 Flash</option>
+                            <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash Exp</option>
+                            <option value="gemini-1.5-pro-002">Gemini 1.5 Pro 002</option>
+                            <option value="gemini-1.5-pro-001">Gemini 1.5 Pro 001</option>
+                            <option value="gemini-1.5-pro-latest">Gemini 1.5 Pro Latest</option>
+                            <option value="gemini-1.5-flash-002">Gemini 1.5 Flash 002</option>
+                            <option value="gemini-1.5-flash-001">Gemini 1.5 Flash 001</option>
+                            <option value="gemini-1.5-flash-8b-latest">Gemini 1.5 8B Flash Latest</option>
+                            <option value="gemini-1.5-flash-latest">Gemini 1.5 Flash Latest</option>
                             <option value="gemini-pro">Gemini Pro</option>
                         {/if}
                     </datalist>

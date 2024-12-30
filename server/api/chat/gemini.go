@@ -35,7 +35,7 @@ func setGeminiSafetySettings() []*gemini.SafetySetting {
 
 }
 
-func GeminiChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, *data.Tokens, error) {
+func GeminiChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, ttsOptimization bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, *data.Tokens, error) {
 	ctx := context.Background()
 	var t *data.Tokens
 	client, err := gemini.NewClient(ctx, option.WithAPIKey(apiKey))
@@ -66,18 +66,19 @@ func GeminiChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 	}
 	cs.History = geminiContents
 
-	var part gemini.Part
-	if image == nil {
-		part = gemini.Text(text)
-	} else {
-		part = gemini.Blob{
+	var parts []gemini.Part
+	if text != "" {
+		parts = append(parts, gemini.Text(text))
+	}
+	if image != nil {
+		parts = append(parts, gemini.Blob{
 			MIMEType: image.MediaType(),
 			Data:     image.Data,
-		}
+		})
 	}
 	iter := cs.SendMessageStream(
 		ctx,
-		part,
+		parts...,
 	)
 
 	charChannel := make(chan rune)
@@ -113,7 +114,7 @@ func GeminiChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 		}
 	}()
 
-	cr, err := chatReceiver(charChannel, done, multi, voices, chunkMessage, text, image, cm)
+	cr, err := chatReceiver(charChannel, done, multi, ttsOptimization, voices, chunkMessage, text, image, cm)
 	return cr, t, err
 }
 

@@ -40,8 +40,8 @@
             <div class={"text-sm truncate w-28 mt-3 text-center " + (selectCharacterIndex === i ? "text-blue-500" : "text-gray-500")}>{character.general.name}</div>
         </div>
         {#if showInfo === character}
-        <div class="absolute top-0 left-0 w-full h-full bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white p-4 rounded-lg shadow-lg w-128">
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-800 bg-opacity-50">
+            <div class="bg-white w-128 p-4 rounded-lg shadow-lg">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-xl font-bold">{character.general.name}</h2>
                     <i class="las la-times text-gray-500 cursor-pointer text-xl" on:click={() => (showInfo = undefined)} ></i>
@@ -50,9 +50,9 @@
                 <div>
                     {#if character.general.name === "デフォルト" }
                     <div class="w-full flex items-center">
-                        <img src={"images/"+character.voice[0].backgroundImagePath} alt={character.general.name} class="w-1/2 h-full rounded-lg" />
-                        <div class="w-1/2 ml-4">
-                            アシスタントAI: デフォルト(コードネーム:ai-default-01) CV:VOICEVOX 猫使ビィ<br>
+                        <img src={"images/"+character.voice[0].backgroundImagePath} alt={character.general.name} class="w-1/4 h-full rounded-lg" />
+                        <div class="w-3/4 ml-4">
+                            アシスタントAI: デフォルト(コードネーム:ai-default-01)<br>
                             性格: 前向き、元気、純粋、子供っぽい<br>
                             好きな物: おいしいもの、ゲーム、アニメ、漫画、おしゃべり<br>
                             カスタムとの関係は、双子の姉。
@@ -62,8 +62,8 @@
                     {/if}
                     {#if character.general.name === "カスタム"}
                     <div class="w-full flex items-center">
-                        <img src={"images/"+character.voice[0].backgroundImagePath} alt={character.general.name} class="w-1/2 h-full rounded-lg" />
-                        <div class="w-1/2 ml-4">
+                        <img src={"images/"+character.voice[0].backgroundImagePath} alt={character.general.name} class="w-1/4 h-full rounded-lg" />
+                        <div class="w-3/4 ml-4">
                             アシスタントAI: カスタム(コードネーム:ai-custom-01) CV:VOICEVOX 小夜/SAYO<br>
                             性格: 物静か、大人しい、皮肉屋、クール<br>
                             好きな物: 静かな場所、読書、映画<br>
@@ -77,23 +77,19 @@
                         2人のアシスタントAIと同時に話すことができます。
                     </div>
                     <div class="w-full flex items-center">
-                        <img src={"images/"+character.voice[0].backgroundImagePath} alt={character.general.name} class="w-1/2 h-full rounded-lg" />
-                        <div class="w-1/2 ml-4">
+                        <img src={"images/"+character.voice[0].backgroundImagePath} alt={character.general.name} class="w-1/4 h-full rounded-lg" />
+                        <div class="w-3/4 ml-4">
                             アシスタントAI: デフォルト(コードネーム:ai-default-01)<br>
                             性格: 前向き、元気、純粋、子供っぽい<br>
-                            好きな物: おいしいもの、ゲーム、アニメ、漫画、おしゃべり<br>
-                            カスタムとの関係は、双子の姉。
-                            あなたのことをマスターと呼ぶ。
+                            双子の姉。
                         </div>
                     </div>  
                     <div class="w-full flex items-center mt-4">
-                        <img src={"images/"+character.voice[1].backgroundImagePath} alt={character.general.name} class="w-1/2 h-full rounded-lg" />
-                        <div class="w-1/2 ml-4">
+                        <img src={"images/"+character.voice[1].backgroundImagePath} alt={character.general.name} class="w-1/4 h-full rounded-lg" />
+                        <div class="w-3/4 ml-4">
                             アシスタントAI: カスタム(コードネーム:ai-custom-01)<br>
                             性格: 物静か、大人しい、皮肉屋、クール<br>
-                            好きな物: 静かな場所、読書、映画<br>
-                            デフォルトとの関係は、双子の妹。
-                            あなたのことをご主人と呼ぶ。
+                            双子の妹。
                         </div>
                     </div>  
                     {/if}  

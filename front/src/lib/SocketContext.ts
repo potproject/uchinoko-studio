@@ -6,6 +6,8 @@ type TextMessage = {
 };
 
 export class SocketContext{
+    private boundary = 'boundaryUchinoko';
+
     private socket: WebSocket;
 
     public mimeType: string = 'audio/wav';
@@ -83,12 +85,34 @@ export class SocketContext{
         return socket;
     }
 
-    public sendBinary(data: string | ArrayBufferLike | ArrayBufferView | Blob){
-        this.socket.send(data);
+    public sendBinary(contentType: string, data: string | ArrayBufferLike | ArrayBufferView | Blob, filename: string){
+        const multipartMessage = this.createMultipartMessage(this.boundary, [{ contentType, data, filename }]);
+        this.socket.send(multipartMessage);
+    }
+
+    public sendBinaries(data: { contentType: string, data: string | ArrayBufferLike | ArrayBufferView | Blob, filename: string }[]){
+        const multipartMessage = this.createMultipartMessage(this.boundary, data);
+        this.socket.send(multipartMessage);
     }
 
     public sendText(text: string){
         const data = JSON.stringify({text});
         this.socket.send(data);
+    }
+
+    private createMultipartMessage(boundary: string, parts: { contentType: string, data: string | ArrayBufferLike | ArrayBufferView | Blob, filename?: string }[]): Blob {
+        const multipartParts = parts.map(part => {
+            let headers = `--${boundary}\r\n`;
+            headers += `Content-Type: ${part.contentType}\r\n`;
+            if (part.filename) {
+                headers += `Content-Disposition: attachment; filename="${part.filename}"\r\n`;
+            }
+            headers += `\r\n`;
+    
+            return new Blob([headers, part.data, '\r\n'], { type: part.contentType });
+        });
+        multipartParts.push(new Blob([`--${boundary}--\r\n`], { type: 'text/plain' }));
+    
+        return new Blob(multipartParts, { type: 'multipart/mixed; boundary=' + boundary });
     }
 }  

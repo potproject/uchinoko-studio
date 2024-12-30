@@ -10,10 +10,6 @@ import (
 const voicevoxAudioQueryEndpoint = "audio_query"
 const voicevoxSynthesisEndpoint = "synthesis"
 
-type Request struct {
-	Text string `json:"text"`
-}
-
 func voicevox(endpoint string, speaker string, text string) ([]byte, error) {
 	client := new(http.Client)
 	audioQuery := endpoint + voicevoxAudioQueryEndpoint + "?speaker=" + speaker + "&text=" + url.QueryEscape(text)

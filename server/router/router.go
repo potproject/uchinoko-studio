@@ -48,6 +48,7 @@ func userRoutes(app *fiber.App) {
 	app.Get("/v1/ws/talk/:id/:characterId/compressed", controller.WSTalkCompressed())
 
 	app.Get("/v1/config/general", controller.GetGeneralConfig)
+	app.Get("/v1/config/env", controller.GetEnvConfig)
 
 	app.Get("/v1/config/characters", controller.GetCharacterConfigList)
 	app.Get("/v1/config/character/init", controller.GetInitCharacterConfig)
@@ -56,6 +57,7 @@ func userRoutes(app *fiber.App) {
 func managerRoutes(app *fiber.App) {
 	app.Post("/v1/config/general", controller.PostGeneralConfig)
 
+	app.Post("/v1/config/env", controller.PostEnvConfig)
 	app.Post("/v1/config/character/:id", controller.PostCharacterConfig)
 	app.Delete("/v1/config/character/:id", controller.DeleteCharacterConfig)
 }

@@ -1,5 +1,5 @@
 export type Message = {
-    type: 'my' | 'your' | 'error' | 'my-img';
+    type: 'my' | 'your' | 'error';
     voiceIndex: number|null;
     text: string;
     img?: string;
