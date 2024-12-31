@@ -144,6 +144,8 @@
                     <span>利用規約</span>
                 </h2>
                 <textarea class="w-full h-32 p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-500 focus:border-blue-500" placeholder="利用規約" readonly>
+    3人のかわいいうちのAIとマイクで会話できるサービスです(大晦日限定公開予定)。
+
     このWebアプリケーションを使用して、起こったいかなる問題についても、開発者は責任を負いません。
     音声生成処理に外部のサービスまたはアプリケーションを使用している場合、そのサービスまたはアプリケーションの利用規約に従ってください。 このWebアプリケーションは、Google
     Chromeを推奨しています。その他のブラウザでは、正常に動作しない可能性があります。
