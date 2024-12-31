@@ -12,7 +12,7 @@ RUN cd front && pnpm install
 RUN cd front && pnpm build
 
 # Stage 2: Build the backend
-FROM golang:1.22-alpine AS backend-builder
+FROM golang:1.23.4-alpine AS backend-builder
 
 WORKDIR /app
 
