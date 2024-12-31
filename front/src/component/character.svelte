@@ -76,9 +76,10 @@
                     <div class="w-full flex items-center">
                         <img src={"images/"+character.voice[0].backgroundImagePath} alt={character.general.name} class="w-1/4 h-full rounded-lg" />
                         <div class="w-3/4 ml-4">
-                            アシスタントAI: フォーク(コードネーム:ai-fork-03)<br>
+                            アシスタントAI: フォーク(コードネーム:ai-fork-03:preview)<br>
                             性格: 怠惰、マイペース、睡眠欲が強い<br>
                             好きな物: 寝ること、なんとなくテレビを見ること、寝ること<br>
+                            立ち絵間に合いませんでした<br>
                             2人との関係は、たぶん末の妹。
                             あなたのことをマスターと呼ぶかもしれない。
                         </div>
@@ -107,9 +108,9 @@
                     <div class="w-full flex items-center mt-4">
                         <img src={"images/"+character.voice[2].backgroundImagePath} alt={character.general.name} class="w-1/4 h-full rounded-lg" />
                         <div class="w-3/4 ml-4">
-                            アシスタントAI: フォーク(コードネーム:ai-fork-03)<br>
+                            アシスタントAI: フォーク(コードネーム:ai-fork-03:preview)<br>
                             性格: 怠惰、マイペース、睡眠欲が強い<br>
-                            たぶん妹。
+                            たぶん妹。立ち絵間に合いませんでした
                         </div>
                     </div>  
                     {/if}  
