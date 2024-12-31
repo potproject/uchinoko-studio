@@ -18,7 +18,7 @@
             <!-- キャラクター画像をクリックすると、キャラクター設定モーダルを表示する -->
             <div class="relative">
                 <img
-                    src={character.general.name === "2人と話す" ? "images/two.png" : "images/"+character.voice[0].image }
+                    src={character.general.name === "3人と話す" ? "images/three.png" : "images/"+character.voice[0].image }
                     alt={character.general.name}
                     class={"w-24 h-24 rounded-full border shadow-sm bg-white cursor-pointer hover:shadow-md border-2 " + (selectCharacterIndex === i ? "border-blue-500 shadow-md" : "border-gray-300")}
                     on:click={() => (dispatch("selectCharacter", { index: i }))}
@@ -72,9 +72,21 @@
                         </div>
                     </div>
                     {/if}
-                    {#if character.general.name === "2人と話す"}
+                    {#if character.general.name === "フォーク"}
                     <div class="w-full flex items-center">
-                        2人のアシスタントAIと同時に話すことができます。
+                        <img src={"images/"+character.voice[0].backgroundImagePath} alt={character.general.name} class="w-1/4 h-full rounded-lg" />
+                        <div class="w-3/4 ml-4">
+                            アシスタントAI: フォーク(コードネーム:ai-fork-03)<br>
+                            性格: 怠惰、マイペース、睡眠欲が強い<br>
+                            好きな物: 寝ること、なんとなくテレビを見ること、寝ること<br>
+                            2人との関係は、たぶん末の妹。
+                            あなたのことをマスターと呼ぶかもしれない。
+                        </div>
+                    </div>
+                    {/if}
+                    {#if character.general.name === "3人と話す"}
+                    <div class="w-full flex items-center">
+                        3人のアシスタントAIと同時に話すことができます。
                     </div>
                     <div class="w-full flex items-center">
                         <img src={"images/"+character.voice[0].backgroundImagePath} alt={character.general.name} class="w-1/4 h-full rounded-lg" />
@@ -90,6 +102,14 @@
                             アシスタントAI: カスタム(コードネーム:ai-custom-02)<br>
                             性格: 物静か、大人しい、皮肉屋、クール<br>
                             双子の妹。
+                        </div>
+                    </div>
+                    <div class="w-full flex items-center mt-4">
+                        <img src={"images/"+character.voice[2].backgroundImagePath} alt={character.general.name} class="w-1/4 h-full rounded-lg" />
+                        <div class="w-3/4 ml-4">
+                            アシスタントAI: フォーク(コードネーム:ai-fork-03)<br>
+                            性格: 怠惰、マイペース、睡眠欲が強い<br>
+                            たぶん妹。
                         </div>
                     </div>  
                     {/if}  
