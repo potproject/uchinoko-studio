@@ -389,6 +389,14 @@
                         </div>
                     </div>
                 {/if}
+                <!-- messageが空のとき、マイクで話してみて見たいな表示 -->
+                {#if messages.length === 0 && !initLoading}
+                    <div class="flex justify-center items-center">
+                        <div class="flex justify-center items-center rounded-md bg-gray-600 p-2 m-2 text-white">
+                            <i class="las text-2xl la-microphone"></i>準備完了！マイクで話しかけてみてください！
+                        </div>
+                    </div>
+                {/if}
                 {#each messages as msg}
                     {#if msg.type === "my"}
                         <ChatMyMsg message={msg.text} image={msg.img} loading={msg.loading} speaking={msg.speaking} />
@@ -407,7 +415,7 @@
             </div>
             <div class="py-4">
                 <div class="flex justify-center items-center space-x-2">
-                    <Tooltip text="画面共有">
+                    <!--<Tooltip text="画面共有">
                         <button
                             class="btn text-white font-bold py-2 px-4 rounded-full
                         {!startScreenCapture ? 'bg-gray-500 hover:bg-gray-600' : 'bg-red-500 hover:bg-red-600'}"
@@ -415,7 +423,7 @@
                         >
                             <i class="las text-2xl la-desktop"></i>
                         </button>
-                    </Tooltip>
+                    </Tooltip>-->
                     <Tooltip text="チャット履歴をリセットする">
                         <button class="btn text-white font-bold py-2 px-4 rounded-full bg-gray-500 hover:bg-gray-600 disabled:opacity-50" disabled={speaking} on:click={refreshChat}>
                             <i class="las text-2xl la-folder-minus"></i>
