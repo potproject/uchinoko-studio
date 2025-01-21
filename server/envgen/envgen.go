@@ -23,11 +23,11 @@ func (s setter) BERTVITS2_ENDPOINT(value string) {
 	env.BERTVITS2_ENDPOINT = value
 	return
 }
-func (g getter) COHERE_API_KEY() string {
-	return env.COHERE_API_KEY
+func (g getter) DEEPSEEK_API_KEY() string {
+	return env.DEEPSEEK_API_KEY
 }
-func (s setter) COHERE_API_KEY(value string) {
-	env.COHERE_API_KEY = value
+func (s setter) DEEPSEEK_API_KEY(value string) {
+	env.DEEPSEEK_API_KEY = value
 	return
 }
 func (g getter) DB_FILE_PATH() string {
@@ -188,7 +188,7 @@ func (s setter) VOSK_SERVER_ENDPOINT(value string) {
 type environment struct {
 	ANTHROPIC_API_KEY             string
 	BERTVITS2_ENDPOINT            string
-	COHERE_API_KEY                string
+	DEEPSEEK_API_KEY                string
 	DB_FILE_PATH                  string
 	DEBUG                         bool
 	GEMINI_API_KEY                string
@@ -221,7 +221,7 @@ func Load() error {
 	var err error
 	ANTHROPIC_API_KEY := os.Getenv("ANTHROPIC_API_KEY")
 	BERTVITS2_ENDPOINT := os.Getenv("BERTVITS2_ENDPOINT")
-	COHERE_API_KEY := os.Getenv("COHERE_API_KEY")
+	DEEPSEEK_API_KEY := os.Getenv("DEEPSEEK_API_KEY")
 	DB_FILE_PATH := os.Getenv("DB_FILE_PATH")
 	DEBUG := false
 	DEBUG__S := os.Getenv("DEBUG")
@@ -297,7 +297,7 @@ func Load() error {
 	env = environment{
 		ANTHROPIC_API_KEY:             ANTHROPIC_API_KEY,
 		BERTVITS2_ENDPOINT:            BERTVITS2_ENDPOINT,
-		COHERE_API_KEY:                COHERE_API_KEY,
+		DEEPSEEK_API_KEY:                DEEPSEEK_API_KEY,
 		DB_FILE_PATH:                  DB_FILE_PATH,
 		DEBUG:                         DEBUG,
 		GEMINI_API_KEY:                GEMINI_API_KEY,
@@ -327,7 +327,7 @@ func Load() error {
 type getterInterface interface {
 	ANTHROPIC_API_KEY() string
 	BERTVITS2_ENDPOINT() string
-	COHERE_API_KEY() string
+	DEEPSEEK_API_KEY() string
 	DB_FILE_PATH() string
 	DEBUG() bool
 	GEMINI_API_KEY() string
@@ -364,7 +364,7 @@ func Get() getter {
 type setterInterface interface {
 	ANTHROPIC_API_KEY() string
 	BERTVITS2_ENDPOINT() string
-	COHERE_API_KEY() string
+	DEEPSEEK_API_KEY() string
 	DB_FILE_PATH() string
 	DEBUG() bool
 	GEMINI_API_KEY() string

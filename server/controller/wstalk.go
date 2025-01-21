@@ -154,8 +154,8 @@ func getChatApiKey(chatType string) string {
 	if chatType == "anthropic" {
 		return envgen.Get().ANTHROPIC_API_KEY()
 	}
-	if chatType == "cohere" {
-		return envgen.Get().COHERE_API_KEY()
+	if chatType == "deepseek" {
+		return envgen.Get().DEEPSEEK_API_KEY()
 	}
 	if chatType == "gemini" {
 		return envgen.Get().GEMINI_API_KEY()
@@ -351,8 +351,8 @@ func runChatStream(id string, characterConfig data.CharacterConfig, multi bool, 
 		chatStream = chat.AnthropicChatStream
 	}
 	// image support: ng
-	if chatType == "cohere" {
-		chatStream = chat.CohereChatStream
+	if chatType == "deepseek" {
+		chatStream = chat.DeepSeekChatStream
 	}
 	// image support: ok
 	if chatType == "gemini" {
