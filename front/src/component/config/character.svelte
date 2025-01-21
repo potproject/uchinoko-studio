@@ -347,6 +347,16 @@
                     </datalist>
                 </div>
             </div>
+            <!-- Temperature -->
+            <div class="flex items-center px-4 py-2">
+                <div class="flex-1">
+                    <label for="temperature" class="text-sm">Temperature</label>
+                    <div class="flex items center">
+                        <input type="checkbox" id="temperature" class="mr-2" bind:checked={data.chat.temperature.enable} />
+                        <input type="number" min="0" max="2" step="0.01" id="temperature" class="w-full border border-gray-300 rounded p-1" bind:value={data.chat.temperature.value} disabled={!data.chat.temperature.enable} />
+                    </div>
+                </div>
+            </div>
             <!-- システムプロンプト -->
             <div class="flex items-center px-4 py-2">
                 <div class="flex-1">

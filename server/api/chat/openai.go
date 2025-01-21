@@ -13,21 +13,21 @@ import (
 	openai "github.com/sashabaranov/go-openai"
 )
 
-func OpenAILocalChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, ttsOptimization bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, *data.Tokens, error) {
+func OpenAILocalChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, ttsOptimization bool, chatSystemPropmt string, temperature *float32, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, *data.Tokens, error) {
 	config := openai.DefaultConfig(apiKey)
 	baseUrl, _ := url.JoinPath(envgen.Get().OPENAI_LOCAL_API_ENDPOINT(), "v1")
 	config.BaseURL = baseUrl
 	c := openai.NewClientWithConfig(config)
-	return OpenAIChatStreamMain(context.Background(), c, voices, multi, ttsOptimization, chatSystemPropmt, model, cm, text, image, chunkMessage)
+	return OpenAIChatStreamMain(context.Background(), c, voices, multi, ttsOptimization, chatSystemPropmt, temperature, model, cm, text, image, chunkMessage)
 }
 
-func OpenAIChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, ttsOptimization bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, *data.Tokens, error) {
+func OpenAIChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, ttsOptimization bool, chatSystemPropmt string, temperature *float32, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, *data.Tokens, error) {
 	ctx := context.Background()
 	c := openai.NewClient(apiKey)
-	return OpenAIChatStreamMain(ctx, c, voices, multi, ttsOptimization, chatSystemPropmt, model, cm, text, image, chunkMessage)
+	return OpenAIChatStreamMain(ctx, c, voices, multi, ttsOptimization, chatSystemPropmt, temperature, model, cm, text, image, chunkMessage)
 }
 
-func OpenAIChatStreamMain(ctx context.Context, c *openai.Client, voices []data.CharacterConfigVoice, multi bool, ttsOptimization bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, *data.Tokens, error) {
+func OpenAIChatStreamMain(ctx context.Context, c *openai.Client, voices []data.CharacterConfigVoice, multi bool, ttsOptimization bool, chatSystemPropmt string, temperature *float32, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, *data.Tokens, error) {
 	var t *data.Tokens
 	ncm := append(cm, data.ChatCompletionMessage{
 		Role:    data.ChatCompletionMessageRoleUser,
@@ -77,6 +77,10 @@ func OpenAIChatStreamMain(ctx context.Context, c *openai.Client, voices []data.C
 			IncludeUsage: true,
 		},
 	}
+	if temperature != nil {
+		req.Temperature = *temperature
+	}
+
 	stream, err := c.CreateChatCompletionStream(ctx, req)
 	if err != nil {
 		log.Printf("ChatCompletionStream error: %v\n", err)

@@ -22,6 +22,10 @@ export type CharacterConfig = {
         type: string;
         model: string;
         systemPrompt: string;
+        temperature: {
+            enable: boolean;
+            value: number;
+        }
         maxHistory: number;
         limit:{
             day: {
