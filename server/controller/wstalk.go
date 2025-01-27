@@ -154,8 +154,8 @@ func getChatApiKey(chatType string) string {
 	if chatType == "anthropic" {
 		return envgen.Get().ANTHROPIC_API_KEY()
 	}
-	if chatType == "cohere" {
-		return envgen.Get().COHERE_API_KEY()
+	if chatType == "deepseek" {
+		return envgen.Get().DEEPSEEK_API_KEY()
 	}
 	if chatType == "gemini" {
 		return envgen.Get().GEMINI_API_KEY()
@@ -241,7 +241,11 @@ func WSTalk() func(*websocket.Conn) {
 			wg.Add(1)
 			go func() {
 				var err error
-				tokens, err = runChatStream(id, character, character.MultiVoice, general.EnableTTSOptimization, requestText, requestImage, chatType, getChatApiKey(chatType), chatSystemPropmt, character.Chat.MaxHistory, chatModel, chunkMessage)
+				var templature *float32
+				if character.Chat.Temperature.Enable {
+					templature = &character.Chat.Temperature.Value
+				}
+				tokens, err = runChatStream(id, character, character.MultiVoice, general.EnableTTSOptimization, requestText, requestImage, chatType, getChatApiKey(chatType), chatSystemPropmt, templature, character.Chat.MaxHistory, chatModel, chunkMessage)
 				if err != nil {
 					sendError(c, err)
 				}
@@ -330,7 +334,7 @@ func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, changeV
 	}
 }
 
-func runChatStream(id string, characterConfig data.CharacterConfig, multi bool, ttsOptimization bool, requestText string, requestImage *data.Image, chatType string, apiKey string, chatSystemPropmt string, maxHistory int64, chatModel string, chunkMessage chan api.ChunkMessage) (*data.Tokens, error) {
+func runChatStream(id string, characterConfig data.CharacterConfig, multi bool, ttsOptimization bool, requestText string, requestImage *data.Image, chatType string, apiKey string, chatSystemPropmt string, temperature *float32, maxHistory int64, chatModel string, chunkMessage chan api.ChunkMessage) (*data.Tokens, error) {
 	var t *data.Tokens
 	cm, _, err := db.GetChatMessage(id, characterConfig.General.ID)
 	if err != nil {
@@ -351,8 +355,8 @@ func runChatStream(id string, characterConfig data.CharacterConfig, multi bool, 
 		chatStream = chat.AnthropicChatStream
 	}
 	// image support: ng
-	if chatType == "cohere" {
-		chatStream = chat.CohereChatStream
+	if chatType == "deepseek" {
+		chatStream = chat.DeepSeekChatStream
 	}
 	// image support: ok
 	if chatType == "gemini" {
@@ -363,7 +367,7 @@ func runChatStream(id string, characterConfig data.CharacterConfig, multi bool, 
 		chatStream = chat.OpenAILocalChatStream
 	}
 
-	ncm, t, err := chatStream(apiKey, characterConfig.Voice, multi, ttsOptimization, chatSystemPropmt, chatModel, cm.Chat, requestText, requestImage, chunkMessage)
+	ncm, t, err := chatStream(apiKey, characterConfig.Voice, multi, ttsOptimization, chatSystemPropmt, temperature, chatModel, cm.Chat, requestText, requestImage, chunkMessage)
 	if err != nil {
 		return t, err
 	}

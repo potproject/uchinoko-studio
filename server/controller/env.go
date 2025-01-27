@@ -12,7 +12,7 @@ type EnvConfigResponse struct {
 	VOSK_SERVER_ENDPOINT          bool `json:"VOSK_SERVER_ENDPOINT"`
 	OPENAI_API_KEY                bool `json:"OPENAI_API_KEY"`
 	ANTHROPIC_API_KEY             bool `json:"ANTHROPIC_API_KEY"`
-	COHERE_API_KEY                bool `json:"COHERE_API_KEY"`
+	DEEPSEEK_API_KEY              bool `json:"DEEPSEEK_API_KEY"`
 	GEMINI_API_KEY                bool `json:"GEMINI_API_KEY"`
 	OPENAI_LOCAL_API_KEY          bool `json:"OPENAI_LOCAL_API_KEY"`
 	OPENAI_LOCAL_API_ENDPOINT     bool `json:"OPENAI_LOCAL_API_ENDPOINT"`
@@ -42,7 +42,7 @@ func GetEnvConfig(c *fiber.Ctx) error {
 		VOSK_SERVER_ENDPOINT:          env.VOSK_SERVER_ENDPOINT() != "" || config.VOSK_SERVER_ENDPOINT != "",
 		OPENAI_API_KEY:                env.OPENAI_API_KEY() != "" || config.OPENAI_API_KEY != "",
 		ANTHROPIC_API_KEY:             env.ANTHROPIC_API_KEY() != "" || config.ANTHROPIC_API_KEY != "",
-		COHERE_API_KEY:                env.COHERE_API_KEY() != "" || config.COHERE_API_KEY != "",
+		DEEPSEEK_API_KEY:              env.DEEPSEEK_API_KEY() != "" || config.DEEPSEEK_API_KEY != "",
 		GEMINI_API_KEY:                env.GEMINI_API_KEY() != "" || config.GEMINI_API_KEY != "",
 		OPENAI_LOCAL_API_KEY:          env.OPENAI_LOCAL_API_KEY() != "" || config.OPENAI_LOCAL_API_KEY != "",
 		OPENAI_LOCAL_API_ENDPOINT:     env.OPENAI_LOCAL_API_ENDPOINT() != "" || config.OPENAI_LOCAL_API_ENDPOINT != "",
@@ -84,7 +84,7 @@ func PostEnvConfig(c *fiber.Ctx) error {
 		"VOSK_SERVER_ENDPOINT":          true,
 		"OPENAI_API_KEY":                true,
 		"ANTHROPIC_API_KEY":             true,
-		"COHERE_API_KEY":                true,
+		"DEEPSEEK_API_KEY":              true,
 		"GEMINI_API_KEY":                true,
 		"OPENAI_LOCAL_API_KEY":          true,
 		"OPENAI_LOCAL_API_ENDPOINT":     true,
@@ -138,10 +138,10 @@ func PostEnvConfig(c *fiber.Ctx) error {
 					envgen.Set().ANTHROPIC_API_KEY(value)
 					changed = true
 				}
-			case "COHERE_API_KEY":
-				if config.COHERE_API_KEY != value {
-					config.COHERE_API_KEY = value
-					envgen.Set().COHERE_API_KEY(value)
+			case "DEEPSEEK_API_KEY":
+				if config.DEEPSEEK_API_KEY != value {
+					config.DEEPSEEK_API_KEY = value
+					envgen.Set().DEEPSEEK_API_KEY(value)
 					changed = true
 				}
 			case "GEMINI_API_KEY":

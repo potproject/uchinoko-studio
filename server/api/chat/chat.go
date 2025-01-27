@@ -16,6 +16,7 @@ type ChatStream func(
 	bool, // multi
 	bool, // ttsOptimization
 	string, // chatSystemPropmt
+	*float32, // temperature
 	string, // model
 	[]data.ChatCompletionMessage, // messages
 	string, // text

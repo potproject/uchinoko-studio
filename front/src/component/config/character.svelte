@@ -302,7 +302,7 @@
                     <select id="chat" class="w-full border border-gray-300 rounded p-1" bind:value={data.chat.type}>
                         <option value="openai">OpenAI</option>
                         <option value="anthropic">Anthropic</option>
-                        <option value="cohere">Cohere</option>
+                        <option value="deepseek">DeepSeek</option>
                         <option value="gemini">Gemini</option>
                         <option value="openai-local">Local LLM(OpenAI v1/chat/completions Compatible)</option>
                     </select>
@@ -329,13 +329,9 @@
                             <option value="claude-3-sonnet-20240229">Claude 3 Sonnet(20240229)</option>
                             <option value="claude-3-haiku-20240307">Claude 3 Haiku(20240307)</option>
                         {/if}
-                        {#if data.chat.type === "cohere"}
-                            <option value="command-r-plus">Command R Plus</option>
-                            <option value="command-r">Command R</option>
-                            <option value="command-nightly">Command Nightly</option>
-                            <option value="command">Command</option>
-                            <option value="command-light-nightly">Command Light Nightly</option>
-                            <option value="command-light">Command Light</option>
+                        {#if data.chat.type === "deepseek"}
+                            <option value="deepseek-chat">DeepSeek Chat</option>
+                            <option value="deepseek-reasoner">DeepSeek Reasoner</option>
                         {/if}
                         {#if data.chat.type === "gemini"}
                             <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash Exp</option>
@@ -349,6 +345,16 @@
                             <option value="gemini-pro">Gemini Pro</option>
                         {/if}
                     </datalist>
+                </div>
+            </div>
+            <!-- Temperature -->
+            <div class="flex items-center px-4 py-2">
+                <div class="flex-1">
+                    <label for="temperature" class="text-sm">Temperature</label>
+                    <div class="flex items center">
+                        <input type="checkbox" id="temperature" class="mr-2" bind:checked={data.chat.temperature.enable} />
+                        <input type="number" min="0" max="2" step="0.01" id="temperature" class="w-full border border-gray-300 rounded p-1" bind:value={data.chat.temperature.value} disabled={!data.chat.temperature.enable} />
+                    </div>
                 </div>
             </div>
             <!-- システムプロンプト -->

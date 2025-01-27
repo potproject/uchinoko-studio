@@ -37,8 +37,14 @@ type CharacterConfigChat struct {
 	Type         string                   `json:"type"`
 	Model        string                   `json:"model"`
 	SystemPrompt string                   `json:"systemPrompt"`
+	Temperature  TemperatureConfig        `json:"temperature"`
 	MaxHistory   int64                    `json:"maxHistory"`
 	Limit        CharacterConfigChatLimit `json:"limit"`
+}
+
+type TemperatureConfig struct {
+	Enable bool    `json:"enable"`
+	Value  float32 `json:"value"`
 }
 
 type CharacterConfigChatLimit struct {

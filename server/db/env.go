@@ -16,7 +16,7 @@ func envInitConfig() data.EnvConfig {
 		VOSK_SERVER_ENDPOINT:          "",
 		OPENAI_API_KEY:                "",
 		ANTHROPIC_API_KEY:             "",
-		COHERE_API_KEY:                "",
+		DEEPSEEK_API_KEY:              "",
 		GEMINI_API_KEY:                "",
 		OPENAI_LOCAL_API_KEY:          "",
 		OPENAI_LOCAL_API_ENDPOINT:     "",
@@ -77,8 +77,8 @@ func LoadEnvConfig() error {
 	if config.ANTHROPIC_API_KEY != "" {
 		envgen.Set().ANTHROPIC_API_KEY(config.ANTHROPIC_API_KEY)
 	}
-	if config.COHERE_API_KEY != "" {
-		envgen.Set().COHERE_API_KEY(config.COHERE_API_KEY)
+	if config.DEEPSEEK_API_KEY != "" {
+		envgen.Set().DEEPSEEK_API_KEY(config.DEEPSEEK_API_KEY)
 	}
 	if config.GEMINI_API_KEY != "" {
 		envgen.Set().GEMINI_API_KEY(config.GEMINI_API_KEY)

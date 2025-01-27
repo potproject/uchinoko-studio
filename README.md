@@ -31,7 +31,7 @@ See Article(Japanese Only): https://blog.potproject.net/2023/12/24/ai-web-uchino
 * Run on Browser(Google Chrome Supported)
 * Mobile Browser Support(iOS Safari, Android Chrome)
 * Japanese Support(for now...)
-* Chat-based LLM Support: [OpenAI GPT(Cloud)](https://openai.com/gpt-4),[Anthropic Claude(Cloud)](https://www.anthropic.com/claude),[Cohere Command(Cloud)](https://cohere.com/command),[Gemini(Cloud)](https://gemini.google.com),Local LLM(OpenAI `/v1/chat/completions` Compatible)
+* Chat-based LLM Support: [OpenAI GPT(Cloud)](https://openai.com/gpt-4),[Anthropic Claude(Cloud)](https://www.anthropic.com/claude),[DeepSeek(Cloud)](https://www.deepseek.com),[Gemini(Cloud)](https://gemini.google.com),Local LLM(OpenAI `/v1/chat/completions` Compatible)
 * Speach-To-Text Support: [OpenAI Speech to Text API(Cloud)](https://platform.openai.com/docs/guides/speech-to-text),[Google Speech to Text API(Cloud)](https://cloud.google.com/speech-to-text),[Vosk Server(local)](https://github.com/alphacep/vosk-server),[SpeechRecognition(Web API)](https://developer.mozilla.org/docs/Web/API/SpeechRecognition)
 * Text-To-Speech Support: [Bert-Vits2(local)](https://github.com/fishaudio/Bert-VITS2), [Style-Bert-VITS2(local)](https://github.com/litagin02/Style-Bert-VITS2), [VOICEVOX(local)](https://voicevox.hiroshiba.jp/),[NijiVoice API(Cloud)](https://nijivoice.com), [Google Text To Speech API(Cloud)](https://cloud.google.com/text-to-speech),  [OpenAI Speech API(Cloud)](https://platform.openai.com/docs/guides/speech-to-text)
 * More bugs...
@@ -58,7 +58,7 @@ __!WARNING! このアプリケーションはまだ開発中であり、正常�
 
 * OpenAI: `OPENAI_API_KEY`
 * Anthropic: `ANTHROPIC_API_KEY`
-* cohere: `COHERE_API_KEY`
+* DeepSeek: `DEEPSEEK_API_KEY`
 * Gemini: `GEMINI_API_KEY`
 
 ### Chat-based LLM(Local)

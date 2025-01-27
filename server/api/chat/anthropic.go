@@ -11,7 +11,7 @@ import (
 	"github.com/potproject/uchinoko-studio/data"
 )
 
-func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, ttsOptimization bool, chatSystemPropmt string, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, *data.Tokens, error) {
+func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, ttsOptimization bool, chatSystemPropmt string, temperature *float32, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, *data.Tokens, error) {
 	ctx := context.Background()
 	c := claude.NewClient(apiKey)
 
@@ -57,6 +57,10 @@ func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, mult
 		Messages:  anthropicChatMessages,
 		Stream:    true,
 		System:    chatSystemPropmt,
+	}
+
+	if temperature != nil {
+		body.Temperature = float64(*temperature)
 	}
 
 	stream, err := c.CreateMessagesStream(ctx, body)
