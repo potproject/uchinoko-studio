@@ -2,7 +2,7 @@
     import { PlayingContext } from "$lib/PlayingContext";
     import { RecordingContext } from "$lib/RecordingContent";
     import { SocketContext } from "$lib/SocketContext";
-    import { tick } from "svelte";
+    import { onMount, tick } from "svelte";
     import ChatMyMsg from "./chat-my-msg.svelte";
     import ChatYourMsg from "./chat-your-msg.svelte";
     import type { CharacterConfig } from "../types/character";
@@ -17,119 +17,54 @@
     import { ScreenCapture } from "$lib/ScreenCapture";
     import Tooltip from "./tooltip/tooltip.svelte";
 
-    let initLoading = true;
-    let stopMic = false;
-    let startScreenCapture = false;
-
-    let socket: SocketContext;
-    let playing: PlayingContext;
-    let recording: RecordingContentInterface;
-    let image: ImageContext;
-    let messages: Message[] = [];
-    let screenCapture: ScreenCapture = new ScreenCapture();
-
     export let audio: AudioContext;
     export let media: MediaStream;
     export let selectCharacter: CharacterConfig;
     export let audioOutputDevicesCharacters: string[];
     export let generalConfig: GeneralConfig;
-    let backgroundImage: { path: string; characterChange: boolean } = { path: "", characterChange: false };
 
-    const speakDisabled = (disabled: boolean) => {
-        if (stopMic || initLoading) {
-            disabled = true;
-        }
-        recording.changeRecordingAllow(!disabled);
-    };
-
-    let speaking = false;
-    let chatarea: HTMLDivElement | undefined = undefined;
-    let chunkMessages: ChunkMessage[] = [];
-
-    const updateChat = async () => {
-        //スクロールバーを一番下に移動
-        await tick();
-        chatarea?.scrollTo(0, chatarea.scrollHeight);
-    };
-
-    const addMessage = (message: Message) => {
-        message.text = message.text.trim();
-        messages = [...messages, message];
-        updateChat();
-    };
-
-    const changeLastMessage = (message: Partial<Message>) => {
-        if (message.text !== undefined) {
-            message.text = message.text.trim();
-        }
-        messages = [
-            ...messages.slice(0, messages.length - 1),
-            {
-                ...messages[messages.length - 1],
-                ...message,
-            },
-        ];
-        updateChat();
-    };
-
-    image = new ImageContext();
-    image.onLoadStart = (file: File) => {
-        addMessage({
-            type: "my",
-            text: MessageConstants.uploadImage,
-            img: URL.createObjectURL(file),
-            loading: true,
-            speaking: false,
-            chunk: false,
-            voiceIndex: null,
-        });
-    };
-    image.onLoadEnd = (mimeType: string, arrayBuffer: ArrayBuffer) => {
-        socket.sendBinary(mimeType, arrayBuffer, "image.png");
-    };
-
-    // 画面キャプチャ
-    const enableScreenCapture = async () => {
-        screenCapture.onEnded = () => {
-            startScreenCapture = false;
-        };
-        if (screenCapture.stream?.active) {
-            screenCapture.stopCapture();
-            startScreenCapture = false;
-            return;
-        }
-        try {
-            await screenCapture.startCapture();
-            startScreenCapture = true;
-        } catch (e) {
-            console.error(e);
-        }
-        return;
-    };
-
-    const refreshChat = async () => {
-        if (globalThis.confirm("チャットをリセットしますか？返答が上手くいかない場合に使用してください。")) {
-            fetch(`/v1/chat/${getID()}/${selectCharacter.general.id}`, {
-                method: "DELETE",
-            })
-                .finally(() => {
-                    messages = [];
-                    updateChat();
-                })
-                .catch((e) => {
-                    console.error(e);
-                    alert("エラーが発生しました");
-                });
+        
+    let mute = false;
+    let onChangeMute = (value: boolean) => {
+        mute = value;
+        if (mute) {
+            recording.changeRecordingAllow(false);
+        } else {
+            recording.changeRecordingAllow(state === ChatState.Waiting || state === ChatState.UserSpeaking);
         }
     };
 
-    const uploadImage = async () => {
-        stopMic = true;
-        speakDisabled(stopMic);
-        image.upload();
+    enum ChatState {
+        Initializing = "initializing", // 初期化中
+        Waiting = "waiting", // ユーザ発話待機中
+        UserSpeaking = "user_speaking", // ユーザが音声発信中
+        Loading = "loading", // ユーザ発信完了後，AI応答待ち（ロード中）
+        AISpeaking = "ai_speaking", // AIが音声発信中
+    }
+    let state: ChatState = ChatState.Initializing;
+    const onChangeState = (newState: ChatState) => {
+        if (!mute && ChatState.UserSpeaking !== newState) {
+            const disabled = (newState !== ChatState.Waiting);
+            if (recording) {
+                recording.changeRecordingAllow(!disabled);   
+            }
+        }
+        state = newState;
     };
 
-    (async () => {
+    onMount(async () => {
+        onChangeState(ChatState.Initializing);
+        await loadSocket();
+        await loadPlaying();
+        await loadRecording();
+        await loadMessages();
+        await loadImage();
+        await loadScreenCapture();
+        onChangeState(ChatState.Waiting);
+    });
+
+    let socket: SocketContext;
+    const loadSocket = async () => {
         socket = await SocketContext.connect(getID(), selectCharacter.general.id);
         socket.onClosed = () => {
             addMessage({
@@ -181,11 +116,13 @@
                 voiceIndex: null,
             });
         };
+    };
 
-        // Playing 再生
+    let playing: PlayingContext;
+    const loadPlaying = async () => {
         playing = new PlayingContext(audio);
         playing.onSpeakingStart = () => {
-            speaking = true;
+            onChangeState(ChatState.AISpeaking);
         };
         playing.onSpeackingChunkStart = () => {
             while (chunkMessages.length > 0) {
@@ -250,7 +187,6 @@
         };
 
         playing.onSpeakingEnd = () => {
-            speaking = false;
             if (messages[messages.length - 1].speaking) {
                 changeLastMessage({
                     loading: false,
@@ -258,16 +194,26 @@
                     chunk: false,
                 });
             }
-            speakDisabled(false);
+            onChangeState(ChatState.Waiting);
         };
+    };
 
+    let recording: RecordingContentInterface;
+    const loadRecording = async () => {
         // Recording 録音
         if (generalConfig.transcription.type === "speech_recognition") {
             recording = new RecognitionContent(media, socket.mimeType, generalConfig);
         } else if (generalConfig.transcription.method === "pushToTalk") {
-            recording = new RecordingPushToTalkContext(media, socket.mimeType, generalConfig);
-            stopMic = true;
-            speakDisabled(true);
+            // TODO Push To Talkは一旦無し
+            // recording = new RecordingPushToTalkContext(media, socket.mimeType, generalConfig);
+            addMessage({
+                type: "error",
+                text: "Push To Talkは未実装です",
+                loading: false,
+                speaking: false,
+                chunk: false,
+                voiceIndex: null,
+            });
         } else {
             recording = new RecordingContext(media, socket.mimeType, generalConfig);
         }
@@ -284,6 +230,7 @@
             });
 
             updateChat();
+            onChangeState(ChatState.UserSpeaking);
             return;
         };
         recording.onSpeakingEnd = (ignore) => {
@@ -294,6 +241,7 @@
             if (ignore) {
                 messages = messages.slice(0, messages.length - 1);
                 updateChat();
+                onChangeState(ChatState.Waiting);
                 return;
             }
             changeLastMessage({
@@ -302,7 +250,7 @@
                 speaking: false,
                 chunk: false,
             });
-            speakDisabled(true);
+            onChangeState(ChatState.Loading);
             return;
         };
         recording.onDataAvailable = (event) => {
@@ -337,8 +285,10 @@
         recording.onText = (text: string) => {
             socket.sendText(text);
         };
+    };
 
-        // old message load
+    let messages: Message[] = [];
+    let loadMessages = async () => {
         const res = await fetch(`/v1/chat/${getID()}/${selectCharacter.general.id}`, {
             method: "GET",
             headers: {
@@ -346,7 +296,6 @@
             },
         });
         if (res.status === 204) {
-            initLoading = false;
             updateChat();
             return;
         }
@@ -365,12 +314,107 @@
             }
         }
         messages = newmessages;
-        initLoading = false;
         if (selectCharacter.voice.length > 0) {
             backgroundImage = { path: selectCharacter.voice[0].backgroundImagePath, characterChange: false };
         }
         updateChat();
-    })();
+    };
+
+    let image: ImageContext;
+    const loadImage = async () => {
+        image = new ImageContext();
+        image.onLoadStart = (file: File) => {
+            addMessage({
+                type: "my",
+                text: MessageConstants.uploadImage,
+                img: URL.createObjectURL(file),
+                loading: true,
+                speaking: false,
+                chunk: false,
+                voiceIndex: null,
+            });
+        };
+        image.onLoadEnd = (mimeType: string, arrayBuffer: ArrayBuffer) => {
+            socket.sendBinary(mimeType, arrayBuffer, "image.png");
+        };
+    };
+    const uploadImage = async () => {
+        state = ChatState.Loading;
+        await image.upload();
+    };
+
+    let screenCapture: ScreenCapture;
+    let startScreenCapture = false;
+    const loadScreenCapture = async () => {
+        screenCapture = new ScreenCapture();
+        screenCapture.onEnded = () => {
+            startScreenCapture = false;
+        };
+    };
+    const enableScreenCapture = async () => {
+        screenCapture.onEnded = () => {
+            startScreenCapture = false;
+        };
+        if (screenCapture.stream?.active) {
+            screenCapture.stopCapture();
+            startScreenCapture = false;
+            return;
+        }
+        try {
+            await screenCapture.startCapture();
+            startScreenCapture = true;
+        } catch (e) {
+            console.error(e);
+        }
+        return;
+    };
+
+    let backgroundImage: { path: string; characterChange: boolean } = { path: "", characterChange: false };
+
+    let chatarea: HTMLDivElement | undefined = undefined;
+    let chunkMessages: ChunkMessage[] = [];
+
+    const updateChat = async () => {
+        //スクロールバーを一番下に移動
+        await tick();
+        chatarea?.scrollTo(0, chatarea.scrollHeight);
+    };
+
+    const addMessage = (message: Message) => {
+        message.text = message.text.trim();
+        messages = [...messages, message];
+        updateChat();
+    };
+
+    const changeLastMessage = (message: Partial<Message>) => {
+        if (message.text !== undefined) {
+            message.text = message.text.trim();
+        }
+        messages = [
+            ...messages.slice(0, messages.length - 1),
+            {
+                ...messages[messages.length - 1],
+                ...message,
+            },
+        ];
+        updateChat();
+    };
+
+    const refreshChat = async () => {
+        if (globalThis.confirm("チャットをリセットしますか？返答が上手くいかない場合に使用してください。")) {
+            fetch(`/v1/chat/${getID()}/${selectCharacter.general.id}`, {
+                method: "DELETE",
+            })
+                .finally(() => {
+                    messages = [];
+                    updateChat();
+                })
+                .catch((e) => {
+                    console.error(e);
+                    alert("エラーが発生しました");
+                });
+        }
+    };
 </script>
 
 <div class="w-full h-full">
@@ -382,7 +426,7 @@
         {/if}
         <div class="flex flex-col z-10 md:w-256">
             <div class="py-2 px-4 h-80 md:h-full overflow-y-scroll hidden-scrollbar" bind:this={chatarea}>
-                {#if initLoading}
+                {#if state === ChatState.Initializing}
                     <div class="flex justify-center items-center">
                         <div class="flex justify-center items-center rounded-md bg-gray-600 p-2 m-2 text-white">
                             <i class="las text-2xl animate-spin la-spinner"></i>Loading...
@@ -409,7 +453,8 @@
                 <div class="flex justify-center items-center space-x-2">
                     <Tooltip text="画面共有">
                         <button
-                            class="btn text-white font-bold py-2 px-4 rounded-full
+                            disabled={state !== ChatState.Waiting}
+                            class="btn text-white font-bold py-2 px-4 rounded-full disabled:opacity-50 
                         {!startScreenCapture ? 'bg-gray-500 hover:bg-gray-600' : 'bg-red-500 hover:bg-red-600'}"
                             on:click={enableScreenCapture}
                         >
@@ -417,26 +462,26 @@
                         </button>
                     </Tooltip>
                     <Tooltip text="チャット履歴をリセットする">
-                        <button class="btn text-white font-bold py-2 px-4 rounded-full bg-gray-500 hover:bg-gray-600 disabled:opacity-50" disabled={speaking} on:click={refreshChat}>
+                        <button class="btn text-white font-bold py-2 px-4 rounded-full bg-gray-500 hover:bg-gray-600 disabled:opacity-50" disabled={state !== ChatState.Waiting} on:click={refreshChat}>
                             <i class="las text-2xl la-folder-minus"></i>
                         </button>
                     </Tooltip>
                     <Tooltip text="画像をアップロード">
-                        <button class="btn text-white font-bold py-2 px-4 rounded-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50" disabled={speaking} on:click={uploadImage}>
+                        <button class="btn text-white font-bold py-2 px-4 rounded-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50" disabled={state !== ChatState.Waiting} on:click={uploadImage}>
                             <i class="las text-2xl la-file-image"></i>
                         </button>
                     </Tooltip>
                     <Tooltip text="音声ミュート">
                         <button
-                            class="btn text-white font-bold py-2 px-4 rounded-full
-                    {!stopMic ? 'bg-blue-500 hover:bg-blue-600' : 'bg-red-500 hover:bg-red-600'}
+                            disabled={state === ChatState.UserSpeaking}
+                            class="btn text-white font-bold py-2 px-4 rounded-full disabled:opacity-50 
+                    {!mute ? 'bg-blue-500 hover:bg-blue-600' : 'bg-red-500 hover:bg-red-600'}
                     "
                             on:click={() => {
-                                stopMic = !stopMic;
-                                speakDisabled(stopMic);
+                                onChangeMute(!mute);
                             }}
                         >
-                            <i class="las text-2xl {!stopMic ? 'la-microphone' : 'la-microphone-slash'}"></i>
+                            <i class="las text-2xl {!mute ? 'la-microphone' : 'la-microphone-slash'}"></i>
                         </button>
                     </Tooltip>
                 </div>
