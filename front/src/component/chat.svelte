@@ -23,7 +23,6 @@
     export let audioOutputDevicesCharacters: string[];
     export let generalConfig: GeneralConfig;
 
-        
     let mute = false;
     let onChangeMute = (value: boolean) => {
         mute = value;
@@ -44,9 +43,9 @@
     let state: ChatState = ChatState.Initializing;
     const onChangeState = (newState: ChatState) => {
         if (!mute && ChatState.UserSpeaking !== newState) {
-            const disabled = (newState !== ChatState.Waiting);
+            const disabled = newState !== ChatState.Waiting;
             if (recording) {
-                recording.changeRecordingAllow(!disabled);   
+                recording.changeRecordingAllow(!disabled);
             }
         }
         state = newState;
@@ -70,9 +69,6 @@
             addMessage({
                 type: "error",
                 text: MessageConstants.disconnected,
-                loading: false,
-                speaking: false,
-                chunk: false,
                 voiceIndex: null,
             });
         };
@@ -91,7 +87,7 @@
         };
 
         socket.onChatRequest = (text) => {
-            changeLastMessage({ text: text, loading: false, speaking: false });
+            changeLastMessage({ text: text });
         };
 
         socket.onChatResponseChangeCharacter = (text) => {
@@ -110,9 +106,6 @@
             addMessage({
                 type: "error",
                 text: text,
-                loading: false,
-                speaking: false,
-                chunk: false,
                 voiceIndex: null,
             });
         };
@@ -132,14 +125,6 @@
                 }
                 switch (chunkMessage.type) {
                     case "change-character":
-                        if (messages[messages.length - 1].chunk && messages[messages.length - 1].type === "your") {
-                            changeLastMessage({
-                                text: messages[messages.length - 1].text,
-                                loading: false,
-                                speaking: false,
-                                chunk: false,
-                            });
-                        }
                         const voiceIndex = selectCharacter.voice.findIndex((v) => v.identification === chunkMessage.text);
                         if (generalConfig.characterOutputChange && audioOutputDevicesCharacters.length > 0 && audioOutputDevicesCharacters[voiceIndex]) {
                             playing.changeOutputDevice(audioOutputDevicesCharacters[voiceIndex]);
@@ -147,9 +132,6 @@
                         addMessage({
                             type: "your",
                             text: MessageConstants.empty,
-                            loading: true,
-                            speaking: true,
-                            chunk: true,
                             voiceIndex,
                         });
                         backgroundImage = { path: "", characterChange: false };
@@ -164,21 +146,15 @@
                         backgroundImage = { path: chunkMessage.text, characterChange: false };
                         continue;
                     case "chat":
-                        if (messages[messages.length - 1].chunk) {
+                        if (messages[messages.length - 1].type === "your") {
                             changeLastMessage({
                                 text: messages[messages.length - 1].text + chunkMessage.text,
-                                loading: true,
-                                speaking: true,
-                                chunk: true,
                             });
                             return;
                         }
                         addMessage({
                             type: "your",
                             text: chunkMessage.text,
-                            loading: true,
-                            speaking: true,
-                            chunk: true,
                             voiceIndex: 0,
                         });
                         return;
@@ -187,13 +163,6 @@
         };
 
         playing.onSpeakingEnd = () => {
-            if (messages[messages.length - 1].speaking) {
-                changeLastMessage({
-                    loading: false,
-                    speaking: false,
-                    chunk: false,
-                });
-            }
             onChangeState(ChatState.Waiting);
         };
     };
@@ -209,9 +178,6 @@
             addMessage({
                 type: "error",
                 text: "Push To Talkは未実装です",
-                loading: false,
-                speaking: false,
-                chunk: false,
                 voiceIndex: null,
             });
         } else {
@@ -223,9 +189,6 @@
             addMessage({
                 type: "my",
                 text: MessageConstants.speakingStart,
-                loading: false,
-                speaking: true,
-                chunk: false,
                 voiceIndex: null,
             });
 
@@ -246,9 +209,6 @@
             }
             changeLastMessage({
                 text: MessageConstants.speakingEnd,
-                loading: true,
-                speaking: false,
-                chunk: false,
             });
             onChangeState(ChatState.Loading);
             return;
@@ -287,6 +247,87 @@
         };
     };
 
+    export function expandMessage(messageText: string, characterConfig: CharacterConfig): Message[] {
+        const messages: Message[] = [];
+        const text = messageText;
+
+        // 空文字になっている identification は除外する
+        const idTags = characterConfig.voice
+            .map((voice, idx) => ({
+                tag: voice.identification.trim(),
+                voiceIndex: idx,
+            }))
+            .filter((item) => item.tag !== "");
+
+        // ヘルパー: pos 以降で最も早く現れる identification タグを返す
+        function getNextTag(pos: number): { index: number; tag: string; voiceIndex: number } | null {
+            let next: { index: number; tag: string; voiceIndex: number } | null = null;
+            for (const item of idTags) {
+                const idx = text.indexOf(item.tag, pos);
+                if (idx !== -1 && (next === null || idx < next.index)) {
+                    next = { index: idx, tag: item.tag, voiceIndex: item.voiceIndex };
+                }
+            }
+            return next;
+        }
+
+        let pos = 0;
+        // 最初の identification タグが見つからなければ、全体を1件として扱う
+        const firstTag = getNextTag(pos);
+        if (!firstTag) {
+            messages.push({
+                type: "your",
+                voiceIndex: null,
+                text: text.trim(),
+            });
+            return messages;
+        }
+
+        // タグより前にテキストがある場合は voiceIndex を null とする
+        if (pos < firstTag.index) {
+            const beforeText = text.substring(pos, firstTag.index).trim();
+            if (beforeText) {
+                messages.push({
+                    type: "your",
+                    voiceIndex: null,
+                    text: beforeText,
+                });
+            }
+            pos = firstTag.index;
+        }
+
+        // メッセージを順次抽出
+        while (pos < text.length) {
+            const currentTag = getNextTag(pos);
+            if (!currentTag) {
+                const remaining = text.substring(pos).trim();
+                if (remaining && messages.length > 0) {
+                    messages.push({
+                        type: "your",
+                        voiceIndex: messages[messages.length - 1].voiceIndex,
+                        text: remaining,
+                    });
+                }
+                break;
+            }
+
+            const segmentStart = currentTag.index + currentTag.tag.length;
+            const nextTag = getNextTag(segmentStart);
+            const segmentEnd = nextTag ? nextTag.index : text.length;
+            const segmentText = text.substring(segmentStart, segmentEnd).trim();
+            if (segmentText) {
+                messages.push({
+                    type: "your",
+                    voiceIndex: currentTag.voiceIndex,
+                    text: segmentText,
+                });
+            }
+            pos = segmentEnd;
+        }
+
+        return messages;
+    }
+
     let messages: Message[] = [];
     let loadMessages = async () => {
         const res = await fetch(`/v1/chat/${getID()}/${selectCharacter.general.id}`, {
@@ -303,12 +344,16 @@
         const newmessages: Message[] = [];
         for (const msg of oldMessages) {
             if (msg.role === "user" || msg.role === "assistant") {
+                // assistantで複数話者を使用している場合、複数プッシュする
+                if (selectCharacter.multiVoice && msg.role === "assistant") {
+                    const splitMessages = expandMessage(msg.content, selectCharacter);
+                    newmessages.push(...splitMessages);
+                    continue;
+                }
+
                 newmessages.push({
                     type: msg.role === "user" ? "my" : "your",
                     text: msg.content,
-                    loading: false,
-                    speaking: false,
-                    chunk: false,
                     voiceIndex: null,
                 });
             }
@@ -328,9 +373,6 @@
                 type: "my",
                 text: MessageConstants.uploadImage,
                 img: URL.createObjectURL(file),
-                loading: true,
-                speaking: false,
-                chunk: false,
                 voiceIndex: null,
             });
         };
@@ -435,13 +477,11 @@
                 {/if}
                 {#each messages as msg}
                     {#if msg.type === "my"}
-                        <ChatMyMsg message={msg.text} image={msg.img} loading={msg.loading} speaking={msg.speaking} />
+                        <ChatMyMsg message={msg.text} image={msg.img} />
                     {:else if msg.type === "your"}
                         <ChatYourMsg
                             name={msg.voiceIndex !== null ? selectCharacter.voice[msg.voiceIndex].name : ""}
                             message={msg.text}
-                            loading={msg.loading}
-                            speaking={msg.speaking}
                             img={msg.voiceIndex === null ? null : "images/" + selectCharacter.voice[msg.voiceIndex].image}
                         />
                     {:else if msg.type === "error"}
@@ -454,7 +494,7 @@
                     <Tooltip text="画面共有">
                         <button
                             disabled={state !== ChatState.Waiting}
-                            class="btn text-white font-bold py-2 px-4 rounded-full disabled:opacity-50 
+                            class="btn text-white font-bold py-2 px-4 rounded-full disabled:opacity-50
                         {!startScreenCapture ? 'bg-gray-500 hover:bg-gray-600' : 'bg-red-500 hover:bg-red-600'}"
                             on:click={enableScreenCapture}
                         >
@@ -474,7 +514,7 @@
                     <Tooltip text="音声ミュート">
                         <button
                             disabled={state === ChatState.UserSpeaking}
-                            class="btn text-white font-bold py-2 px-4 rounded-full disabled:opacity-50 
+                            class="btn text-white font-bold py-2 px-4 rounded-full disabled:opacity-50
                     {!mute ? 'bg-blue-500 hover:bg-blue-600' : 'bg-red-500 hover:bg-red-600'}
                     "
                             on:click={() => {

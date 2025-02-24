@@ -3,9 +3,6 @@ export type Message = {
     voiceIndex: number|null;
     text: string;
     img?: string;
-    loading: boolean;
-    speaking: boolean;
-    chunk: boolean;
 }
 
 export type ChunkMessage = {
