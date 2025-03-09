@@ -483,6 +483,7 @@
                             name={msg.voiceIndex !== null ? selectCharacter.voice[msg.voiceIndex].name : ""}
                             message={msg.text}
                             img={msg.voiceIndex === null ? null : "images/" + selectCharacter.voice[msg.voiceIndex].image}
+                            loading={state === ChatState.AISpeaking && msg === messages[messages.length - 1]}
                         />
                     {:else if msg.type === "error"}
                         <ChatError message={msg.text} />
