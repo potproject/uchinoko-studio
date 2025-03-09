@@ -315,14 +315,13 @@
                     <input type="text" id="model" class="w-full border border-gray-300 rounded p-1" list="model_list" bind:value={data.chat.model} />
                     <datalist id="model_list">
                         {#if data.chat.type === "openai"}
+                            <option value="gpt-4.5-preview-2025-02-27">GPT-4.5 Preview(2025-02-27)</option>
                             <option value="gpt-4o">GPT-4o</option>
                             <option value="gpt-4o-mini">GPT-4o Mini</option>
                             <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                            <option value="gpt-4">GPT-4</option>
-                            <option value="gpt-4-32k">GPT-4 32k</option>
-                            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
                         {/if}
                         {#if data.chat.type === "anthropic"}
+                            <option value="claude-3-7-sonnet-20250219">Claude 3.7 Sonnet(20250219)</option>
                             <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet(20241022)</option>
                             <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku(20241022)</option>
                             <option value="claude-3-opus-20240229">Claude 3 Opus(20240229)</option>
@@ -334,13 +333,10 @@
                             <option value="deepseek-reasoner">DeepSeek Reasoner</option>
                         {/if}
                         {#if data.chat.type === "gemini"}
-                            <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash Exp</option>
-                            <option value="gemini-1.5-pro-002">Gemini 1.5 Pro 002</option>
-                            <option value="gemini-1.5-pro-001">Gemini 1.5 Pro 001</option>
+                            <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                            <option value="gemini-2.0-pro-exp-02-05">Gemini 2.0 Pro Exp(0205)</option>
+                            <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite</option>
                             <option value="gemini-1.5-pro-latest">Gemini 1.5 Pro Latest</option>
-                            <option value="gemini-1.5-flash-002">Gemini 1.5 Flash 002</option>
-                            <option value="gemini-1.5-flash-001">Gemini 1.5 Flash 001</option>
-                            <option value="gemini-1.5-flash-8b-latest">Gemini 1.5 8B Flash Latest</option>
                             <option value="gemini-1.5-flash-latest">Gemini 1.5 Flash Latest</option>
                             <option value="gemini-pro">Gemini Pro</option>
                         {/if}
