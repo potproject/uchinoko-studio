@@ -7,9 +7,8 @@ toolchain go1.23.4
 require (
 	cloud.google.com/go/speech v1.23.1
 	cloud.google.com/go/texttospeech v1.7.7
-	github.com/cohere-ai/cohere-go/v2 v2.7.1
 	github.com/gofiber/fiber/v2 v2.51.0
-	github.com/potproject/claude-sdk-go v1.1.6
+	github.com/potproject/claude-sdk-go v1.3.0
 	github.com/syndtr/goleveldb v1.0.0
 	google.golang.org/api v0.178.0
 	tailscale.com v1.78.3

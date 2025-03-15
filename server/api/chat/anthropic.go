@@ -39,13 +39,15 @@ func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, mult
 							MediaType: v.Image.MediaType(),
 							Data:      v.Image.Base64(),
 						},
+						CacheControl: claude.UseCacheEphemeral(),
 					},
 				},
 			}
 			if v.Content != "" {
 				anthropicChatMessages[i].ContentTypeText = []claude.RequestBodyMessagesMessagesContentTypeText{
 					{
-						Text: v.Content,
+						Text:         v.Content,
+						CacheControl: claude.UseCacheEphemeral(),
 					},
 				}
 			}
@@ -56,7 +58,9 @@ func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, mult
 		MaxTokens: 4096,
 		Messages:  anthropicChatMessages,
 		Stream:    true,
-		System:    chatSystemPropmt,
+		SystemTypeText: []claude.RequestBodySystemTypeText{
+			claude.UseSystemCacheEphemeral(chatSystemPropmt),
+		},
 	}
 
 	if temperature != nil {
