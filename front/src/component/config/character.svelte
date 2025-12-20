@@ -315,30 +315,26 @@
                     <input type="text" id="model" class="w-full border border-gray-300 rounded p-1" list="model_list" bind:value={data.chat.model} />
                     <datalist id="model_list">
                         {#if data.chat.type === "openai"}
-                            <option value="gpt-4.5-preview-2025-02-27">GPT-4.5 Preview(2025-02-27)</option>
-                            <option value="gpt-4o">GPT-4o</option>
-                            <option value="gpt-4o-mini">GPT-4o Mini</option>
-                            <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                            <option value="gpt-5.2">GPT-5.2</option>
+                            <option value="gpt-5-mini">GPT-5 Mini</option>
+                            <option value="gpt-5-nano">GPT-5 Nano</option>
+                            <option value="gpt-5">GPT-5</option>
                         {/if}
                         {#if data.chat.type === "anthropic"}
-                            <option value="claude-3-7-sonnet-20250219">Claude 3.7 Sonnet(20250219)</option>
-                            <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet(20241022)</option>
-                            <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku(20241022)</option>
-                            <option value="claude-3-opus-20240229">Claude 3 Opus(20240229)</option>
-                            <option value="claude-3-sonnet-20240229">Claude 3 Sonnet(20240229)</option>
-                            <option value="claude-3-haiku-20240307">Claude 3 Haiku(20240307)</option>
+                            <option value="claude-opus-4-5">Claude 4.5 Opus</option>
+                            <option value="claude-sonnet-4-5">Claude 4.5 Sonnet</option>
+                            <option value="claude-haiku-4-5">Claude 4.5 Haiku</option>
                         {/if}
                         {#if data.chat.type === "deepseek"}
                             <option value="deepseek-chat">DeepSeek Chat</option>
                             <option value="deepseek-reasoner">DeepSeek Reasoner</option>
                         {/if}
                         {#if data.chat.type === "gemini"}
-                            <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-                            <option value="gemini-2.0-pro-exp-02-05">Gemini 2.0 Pro Exp(0205)</option>
-                            <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite</option>
-                            <option value="gemini-1.5-pro-latest">Gemini 1.5 Pro Latest</option>
-                            <option value="gemini-1.5-flash-latest">Gemini 1.5 Flash Latest</option>
-                            <option value="gemini-pro">Gemini Pro</option>
+                            <option value="gemini-3-pro-preview">Gemini 3 Pro Preview</option>
+                            <option value="gemini-3-flash-preview">Gemini 3 Flash Preview</option>
+                            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                            <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
+                            <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
                         {/if}
                     </datalist>
                 </div>
