@@ -22,6 +22,7 @@ func envInitConfig() data.EnvConfig {
 		OPENAI_LOCAL_API_ENDPOINT:     "",
 		VOICEVOX_ENDPOINT:             "",
 		BERTVITS2_ENDPOINT:            "",
+		IRODORI_TTS_ENDPOINT:          "",
 		NIJIVOICE_API_KEY:             "",
 		STYLEBERTVIT2_ENDPOINT:        "",
 		GOOGLE_TEXT_TO_SPEECH_API_KEY: "",
@@ -94,6 +95,9 @@ func LoadEnvConfig() error {
 	}
 	if config.BERTVITS2_ENDPOINT != "" {
 		envgen.Set().BERTVITS2_ENDPOINT(config.BERTVITS2_ENDPOINT)
+	}
+	if config.IRODORI_TTS_ENDPOINT != "" {
+		envgen.Set().IRODORI_TTS_ENDPOINT(config.IRODORI_TTS_ENDPOINT)
 	}
 	if config.STYLEBERTVIT2_ENDPOINT != "" {
 		envgen.Set().STYLEBERTVIT2_ENDPOINT(config.STYLEBERTVIT2_ENDPOINT)

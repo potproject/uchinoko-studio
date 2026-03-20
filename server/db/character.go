@@ -23,6 +23,7 @@ func CharacterInitConfig() data.CharacterConfig {
 				ModelID:             "",
 				ModelFile:           "",
 				SpeakerID:           "1",
+				ReferenceAudioPath:  "",
 				Image:               "default.png",
 				BackgroundImagePath: "",
 				Behavior:            []data.CharacterConfigVoiceBehavior{},

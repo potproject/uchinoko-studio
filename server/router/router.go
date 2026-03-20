@@ -19,6 +19,7 @@ func Route(static embed.FS) *fiber.App {
 		Browse:     true,
 	}))
 	app.Static("/images/", "./images")
+	app.Static("/refs/", "./refs")
 
 	// API
 	if envgen.Get().DEBUG() && !envgen.Get().READ_ONLY() {

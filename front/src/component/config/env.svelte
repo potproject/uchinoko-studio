@@ -130,6 +130,14 @@
                     isSet: false,
                 },
                 {
+                    key: "IRODORI_TTS_ENDPOINT",
+                    name: "Irodori TTSエンドポイント",
+                    description: "音声合成OSS Irodori TTS の Gradio エンドポイントURL",
+                    link: "https://github.com/Aratako/Irodori-TTS",
+                    value: "",
+                    isSet: false,
+                },
+                {
                     key: "STYLEBERTVIT2_ENDPOINT",
                     name: "STYLEBERTVIT2エンドポイント",
                     description: "音声合成OSS Style-Bert-VITS2 のエンドポイントURL",

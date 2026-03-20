@@ -23,6 +23,7 @@ type CharacterConfigVoice struct {
 	ModelID             string                         `json:"modelId"`
 	ModelFile           string                         `json:"modelFile"`
 	SpeakerID           string                         `json:"speakerId"`
+	ReferenceAudioPath  string                         `json:"referenceAudioPath"`
 	Image               string                         `json:"image"`
 	BackgroundImagePath string                         `json:"backgroundImagePath"`
 	Behavior            []CharacterConfigVoiceBehavior `json:"behavior"`

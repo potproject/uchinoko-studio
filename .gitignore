@@ -3,3 +3,8 @@ env.txt
 server/database
 server/static
 server/images
+server/leveldb
+refs/*
+!refs/.gitkeep
+.gocache
+.gomodcache

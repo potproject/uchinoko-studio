@@ -16,6 +16,9 @@ func getVoiceEndpoint(voiceType string) string {
 	if voiceType == "bertvits2" {
 		return envgen.Get().BERTVITS2_ENDPOINT()
 	}
+	if voiceType == "irodori-tts" {
+		return envgen.Get().IRODORI_TTS_ENDPOINT()
+	}
 	if voiceType == "stylebertvits2" {
 		return envgen.Get().STYLEBERTVIT2_ENDPOINT()
 	}
@@ -66,6 +69,9 @@ func TTSStream(general data.GeneralConfig, chunkMessage <-chan api.ChunkMessage,
 				}
 				if t.Voice.Type == "stylebertvits2" {
 					bin, err = styleBertVits2(getVoiceEndpoint(t.Voice.Type), t.Voice.ModelID, t.Voice.ModelFile, t.Voice.SpeakerID, t.Text)
+				}
+				if t.Voice.Type == "irodori-tts" {
+					bin, err = irodori(getVoiceEndpoint(t.Voice.Type), t.Voice.ModelID, t.Voice.ReferenceAudioPath, t.Text)
 				}
 				if t.Voice.Type == "nijivoice" {
 					bin, err = nijivoice(getApiKey(t.Voice.Type), t.Voice.SpeakerID, t.Text)
