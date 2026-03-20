@@ -94,9 +94,8 @@ OPENAI_LOCAL_API_ENDPOINT=http://localhost:11434/
 #### Irodori TTS の補足
 
 * `Checkpoint`にはHugging Face上のモデルIDを設定します。空欄時は `Aratako/Irodori-TTS-500M` を使用します。
-* `参照音声URLまたは refs/ 配下パス` を指定すると、音声クローニング用の参照音声を渡せます。空欄なら通常のTTSとして動作します。
+* `refs/ 配下パス` を指定すると、音声クローニング用の参照音声を渡せます。空欄なら通常のTTSとして動作します。
 * ローカル参照音声を使う場合は、リポジトリ直下の `refs/` フォルダに wav を置いて、UI では `sample.wav` のように入力してください。
-* 現在の実装では、Irodori TTS への詳細パラメータは提供いただいたサンプル値を既定値として利用しています。
 
 ### Tailscale 
 

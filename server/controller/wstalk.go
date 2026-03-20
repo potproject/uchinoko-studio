@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
+	"runtime/debug"
 	"sync"
 
 	"github.com/gofiber/contrib/websocket"
@@ -334,6 +335,15 @@ func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, changeV
 	}
 }
 
+func shouldDisableTTSOptimization(voices []data.CharacterConfigVoice) bool {
+	for _, voice := range voices {
+		if voice.Type == "irodori-tts" {
+			return true
+		}
+	}
+	return false
+}
+
 func runChatStream(id string, characterConfig data.CharacterConfig, multi bool, ttsOptimization bool, requestText string, requestImage *data.Image, chatType string, apiKey string, chatSystemPropmt string, temperature *float32, maxHistory int64, chatModel string, chunkMessage chan api.ChunkMessage) (*data.Tokens, error) {
 	var t *data.Tokens
 	cm, _, err := db.GetChatMessage(id, characterConfig.General.ID)
@@ -367,6 +377,10 @@ func runChatStream(id string, characterConfig data.CharacterConfig, multi bool, 
 		chatStream = chat.OpenAILocalChatStream
 	}
 
+	if shouldDisableTTSOptimization(characterConfig.Voice) {
+		ttsOptimization = false
+	}
+
 	ncm, t, err := chatStream(apiKey, characterConfig.Voice, multi, ttsOptimization, chatSystemPropmt, temperature, chatModel, cm.Chat, requestText, requestImage, chunkMessage)
 	if err != nil {
 		return t, err
@@ -384,5 +398,19 @@ func runChatStream(id string, characterConfig data.CharacterConfig, multi bool, 
 }
 
 func sendError(c *websocket.Conn, err error) error {
-	return wsSendTextMessage(c, ErrorOutputType, err.Error())
+	if err == nil {
+		return nil
+	}
+
+	message := err.Error()
+	if envgen.Get().DEBUG() {
+		detailed := fmt.Sprintf("%+v", err)
+		if detailed != err.Error() {
+			message = detailed
+		} else {
+			message = fmt.Sprintf("%s\n\n%s", err.Error(), debug.Stack())
+		}
+	}
+
+	return wsSendTextMessage(c, ErrorOutputType, message)
 }
