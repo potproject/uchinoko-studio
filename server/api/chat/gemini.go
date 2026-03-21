@@ -35,7 +35,7 @@ func setGeminiSafetySettings() []*gemini.SafetySetting {
 
 }
 
-func GeminiChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, ttsOptimization bool, chatSystemPropmt string, temperature *float32, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, *data.Tokens, error) {
+func GeminiChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, ttsOptimization bool, chatSystemPropmt string, temperature *float32, model string, cm []data.ChatCompletionMessage, text string, persistUserText bool, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, *data.Tokens, error) {
 	ctx := context.Background()
 	var t *data.Tokens
 	client, err := gemini.NewClient(ctx, option.WithAPIKey(apiKey))
@@ -117,7 +117,7 @@ func GeminiChatStream(apiKey string, voices []data.CharacterConfigVoice, multi b
 		}
 	}()
 
-	cr, err := chatReceiver(charChannel, done, multi, ttsOptimization, voices, chunkMessage, text, image, cm)
+	cr, err := chatReceiver(charChannel, done, multi, ttsOptimization, voices, chunkMessage, text, persistUserText, image, cm)
 	return cr, t, err
 }
 

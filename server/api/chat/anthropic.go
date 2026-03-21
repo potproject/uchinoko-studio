@@ -80,7 +80,7 @@ type anthropicUsage struct {
 	OutputTokens int64 `json:"output_tokens"`
 }
 
-func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, ttsOptimization bool, chatSystemPropmt string, temperature *float32, model string, cm []data.ChatCompletionMessage, text string, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, *data.Tokens, error) {
+func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, multi bool, ttsOptimization bool, chatSystemPropmt string, temperature *float32, model string, cm []data.ChatCompletionMessage, text string, persistUserText bool, image *data.Image, chunkMessage chan api.ChunkMessage) ([]data.ChatCompletionMessage, *data.Tokens, error) {
 	ctx := context.Background()
 
 	body := buildAnthropicMessagesRequest(chatSystemPropmt, temperature, model, cm, text, image)
@@ -118,7 +118,7 @@ func AnthropicChatStream(apiKey string, voices []data.CharacterConfigVoice, mult
 		done <- streamAnthropicResponse(resp.Body, charChannel, &t)
 	}()
 
-	cr, err := chatReceiver(charChannel, done, multi, ttsOptimization, voices, chunkMessage, text, image, cm)
+	cr, err := chatReceiver(charChannel, done, multi, ttsOptimization, voices, chunkMessage, text, persistUserText, image, cm)
 	return cr, t, err
 }
 

@@ -5,6 +5,11 @@ type TextMessage = {
     text: string;
 };
 
+type OutgoingTextMessage = {
+    text: string;
+    mode?: 'auto-conversation';
+};
+
 export class SocketContext{
     private boundary = 'boundaryUchinoko';
 
@@ -95,8 +100,8 @@ export class SocketContext{
         this.socket.send(multipartMessage);
     }
 
-    public sendText(text: string){
-        const data = JSON.stringify({text});
+    public sendText(text: string, mode?: OutgoingTextMessage['mode']){
+        const data = JSON.stringify({ text, mode } satisfies OutgoingTextMessage);
         this.socket.send(data);
     }
 

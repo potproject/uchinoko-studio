@@ -2,7 +2,7 @@
     import { PlayingContext } from "$lib/PlayingContext";
     import { RecordingContext } from "$lib/RecordingContent";
     import { SocketContext } from "$lib/SocketContext";
-    import { onMount, tick } from "svelte";
+    import { onDestroy, onMount, tick } from "svelte";
     import ChatMyMsg from "./chat-my-msg.svelte";
     import ChatYourMsg from "./chat-your-msg.svelte";
     import type { CharacterConfig } from "../types/character";
@@ -23,13 +23,18 @@
     export let audioOutputDevicesCharacters: string[];
     export let generalConfig: GeneralConfig;
 
+    const AUTO_CONVERSATION_PROMPT = "<Continue with a natural next utterance without waiting for new input from the user, while maintaining the flow of the current conversation>";
+    const AUTO_CONVERSATION_DELAY_MS = 600;
+
+    type RequestSource = "user" | "auto" | null;
+
     let mute = false;
     let onChangeMute = (value: boolean) => {
         mute = value;
         if (mute) {
             recording.changeRecordingAllow(false);
         } else {
-            recording.changeRecordingAllow(state === ChatState.Waiting || state === ChatState.UserSpeaking);
+            recording.changeRecordingAllow(!autoConversationEnabled && (state === ChatState.Waiting || state === ChatState.UserSpeaking));
         }
     };
 
@@ -43,12 +48,57 @@
     let state: ChatState = ChatState.Initializing;
     const onChangeState = (newState: ChatState) => {
         if (!mute && ChatState.UserSpeaking !== newState) {
-            const disabled = newState !== ChatState.Waiting;
+            const disabled = newState !== ChatState.Waiting || autoConversationEnabled;
             if (recording) {
                 recording.changeRecordingAllow(!disabled);
             }
         }
         state = newState;
+    };
+
+    let autoConversationEnabled = false;
+    let autoConversationTimer: ReturnType<typeof setTimeout> | undefined = undefined;
+    let currentRequestSource: RequestSource = null;
+    let expectNewAssistantMessage = false;
+    let receivedAudioChunkThisTurn = false;
+
+    const clearAutoConversationTimer = () => {
+        if (autoConversationTimer) {
+            clearTimeout(autoConversationTimer);
+            autoConversationTimer = undefined;
+        }
+    };
+
+    const queueAutoConversationTurn = () => {
+        clearAutoConversationTimer();
+        autoConversationTimer = setTimeout(() => {
+            autoConversationTimer = undefined;
+            if (!autoConversationEnabled || state !== ChatState.Waiting) {
+                return;
+            }
+            currentRequestSource = "auto";
+            expectNewAssistantMessage = true;
+            receivedAudioChunkThisTurn = false;
+            onChangeState(ChatState.Loading);
+            socket.sendText(AUTO_CONVERSATION_PROMPT, "auto-conversation");
+        }, AUTO_CONVERSATION_DELAY_MS);
+    };
+
+    const setAutoConversationEnabled = (value: boolean) => {
+        autoConversationEnabled = value;
+        if (!value) {
+            clearAutoConversationTimer();
+            if (!mute && state === ChatState.Waiting && recording) {
+                recording.changeRecordingAllow(true);
+            }
+            return;
+        }
+        if (recording) {
+            recording.changeRecordingAllow(false);
+        }
+        if (state === ChatState.Waiting) {
+            queueAutoConversationTurn();
+        }
     };
 
     onMount(async () => {
@@ -62,10 +112,17 @@
         onChangeState(ChatState.Waiting);
     });
 
+    onDestroy(() => {
+        clearAutoConversationTimer();
+    });
+
     let socket: SocketContext;
     const loadSocket = async () => {
         socket = await SocketContext.connect(getID(), selectCharacter.general.id);
         socket.onClosed = () => {
+            setAutoConversationEnabled(false);
+            currentRequestSource = null;
+            expectNewAssistantMessage = false;
             addMessage({
                 type: "error",
                 text: MessageConstants.disconnected,
@@ -73,6 +130,7 @@
             });
         };
         socket.onBinary = (data) => {
+            receivedAudioChunkThisTurn = true;
             playing.playWAV(data);
             return;
         };
@@ -87,7 +145,21 @@
         };
 
         socket.onChatRequest = (text) => {
+            if (currentRequestSource !== "user" || messages.length === 0 || messages[messages.length - 1].type !== "my") {
+                return;
+            }
             changeLastMessage({ text: text });
+        };
+
+        socket.onChatResponse = () => {
+            currentRequestSource = null;
+            if (receivedAudioChunkThisTurn || playing.isPlaying()) {
+                return;
+            }
+            onChangeState(ChatState.Waiting);
+            if (autoConversationEnabled) {
+                queueAutoConversationTurn();
+            }
         };
 
         socket.onChatResponseChangeCharacter = (text) => {
@@ -103,6 +175,9 @@
         };
 
         socket.onError = (text) => {
+            setAutoConversationEnabled(false);
+            currentRequestSource = null;
+            expectNewAssistantMessage = false;
             addMessage({
                 type: "error",
                 text: text,
@@ -134,6 +209,7 @@
                             text: MessageConstants.empty,
                             voiceIndex,
                         });
+                        expectNewAssistantMessage = false;
                         backgroundImage = { path: "", characterChange: false };
                         tick().then(() => {
                             backgroundImage = {
@@ -146,12 +222,13 @@
                         backgroundImage = { path: chunkMessage.text, characterChange: false };
                         continue;
                     case "chat":
-                        if (messages[messages.length - 1].type === "your") {
+                        if (!expectNewAssistantMessage && messages.length > 0 && messages[messages.length - 1].type === "your") {
                             changeLastMessage({
                                 text: messages[messages.length - 1].text + chunkMessage.text,
                             });
                             return;
                         }
+                        expectNewAssistantMessage = false;
                         addMessage({
                             type: "your",
                             text: chunkMessage.text,
@@ -164,6 +241,9 @@
 
         playing.onSpeakingEnd = () => {
             onChangeState(ChatState.Waiting);
+            if (autoConversationEnabled) {
+                queueAutoConversationTurn();
+            }
         };
     };
 
@@ -186,6 +266,9 @@
         await recording.init();
 
         recording.onSpeakingStart = () => {
+            currentRequestSource = "user";
+            expectNewAssistantMessage = true;
+            receivedAudioChunkThisTurn = false;
             addMessage({
                 type: "my",
                 text: MessageConstants.speakingStart,
@@ -203,6 +286,8 @@
             // 最後のメッセージを更新
             if (ignore) {
                 messages = messages.slice(0, messages.length - 1);
+                currentRequestSource = null;
+                expectNewAssistantMessage = false;
                 updateChat();
                 onChangeState(ChatState.Waiting);
                 return;
@@ -381,7 +466,11 @@
         };
     };
     const uploadImage = async () => {
-        state = ChatState.Loading;
+        clearAutoConversationTimer();
+        currentRequestSource = "user";
+        expectNewAssistantMessage = true;
+        receivedAudioChunkThisTurn = false;
+        onChangeState(ChatState.Loading);
         await image.upload();
     };
 
@@ -492,6 +581,18 @@
             </div>
             <div class="py-4">
                 <div class="flex justify-center items-center space-x-2">
+                    <Tooltip text="自動会話モード">
+                        <button
+                            disabled={state === ChatState.Initializing || state === ChatState.UserSpeaking}
+                            class="btn text-white font-bold py-2 px-4 rounded-full disabled:opacity-50
+                        {autoConversationEnabled ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-slate-500 hover:bg-slate-600'}"
+                            on:click={() => {
+                                setAutoConversationEnabled(!autoConversationEnabled);
+                            }}
+                        >
+                            <i class="las text-2xl {autoConversationEnabled ? 'la-robot' : 'la-comments'}"></i>
+                        </button>
+                    </Tooltip>
                     <Tooltip text="画面共有">
                         <button
                             disabled={state !== ChatState.Waiting}
