@@ -28,16 +28,6 @@
 
     type RequestSource = "user" | "auto" | null;
 
-    let mute = false;
-    let onChangeMute = (value: boolean) => {
-        mute = value;
-        if (mute) {
-            recording.changeRecordingAllow(false);
-        } else {
-            recording.changeRecordingAllow(!autoConversationEnabled && (state === ChatState.Waiting || state === ChatState.UserSpeaking));
-        }
-    };
-
     enum ChatState {
         Initializing = "initializing", // 初期化中
         Waiting = "waiting", // ユーザ発話待機中
@@ -46,14 +36,25 @@
         AISpeaking = "ai_speaking", // AIが音声発信中
     }
     let state: ChatState = ChatState.Initializing;
-    const onChangeState = (newState: ChatState) => {
-        if (!mute && ChatState.UserSpeaking !== newState) {
-            const disabled = newState !== ChatState.Waiting || autoConversationEnabled;
-            if (recording) {
-                recording.changeRecordingAllow(!disabled);
-            }
+    let mute = false;
+    const syncRecordingAllow = (targetState: ChatState = state) => {
+        if (!recording) {
+            return;
         }
+        recording.changeRecordingAllow(!mute && !autoConversationEnabled && targetState === ChatState.Waiting);
+    };
+    let onChangeMute = (value: boolean) => {
+        if (!recording || state === ChatState.Initializing || state === ChatState.UserSpeaking) {
+            return;
+        }
+        mute = value;
+        syncRecordingAllow();
+    };
+    const onChangeState = (newState: ChatState) => {
         state = newState;
+        if (newState !== ChatState.UserSpeaking) {
+            syncRecordingAllow(newState);
+        }
     };
 
     let autoConversationEnabled = false;
@@ -88,14 +89,10 @@
         autoConversationEnabled = value;
         if (!value) {
             clearAutoConversationTimer();
-            if (!mute && state === ChatState.Waiting && recording) {
-                recording.changeRecordingAllow(true);
-            }
+            syncRecordingAllow();
             return;
         }
-        if (recording) {
-            recording.changeRecordingAllow(false);
-        }
+        syncRecordingAllow();
         if (state === ChatState.Waiting) {
             queueAutoConversationTurn();
         }
@@ -615,7 +612,7 @@
                     </Tooltip>
                     <Tooltip text="音声ミュート">
                         <button
-                            disabled={state === ChatState.UserSpeaking}
+                            disabled={state === ChatState.Initializing || state === ChatState.UserSpeaking}
                             class="btn text-white font-bold py-2 px-4 rounded-full disabled:opacity-50
                     {!mute ? 'bg-blue-500 hover:bg-blue-600' : 'bg-red-500 hover:bg-red-600'}
                     "

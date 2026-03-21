@@ -2,12 +2,12 @@ import type { GeneralConfig } from "../types/general";
 import type { RecordingContentInterface } from "./RecordingContentInterface";
 
 export class RecognitionContent implements RecordingContentInterface {
-    private stream: MediaStream;
     private recognition: any;
 
-    private state: Boolean = false;
-    private result: Boolean = false;
-    private isStart: Boolean = false;
+    private isRecordingAllow: boolean = true;
+    private isRecognitionRunning: boolean = false;
+    private result: boolean = false;
+    private isStart: boolean = false;
 
     public onSpeakingStart: () => void = () => { };
     public onSpeakingEnd: (ignore: boolean) => void = () => { };
@@ -15,9 +15,8 @@ export class RecognitionContent implements RecordingContentInterface {
     public onText: (text: string) => void = () => { };
 
     constructor(stream: MediaStream, mimeType: string, generalConfig: GeneralConfig) {
-        this.stream = stream;
-        /** @ts-ignore */
-        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        void stream;
+        void mimeType;
 
         /** @ts-ignore */
         this.recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
@@ -25,7 +24,12 @@ export class RecognitionContent implements RecordingContentInterface {
         this.recognition.interimResults = false;
         this.recognition.continuous = false;
         this.recognition.onresult = (event: any) => {
-            if(!this.isStart) {
+            if (!this.isRecordingAllow) {
+                this.result = false;
+                this.isStart = false;
+                return;
+            }
+            if (!this.isStart) {
                 this.onSpeakingStart();
             }
             this.onSpeakingEnd(false);
@@ -36,6 +40,9 @@ export class RecognitionContent implements RecordingContentInterface {
         }
 
         this.recognition.onspeechstart = () => {
+            if (!this.isRecordingAllow || this.isStart) {
+                return;
+            }
             this.onSpeakingStart();
             this.isStart = true;
         }
@@ -44,35 +51,42 @@ export class RecognitionContent implements RecordingContentInterface {
         }
 
         this.recognition.onend = () => {
+            this.isRecognitionRunning = false;
             if (this.result === false && this.isStart === true) {
                 this.onSpeakingEnd(true);
             }
-            if (this.result === false){
-                this.recognition.start();
-            }
+            const shouldRestart = this.result === false && this.isRecordingAllow;
+            this.isStart = false;
             this.result = false;
+            if (shouldRestart) {
+                this.startRecognition();
+            }
         }
 
         this.recognition.onerror = (event: any) => {
             console.log("error", event);
-            if(!this.state) {
-                this.recognition.stop();
-            }
-            this.state = false;
+            this.isRecognitionRunning = false;
         }
-        this.state = true;
+        this.startRecognition();
+    }
+
+    private startRecognition() {
+        if (!this.isRecordingAllow || this.isRecognitionRunning) {
+            return;
+        }
         this.recognition.start();
+        this.isRecognitionRunning = true;
     }
 
     public changeRecordingAllow(check: boolean) {
-        if (check && !this.state) {
-            this.recognition.start();
-            this.state = true;
-        } else {
-            if (this.state) {
+        this.isRecordingAllow = check;
+        if (check) {
+            this.startRecognition();
+            return;
+        }
+        if (this.isRecognitionRunning) {
                 this.recognition.stop();
-                this.state = false;
-            }
+                this.isRecognitionRunning = false;
         }
     }
 

@@ -45,10 +45,18 @@ export class RecordingContext implements RecordingContentInterface {
     }
 
     public changeRecordingAllow(check: boolean) {
+        if (this.isRecordingAllow === check) {
+            return;
+        }
         this.isRecordingAllow = check;
+        if (check) {
+            return;
+        }
         const state = this.mediaRecorder.getState();
         if (state === 'recording') {
-            this.mediaRecorder.stopRecording();
+            this.mediaRecorder.stopRecording(() => {
+                this.create();
+            });
             this.onSpeakingEnd(true);
             return;
         }
