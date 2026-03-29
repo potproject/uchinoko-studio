@@ -1,14 +1,73 @@
 package db
 
 import (
-	"encoding/json"
-
 	"github.com/potproject/uchinoko-studio/data"
 	"github.com/potproject/uchinoko-studio/envgen"
-	"github.com/syndtr/goleveldb/leveldb"
 )
 
-// 環境変数の初期設定（必要に応じてデフォルト値を設定）
+type envConfigRow struct {
+	ID                       int    `db:"id"`
+	OpenAISpeechToTextAPIKey string `db:"openai_speech_to_text_api_key"`
+	GoogleSpeechToTextAPIKey string `db:"google_speech_to_text_api_key"`
+	VoskServerEndpoint       string `db:"vosk_server_endpoint"`
+	OpenAIAPIKey             string `db:"openai_api_key"`
+	AnthropicAPIKey          string `db:"anthropic_api_key"`
+	DeepSeekAPIKey           string `db:"deepseek_api_key"`
+	GeminiAPIKey             string `db:"gemini_api_key"`
+	OpenAILocalAPIKey        string `db:"openai_local_api_key"`
+	OpenAILocalAPIEndpoint   string `db:"openai_local_api_endpoint"`
+	VoicevoxEndpoint         string `db:"voicevox_endpoint"`
+	BertVITS2Endpoint        string `db:"bertvits2_endpoint"`
+	IrodoriTTSEndpoint       string `db:"irodori_tts_endpoint"`
+	NijiVoiceAPIKey          string `db:"nijivoice_api_key"`
+	StyleBertVIT2Endpoint    string `db:"stylebertvit2_endpoint"`
+	GoogleTextToSpeechAPIKey string `db:"google_text_to_speech_api_key"`
+	OpenAISpeechAPIKey       string `db:"openai_speech_api_key"`
+}
+
+func (r envConfigRow) toConfig() data.EnvConfig {
+	return data.EnvConfig{
+		OPENAI_SPEECH_TO_TEXT_API_KEY: r.OpenAISpeechToTextAPIKey,
+		GOOGLE_SPEECH_TO_TEXT_API_KEY: r.GoogleSpeechToTextAPIKey,
+		VOSK_SERVER_ENDPOINT:          r.VoskServerEndpoint,
+		OPENAI_API_KEY:                r.OpenAIAPIKey,
+		ANTHROPIC_API_KEY:             r.AnthropicAPIKey,
+		DEEPSEEK_API_KEY:              r.DeepSeekAPIKey,
+		GEMINI_API_KEY:                r.GeminiAPIKey,
+		OPENAI_LOCAL_API_KEY:          r.OpenAILocalAPIKey,
+		OPENAI_LOCAL_API_ENDPOINT:     r.OpenAILocalAPIEndpoint,
+		VOICEVOX_ENDPOINT:             r.VoicevoxEndpoint,
+		BERTVITS2_ENDPOINT:            r.BertVITS2Endpoint,
+		IRODORI_TTS_ENDPOINT:          r.IrodoriTTSEndpoint,
+		NIJIVOICE_API_KEY:             r.NijiVoiceAPIKey,
+		STYLEBERTVIT2_ENDPOINT:        r.StyleBertVIT2Endpoint,
+		GOOGLE_TEXT_TO_SPEECH_API_KEY: r.GoogleTextToSpeechAPIKey,
+		OPENAI_SPEECH_API_KEY:         r.OpenAISpeechAPIKey,
+	}
+}
+
+func newEnvConfigRow(config data.EnvConfig) envConfigRow {
+	return envConfigRow{
+		ID:                       1,
+		OpenAISpeechToTextAPIKey: config.OPENAI_SPEECH_TO_TEXT_API_KEY,
+		GoogleSpeechToTextAPIKey: config.GOOGLE_SPEECH_TO_TEXT_API_KEY,
+		VoskServerEndpoint:       config.VOSK_SERVER_ENDPOINT,
+		OpenAIAPIKey:             config.OPENAI_API_KEY,
+		AnthropicAPIKey:          config.ANTHROPIC_API_KEY,
+		DeepSeekAPIKey:           config.DEEPSEEK_API_KEY,
+		GeminiAPIKey:             config.GEMINI_API_KEY,
+		OpenAILocalAPIKey:        config.OPENAI_LOCAL_API_KEY,
+		OpenAILocalAPIEndpoint:   config.OPENAI_LOCAL_API_ENDPOINT,
+		VoicevoxEndpoint:         config.VOICEVOX_ENDPOINT,
+		BertVITS2Endpoint:        config.BERTVITS2_ENDPOINT,
+		IrodoriTTSEndpoint:       config.IRODORI_TTS_ENDPOINT,
+		NijiVoiceAPIKey:          config.NIJIVOICE_API_KEY,
+		StyleBertVIT2Endpoint:    config.STYLEBERTVIT2_ENDPOINT,
+		GoogleTextToSpeechAPIKey: config.GOOGLE_TEXT_TO_SPEECH_API_KEY,
+		OpenAISpeechAPIKey:       config.OPENAI_SPEECH_API_KEY,
+	}
+}
+
 func envInitConfig() data.EnvConfig {
 	return data.EnvConfig{
 		OPENAI_SPEECH_TO_TEXT_API_KEY: "",
@@ -30,31 +89,79 @@ func envInitConfig() data.EnvConfig {
 	}
 }
 
-const envConfigPrefix = "env_config"
-
 func GetEnvConfig() (data.EnvConfig, error) {
-	key := []byte(envConfigPrefix)
-	value, err := get(key)
-	if err == leveldb.ErrNotFound {
+	var row envConfigRow
+	err := db.Get(&row, "SELECT * FROM env_config WHERE id = 1")
+	if isNotFound(err) {
 		return envInitConfig(), nil
-	} else if err != nil {
-		return data.EnvConfig{}, err
 	}
-	var config data.EnvConfig
-	err = json.Unmarshal(value, &config)
 	if err != nil {
 		return data.EnvConfig{}, err
 	}
-	return config, nil
+
+	return row.toConfig(), nil
 }
 
 func PutEnvConfig(config data.EnvConfig) error {
-	key := []byte(envConfigPrefix)
-	value, err := json.Marshal(config)
-	if err != nil {
-		return err
-	}
-	return put(key, value)
+	row := newEnvConfigRow(config)
+
+	_, err := db.NamedExec(`
+		INSERT INTO env_config (
+			id,
+			openai_speech_to_text_api_key,
+			google_speech_to_text_api_key,
+			vosk_server_endpoint,
+			openai_api_key,
+			anthropic_api_key,
+			deepseek_api_key,
+			gemini_api_key,
+			openai_local_api_key,
+			openai_local_api_endpoint,
+			voicevox_endpoint,
+			bertvits2_endpoint,
+			irodori_tts_endpoint,
+			nijivoice_api_key,
+			stylebertvit2_endpoint,
+			google_text_to_speech_api_key,
+			openai_speech_api_key
+		) VALUES (
+			:id,
+			:openai_speech_to_text_api_key,
+			:google_speech_to_text_api_key,
+			:vosk_server_endpoint,
+			:openai_api_key,
+			:anthropic_api_key,
+			:deepseek_api_key,
+			:gemini_api_key,
+			:openai_local_api_key,
+			:openai_local_api_endpoint,
+			:voicevox_endpoint,
+			:bertvits2_endpoint,
+			:irodori_tts_endpoint,
+			:nijivoice_api_key,
+			:stylebertvit2_endpoint,
+			:google_text_to_speech_api_key,
+			:openai_speech_api_key
+		)
+		ON CONFLICT(id) DO UPDATE SET
+			openai_speech_to_text_api_key = excluded.openai_speech_to_text_api_key,
+			google_speech_to_text_api_key = excluded.google_speech_to_text_api_key,
+			vosk_server_endpoint = excluded.vosk_server_endpoint,
+			openai_api_key = excluded.openai_api_key,
+			anthropic_api_key = excluded.anthropic_api_key,
+			deepseek_api_key = excluded.deepseek_api_key,
+			gemini_api_key = excluded.gemini_api_key,
+			openai_local_api_key = excluded.openai_local_api_key,
+			openai_local_api_endpoint = excluded.openai_local_api_endpoint,
+			voicevox_endpoint = excluded.voicevox_endpoint,
+			bertvits2_endpoint = excluded.bertvits2_endpoint,
+			irodori_tts_endpoint = excluded.irodori_tts_endpoint,
+			nijivoice_api_key = excluded.nijivoice_api_key,
+			stylebertvit2_endpoint = excluded.stylebertvit2_endpoint,
+			google_text_to_speech_api_key = excluded.google_text_to_speech_api_key,
+			openai_speech_api_key = excluded.openai_speech_api_key
+	`, row)
+	return err
 }
 
 func LoadEnvConfig() error {

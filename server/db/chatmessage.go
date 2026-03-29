@@ -1,12 +1,33 @@
 package db
 
-import (
-	_ "embed"
-	"encoding/json"
+import "github.com/potproject/uchinoko-studio/data"
 
-	"github.com/potproject/uchinoko-studio/data"
-	"github.com/syndtr/goleveldb/leveldb"
-)
+type chatSessionRow struct {
+	SessionID    string `db:"session_id"`
+	CharacterID  string `db:"character_id"`
+	MessagesJSON string `db:"messages_json"`
+}
+
+func (r chatSessionRow) toMessage() (data.ChatMessage, error) {
+	messages, err := unmarshalJSONString[[]data.ChatCompletionMessage](r.MessagesJSON)
+	if err != nil {
+		return data.ChatMessage{}, err
+	}
+	return data.ChatMessage{Chat: messages}, nil
+}
+
+func newChatSessionRow(id string, characterID string, message data.ChatMessage) (chatSessionRow, error) {
+	messagesJSON, err := marshalJSONString(message.Chat)
+	if err != nil {
+		return chatSessionRow{}, err
+	}
+
+	return chatSessionRow{
+		SessionID:    id,
+		CharacterID:  characterID,
+		MessagesJSON: messagesJSON,
+	}, nil
+}
 
 func initChatMessage() data.ChatMessage {
 	return data.ChatMessage{
@@ -15,31 +36,38 @@ func initChatMessage() data.ChatMessage {
 }
 
 func PutChatMessage(id string, characterId string, cM data.ChatMessage) error {
-	key := []byte(id + "/" + characterId + "/chatmessage")
-	value, err := json.Marshal(cM)
+	row, err := newChatSessionRow(id, characterId, cM)
 	if err != nil {
 		return err
 	}
-	return put(key, value)
+
+	_, err = db.NamedExec(`
+		INSERT INTO chat_sessions (session_id, character_id, messages_json)
+		VALUES (:session_id, :character_id, :messages_json)
+		ON CONFLICT(session_id, character_id) DO UPDATE SET
+			messages_json = excluded.messages_json
+	`, row)
+	return err
 }
 
 func GetChatMessage(id string, characterId string) (cm data.ChatMessage, empty bool, err error) {
-	key := []byte(id + "/" + characterId + "/chatmessage")
-	value, err := get(key)
-	if err == leveldb.ErrNotFound {
+	var row chatSessionRow
+	err = db.Get(&row, "SELECT * FROM chat_sessions WHERE session_id = ? AND character_id = ?", id, characterId)
+	if isNotFound(err) {
 		return initChatMessage(), true, nil
-	} else if err != nil {
-		return data.ChatMessage{}, false, err
 	}
-	var cM data.ChatMessage
-	err = json.Unmarshal(value, &cM)
 	if err != nil {
 		return data.ChatMessage{}, false, err
 	}
-	return cM, false, nil
+
+	message, err := row.toMessage()
+	if err != nil {
+		return data.ChatMessage{}, false, err
+	}
+	return message, false, nil
 }
 
 func DeleteChatMessage(id string, characterId string) error {
-	key := []byte(id + "/" + characterId + "/chatmessage")
-	return delete(key)
+	_, err := db.Exec("DELETE FROM chat_sessions WHERE session_id = ? AND character_id = ?", id, characterId)
+	return err
 }

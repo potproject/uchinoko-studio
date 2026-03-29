@@ -1,12 +1,59 @@
 package db
 
 import (
-	"encoding/json"
-
 	"github.com/google/uuid"
 	"github.com/potproject/uchinoko-studio/data"
-	"github.com/syndtr/goleveldb/leveldb"
 )
+
+type characterRow struct {
+	ID         string `db:"id"`
+	Name       string `db:"name"`
+	MultiVoice int    `db:"multi_voice"`
+	VoiceJSON  string `db:"voice_json"`
+	ChatJSON   string `db:"chat_json"`
+}
+
+func (r characterRow) toConfig() (data.CharacterConfig, error) {
+	voice, err := unmarshalJSONString[[]data.CharacterConfigVoice](r.VoiceJSON)
+	if err != nil {
+		return data.CharacterConfig{}, err
+	}
+
+	chat, err := unmarshalJSONString[data.CharacterConfigChat](r.ChatJSON)
+	if err != nil {
+		return data.CharacterConfig{}, err
+	}
+
+	return data.CharacterConfig{
+		General: data.CharacterConfigGeneral{
+			ID:   r.ID,
+			Name: r.Name,
+		},
+		MultiVoice: intToBool(r.MultiVoice),
+		Voice:      voice,
+		Chat:       chat,
+	}, nil
+}
+
+func newCharacterRow(config data.CharacterConfig) (characterRow, error) {
+	voiceJSON, err := marshalJSONString(config.Voice)
+	if err != nil {
+		return characterRow{}, err
+	}
+
+	chatJSON, err := marshalJSONString(config.Chat)
+	if err != nil {
+		return characterRow{}, err
+	}
+
+	return characterRow{
+		ID:         config.General.ID,
+		Name:       config.General.Name,
+		MultiVoice: boolToInt(config.MultiVoice),
+		VoiceJSON:  voiceJSON,
+		ChatJSON:   chatJSON,
+	}, nil
+}
 
 func CharacterInitConfig() data.CharacterConfig {
 	return data.CharacterConfig{
@@ -53,76 +100,58 @@ func CharactersInitConfig() data.CharacterConfigList {
 	}
 }
 
-const characterConfigPrefix = "character_config"
-
 func GetCharacterConfigList() (data.CharacterConfigList, error) {
-	key := []byte(characterConfigPrefix)
-	value, err := get(key)
-	if err == leveldb.ErrNotFound {
-		return CharactersInitConfig(), nil
-	} else if err != nil {
+	var rows []characterRow
+	if err := db.Select(&rows, "SELECT * FROM characters ORDER BY name, id"); err != nil {
 		return data.CharacterConfigList{}, err
 	}
-	var config data.CharacterConfigList
-	err = json.Unmarshal(value, &config)
-	if err != nil {
-		return data.CharacterConfigList{}, err
+
+	configs := make([]data.CharacterConfig, 0, len(rows))
+	for _, row := range rows {
+		config, err := row.toConfig()
+		if err != nil {
+			return data.CharacterConfigList{}, err
+		}
+		configs = append(configs, config)
 	}
-	return config, nil
+
+	return data.CharacterConfigList{Characters: configs}, nil
 }
 
 func GetCharacterConfig(id string) (data.CharacterConfig, error) {
-	configs, err := GetCharacterConfigList()
+	var row characterRow
+	err := db.Get(&row, "SELECT * FROM characters WHERE id = ?", id)
+	if isNotFound(err) {
+		return data.CharacterConfig{}, nil
+	}
 	if err != nil {
 		return data.CharacterConfig{}, err
 	}
-	for _, c := range configs.Characters {
-		if c.General.ID == id {
-			return c, nil
-		}
-	}
-	return data.CharacterConfig{}, nil
+
+	return row.toConfig()
 }
 
 func DeleteCharacterConfig(id string) error {
-	configs, err := GetCharacterConfigList()
-	if err != nil {
-		return err
-	}
-	for i, c := range configs.Characters {
-		if c.General.ID == id {
-			configs.Characters = append(configs.Characters[:i], configs.Characters[i+1:]...)
-			break
-		}
-	}
-	key := []byte(characterConfigPrefix)
-	value, err := json.Marshal(configs)
-	if err != nil {
-		return err
-	}
-	return put(key, value)
+	_, err := db.Exec("DELETE FROM characters WHERE id = ?", id)
+	return err
 }
 
 func PutCharacterConfig(id string, config data.CharacterConfig) error {
-	configs, err := GetCharacterConfigList()
+	config.General.ID = id
+
+	row, err := newCharacterRow(config)
 	if err != nil {
 		return err
 	}
-	exists := false
-	for i, c := range configs.Characters {
-		if c.General.ID == id {
-			configs.Characters[i] = config
-			exists = true
-			break
-		}
-	}
-	if !exists {
-		configs.Characters = append(configs.Characters, config)
-	}
-	key := []byte(characterConfigPrefix)
-	value, err := json.Marshal(configs)
-	if err != nil {
-		return err
-	}
-	return put(key, value)
+
+	_, err = db.NamedExec(`
+		INSERT INTO characters (id, name, multi_voice, voice_json, chat_json)
+		VALUES (:id, :name, :multi_voice, :voice_json, :chat_json)
+		ON CONFLICT(id) DO UPDATE SET
+			name = excluded.name,
+			multi_voice = excluded.multi_voice,
+			voice_json = excluded.voice_json,
+			chat_json = excluded.chat_json
+	`, row)
+	return err
 }
