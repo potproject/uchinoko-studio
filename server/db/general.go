@@ -1,28 +1,19 @@
 package db
 
-import "github.com/potproject/uchinoko-studio/data"
+import (
+	"context"
 
-type generalConfigRow struct {
-	ID                               int     `db:"id"`
-	Background                       string  `db:"background"`
-	Language                         string  `db:"language"`
-	SoundEffect                      int     `db:"sound_effect"`
-	CharacterOutputChange            int     `db:"character_output_change"`
-	EnableTTSOptimization            int     `db:"enable_tts_optimization"`
-	TranscriptionType                string  `db:"transcription_type"`
-	TranscriptionMethod              string  `db:"transcription_method"`
-	TranscriptionAutoThreshold       float64 `db:"transcription_auto_threshold"`
-	TranscriptionAutoSilentThreshold float64 `db:"transcription_auto_silent_threshold"`
-	TranscriptionAutoAudioMinLength  float64 `db:"transcription_auto_audio_min_length"`
-}
+	"github.com/potproject/uchinoko-studio/data"
+	"github.com/potproject/uchinoko-studio/db/sqlcgen"
+)
 
-func (r generalConfigRow) toConfig() data.GeneralConfig {
+func generalConfigFromRow(row sqlcgen.GeneralConfig) data.GeneralConfig {
 	return data.GeneralConfig{
-		Background:            r.Background,
-		Language:              r.Language,
-		SoundEffect:           intToBool(r.SoundEffect),
-		CharacterOutputChange: intToBool(r.CharacterOutputChange),
-		EnableTTSOptimization: intToBool(r.EnableTTSOptimization),
+		Background:            row.Background,
+		Language:              row.Language,
+		SoundEffect:           intToBool(row.SoundEffect),
+		CharacterOutputChange: intToBool(row.CharacterOutputChange),
+		EnableTTSOptimization: intToBool(row.EnableTtsOptimization),
 		Transcription: struct {
 			Type        string `json:"type"`
 			Method      string `json:"method"`
@@ -32,29 +23,29 @@ func (r generalConfigRow) toConfig() data.GeneralConfig {
 				AudioMinLength  float64 `json:"audioMinLength"`
 			} `json:"autoSetting"`
 		}{
-			Type:   r.TranscriptionType,
-			Method: r.TranscriptionMethod,
+			Type:   row.TranscriptionType,
+			Method: row.TranscriptionMethod,
 			AutoSetting: struct {
 				Threshold       float64 `json:"threshold"`
 				SilentThreshold float64 `json:"silentThreshold"`
 				AudioMinLength  float64 `json:"audioMinLength"`
 			}{
-				Threshold:       r.TranscriptionAutoThreshold,
-				SilentThreshold: r.TranscriptionAutoSilentThreshold,
-				AudioMinLength:  r.TranscriptionAutoAudioMinLength,
+				Threshold:       row.TranscriptionAutoThreshold,
+				SilentThreshold: row.TranscriptionAutoSilentThreshold,
+				AudioMinLength:  row.TranscriptionAutoAudioMinLength,
 			},
 		},
 	}
 }
 
-func newGeneralConfigRow(config data.GeneralConfig) generalConfigRow {
-	return generalConfigRow{
+func newGeneralConfigParams(config data.GeneralConfig) sqlcgen.UpsertGeneralConfigParams {
+	return sqlcgen.UpsertGeneralConfigParams{
 		ID:                               1,
 		Background:                       config.Background,
 		Language:                         config.Language,
 		SoundEffect:                      boolToInt(config.SoundEffect),
 		CharacterOutputChange:            boolToInt(config.CharacterOutputChange),
-		EnableTTSOptimization:            boolToInt(config.EnableTTSOptimization),
+		EnableTtsOptimization:            boolToInt(config.EnableTTSOptimization),
 		TranscriptionType:                config.Transcription.Type,
 		TranscriptionMethod:              config.Transcription.Method,
 		TranscriptionAutoThreshold:       config.Transcription.AutoSetting.Threshold,
@@ -95,8 +86,7 @@ func generalInitConfig() data.GeneralConfig {
 }
 
 func GetGeneralConfig() (data.GeneralConfig, error) {
-	var row generalConfigRow
-	err := db.Get(&row, "SELECT * FROM general_config WHERE id = 1")
+	row, err := queries.GetGeneralConfig(context.Background())
 	if isNotFound(err) {
 		return generalInitConfig(), nil
 	}
@@ -104,49 +94,9 @@ func GetGeneralConfig() (data.GeneralConfig, error) {
 		return data.GeneralConfig{}, err
 	}
 
-	return row.toConfig(), nil
+	return generalConfigFromRow(row), nil
 }
 
 func PutGeneralConfig(config data.GeneralConfig) error {
-	row := newGeneralConfigRow(config)
-
-	_, err := db.NamedExec(`
-		INSERT INTO general_config (
-			id,
-			background,
-			language,
-			sound_effect,
-			character_output_change,
-			enable_tts_optimization,
-			transcription_type,
-			transcription_method,
-			transcription_auto_threshold,
-			transcription_auto_silent_threshold,
-			transcription_auto_audio_min_length
-		) VALUES (
-			:id,
-			:background,
-			:language,
-			:sound_effect,
-			:character_output_change,
-			:enable_tts_optimization,
-			:transcription_type,
-			:transcription_method,
-			:transcription_auto_threshold,
-			:transcription_auto_silent_threshold,
-			:transcription_auto_audio_min_length
-		)
-		ON CONFLICT(id) DO UPDATE SET
-			background = excluded.background,
-			language = excluded.language,
-			sound_effect = excluded.sound_effect,
-			character_output_change = excluded.character_output_change,
-			enable_tts_optimization = excluded.enable_tts_optimization,
-			transcription_type = excluded.transcription_type,
-			transcription_method = excluded.transcription_method,
-			transcription_auto_threshold = excluded.transcription_auto_threshold,
-			transcription_auto_silent_threshold = excluded.transcription_auto_silent_threshold,
-			transcription_auto_audio_min_length = excluded.transcription_auto_audio_min_length
-	`, row)
-	return err
+	return queries.UpsertGeneralConfig(context.Background(), newGeneralConfigParams(config))
 }

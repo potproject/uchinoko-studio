@@ -8,7 +8,6 @@ require (
 	cloud.google.com/go/speech v1.23.1
 	cloud.google.com/go/texttospeech v1.7.7
 	github.com/gofiber/fiber/v2 v2.51.0
-	github.com/jmoiron/sqlx v1.4.0
 	github.com/syndtr/goleveldb v1.0.0
 	google.golang.org/api v0.178.0
 	modernc.org/sqlite v1.34.2

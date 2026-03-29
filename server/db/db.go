@@ -1,7 +1,9 @@
 package db
 
 import (
+	"context"
 	"database/sql"
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,12 +12,16 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/potproject/uchinoko-studio/db/sqlcgen"
 	"github.com/potproject/uchinoko-studio/envgen"
 	_ "modernc.org/sqlite"
 )
 
-var db *sqlx.DB
+//go:embed sql/schema.sql
+var schemaDDL string
+
+var db *sql.DB
+var queries *sqlcgen.Queries
 
 func Start() {
 	if err := StartWithPath(envgen.Get().DB_FILE_PATH()); err != nil {
@@ -44,6 +50,7 @@ func startWithResolvedPath(resolvedPath string) error {
 	if err != nil {
 		return err
 	}
+	nextQueries := sqlcgen.New(nextDB)
 
 	if err := closeCurrentDB(); err != nil {
 		nextDB.Close()
@@ -51,6 +58,7 @@ func startWithResolvedPath(resolvedPath string) error {
 	}
 
 	db = nextDB
+	queries = nextQueries
 	return nil
 }
 
@@ -64,10 +72,11 @@ func closeCurrentDB() error {
 	}
 
 	db = nil
+	queries = nil
 	return nil
 }
 
-func openSQLite(resolvedPath string) (*sqlx.DB, error) {
+func openSQLite(resolvedPath string) (*sql.DB, error) {
 	if resolvedPath == "" {
 		return nil, errors.New("sqlite path is empty")
 	}
@@ -76,7 +85,7 @@ func openSQLite(resolvedPath string) (*sqlx.DB, error) {
 		return nil, fmt.Errorf("create sqlite directory: %w", err)
 	}
 
-	conn, err := sqlx.Open("sqlite", resolvedPath)
+	conn, err := sql.Open("sqlite", resolvedPath)
 	if err != nil {
 		return nil, fmt.Errorf("open sqlite: %w", err)
 	}
@@ -124,71 +133,9 @@ func resolveSQLitePath(rawPath string) (string, error) {
 	return filepath.Join(cleaned, "uchinoko.db"), nil
 }
 
-func ensureSchema(conn *sqlx.DB) error {
-	statements := []string{
-		`CREATE TABLE IF NOT EXISTS general_config (
-			id INTEGER PRIMARY KEY CHECK (id = 1),
-			background TEXT NOT NULL,
-			language TEXT NOT NULL,
-			sound_effect INTEGER NOT NULL,
-			character_output_change INTEGER NOT NULL,
-			enable_tts_optimization INTEGER NOT NULL,
-			transcription_type TEXT NOT NULL,
-			transcription_method TEXT NOT NULL,
-			transcription_auto_threshold REAL NOT NULL,
-			transcription_auto_silent_threshold REAL NOT NULL,
-			transcription_auto_audio_min_length REAL NOT NULL
-		)`,
-		`CREATE TABLE IF NOT EXISTS env_config (
-			id INTEGER PRIMARY KEY CHECK (id = 1),
-			openai_speech_to_text_api_key TEXT NOT NULL,
-			google_speech_to_text_api_key TEXT NOT NULL,
-			vosk_server_endpoint TEXT NOT NULL,
-			openai_api_key TEXT NOT NULL,
-			anthropic_api_key TEXT NOT NULL,
-			deepseek_api_key TEXT NOT NULL,
-			gemini_api_key TEXT NOT NULL,
-			openai_local_api_key TEXT NOT NULL,
-			openai_local_api_endpoint TEXT NOT NULL,
-			voicevox_endpoint TEXT NOT NULL,
-			bertvits2_endpoint TEXT NOT NULL,
-			irodori_tts_endpoint TEXT NOT NULL,
-			nijivoice_api_key TEXT NOT NULL,
-			stylebertvit2_endpoint TEXT NOT NULL,
-			google_text_to_speech_api_key TEXT NOT NULL,
-			openai_speech_api_key TEXT NOT NULL
-		)`,
-		`CREATE TABLE IF NOT EXISTS characters (
-			id TEXT PRIMARY KEY,
-			name TEXT NOT NULL,
-			multi_voice INTEGER NOT NULL,
-			voice_json TEXT NOT NULL,
-			chat_json TEXT NOT NULL
-		)`,
-		`CREATE TABLE IF NOT EXISTS chat_sessions (
-			session_id TEXT NOT NULL,
-			character_id TEXT NOT NULL,
-			messages_json TEXT NOT NULL,
-			PRIMARY KEY (session_id, character_id)
-		)`,
-		`CREATE TABLE IF NOT EXISTS rate_limits (
-			id TEXT PRIMARY KEY,
-			day_last_update TEXT NOT NULL,
-			day_request INTEGER NOT NULL,
-			day_token INTEGER NOT NULL,
-			hour_last_update TEXT NOT NULL,
-			hour_request INTEGER NOT NULL,
-			hour_token INTEGER NOT NULL,
-			minute_last_update TEXT NOT NULL,
-			minute_request INTEGER NOT NULL,
-			minute_token INTEGER NOT NULL
-		)`,
-	}
-
-	for _, statement := range statements {
-		if _, err := conn.Exec(statement); err != nil {
-			return fmt.Errorf("ensure schema: %w", err)
-		}
+func ensureSchema(conn *sql.DB) error {
+	if _, err := conn.Exec(schemaDDL); err != nil {
+		return fmt.Errorf("ensure schema: %w", err)
 	}
 
 	return nil
@@ -198,14 +145,14 @@ func isNotFound(err error) bool {
 	return errors.Is(err, sql.ErrNoRows)
 }
 
-func boolToInt(value bool) int {
+func boolToInt(value bool) int64 {
 	if value {
 		return 1
 	}
 	return 0
 }
 
-func intToBool(value int) bool {
+func intToBool(value int64) bool {
 	return value != 0
 }
 
@@ -239,36 +186,37 @@ type ListAllResponse struct {
 }
 
 func ListAll() ([]ListAllResponse, error) {
+	ctx := context.Background()
 	var response []ListAllResponse
 
-	var generalRows []generalConfigRow
-	if err := db.Select(&generalRows, "SELECT * FROM general_config ORDER BY id"); err != nil {
+	generalRows, err := queries.ListGeneralConfigs(ctx)
+	if err != nil {
 		return nil, err
 	}
 	for _, row := range generalRows {
 		response = append(response, ListAllResponse{
 			Key:   "general_config",
-			Value: mustMarshalJSONString(row.toConfig()),
+			Value: mustMarshalJSONString(generalConfigFromRow(row)),
 		})
 	}
 
-	var envRows []envConfigRow
-	if err := db.Select(&envRows, "SELECT * FROM env_config ORDER BY id"); err != nil {
+	envRows, err := queries.ListEnvConfigs(ctx)
+	if err != nil {
 		return nil, err
 	}
 	for _, row := range envRows {
 		response = append(response, ListAllResponse{
 			Key:   "env_config",
-			Value: mustMarshalJSONString(row.toConfig()),
+			Value: mustMarshalJSONString(envConfigFromRow(row)),
 		})
 	}
 
-	var characterRows []characterRow
-	if err := db.Select(&characterRows, "SELECT * FROM characters ORDER BY name, id"); err != nil {
+	characterRows, err := queries.ListCharacters(ctx)
+	if err != nil {
 		return nil, err
 	}
 	for _, row := range characterRows {
-		config, err := row.toConfig()
+		config, err := characterConfigFromRow(row)
 		if err != nil {
 			return nil, err
 		}
@@ -278,12 +226,12 @@ func ListAll() ([]ListAllResponse, error) {
 		})
 	}
 
-	var chatRows []chatSessionRow
-	if err := db.Select(&chatRows, "SELECT * FROM chat_sessions ORDER BY session_id, character_id"); err != nil {
+	chatRows, err := queries.ListChatSessions(ctx)
+	if err != nil {
 		return nil, err
 	}
 	for _, row := range chatRows {
-		message, err := row.toMessage()
+		message, err := chatMessageFromRow(row)
 		if err != nil {
 			return nil, err
 		}
@@ -293,14 +241,14 @@ func ListAll() ([]ListAllResponse, error) {
 		})
 	}
 
-	var rateLimitRows []rateLimitRow
-	if err := db.Select(&rateLimitRows, "SELECT * FROM rate_limits ORDER BY id"); err != nil {
+	rateLimitRows, err := queries.ListRateLimits(ctx)
+	if err != nil {
 		return nil, err
 	}
 	for _, row := range rateLimitRows {
 		response = append(response, ListAllResponse{
 			Key:   "rate_limit/" + row.ID,
-			Value: mustMarshalJSONString(row.toRateLimit()),
+			Value: mustMarshalJSONString(rateLimitFromRow(row)),
 		})
 	}
 

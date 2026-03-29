@@ -1,49 +1,37 @@
 package db
 
 import (
+	"context"
 	"time"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/potproject/uchinoko-studio/data"
+	"github.com/potproject/uchinoko-studio/db/sqlcgen"
 )
 
 var timeNow = time.Now
 
-type rateLimitRow struct {
-	ID               string `db:"id"`
-	DayLastUpdate    string `db:"day_last_update"`
-	DayRequest       int64  `db:"day_request"`
-	DayToken         int64  `db:"day_token"`
-	HourLastUpdate   string `db:"hour_last_update"`
-	HourRequest      int64  `db:"hour_request"`
-	HourToken        int64  `db:"hour_token"`
-	MinuteLastUpdate string `db:"minute_last_update"`
-	MinuteRequest    int64  `db:"minute_request"`
-	MinuteToken      int64  `db:"minute_token"`
-}
-
-func (r rateLimitRow) toRateLimit() data.RateLimit {
+func rateLimitFromRow(row sqlcgen.RateLimit) data.RateLimit {
 	return data.RateLimit{
 		Day: data.RateLimitType{
-			LastUpdate: r.DayLastUpdate,
-			Request:    r.DayRequest,
-			Token:      r.DayToken,
+			LastUpdate: row.DayLastUpdate,
+			Request:    row.DayRequest,
+			Token:      row.DayToken,
 		},
 		Hour: data.RateLimitType{
-			LastUpdate: r.HourLastUpdate,
-			Request:    r.HourRequest,
-			Token:      r.HourToken,
+			LastUpdate: row.HourLastUpdate,
+			Request:    row.HourRequest,
+			Token:      row.HourToken,
 		},
 		Minute: data.RateLimitType{
-			LastUpdate: r.MinuteLastUpdate,
-			Request:    r.MinuteRequest,
-			Token:      r.MinuteToken,
+			LastUpdate: row.MinuteLastUpdate,
+			Request:    row.MinuteRequest,
+			Token:      row.MinuteToken,
 		},
 	}
 }
 
-func newRateLimitRow(id string, rateLimit data.RateLimit) rateLimitRow {
-	return rateLimitRow{
+func newRateLimitParams(id string, rateLimit data.RateLimit) sqlcgen.UpsertRateLimitParams {
+	return sqlcgen.UpsertRateLimitParams{
 		ID:               id,
 		DayLastUpdate:    rateLimit.Day.LastUpdate,
 		DayRequest:       rateLimit.Day.Request,
@@ -104,9 +92,13 @@ func normalizeRateLimit(now time.Time, rateLimit data.RateLimit) data.RateLimit 
 	return rateLimit
 }
 
-func getRateLimit(queryer sqlx.Queryer, id string) (data.RateLimit, error) {
-	var row rateLimitRow
-	err := sqlx.Get(queryer, &row, "SELECT * FROM rate_limits WHERE id = ?", id)
+type rateLimitQuerier interface {
+	GetRateLimit(ctx context.Context, id string) (sqlcgen.RateLimit, error)
+	UpsertRateLimit(ctx context.Context, arg sqlcgen.UpsertRateLimitParams) error
+}
+
+func getRateLimit(queryer rateLimitQuerier, id string) (data.RateLimit, error) {
+	row, err := queryer.GetRateLimit(context.Background(), id)
 	if isNotFound(err) {
 		return rateLimitInit(), nil
 	}
@@ -114,61 +106,26 @@ func getRateLimit(queryer sqlx.Queryer, id string) (data.RateLimit, error) {
 		return data.RateLimit{}, err
 	}
 
-	return row.toRateLimit(), nil
+	return rateLimitFromRow(row), nil
 }
 
-func putRateLimit(exec sqlx.Ext, id string, config data.RateLimit) error {
-	row := newRateLimitRow(id, config)
-	_, err := sqlx.NamedExec(exec, `
-		INSERT INTO rate_limits (
-			id,
-			day_last_update,
-			day_request,
-			day_token,
-			hour_last_update,
-			hour_request,
-			hour_token,
-			minute_last_update,
-			minute_request,
-			minute_token
-		) VALUES (
-			:id,
-			:day_last_update,
-			:day_request,
-			:day_token,
-			:hour_last_update,
-			:hour_request,
-			:hour_token,
-			:minute_last_update,
-			:minute_request,
-			:minute_token
-		)
-		ON CONFLICT(id) DO UPDATE SET
-			day_last_update = excluded.day_last_update,
-			day_request = excluded.day_request,
-			day_token = excluded.day_token,
-			hour_last_update = excluded.hour_last_update,
-			hour_request = excluded.hour_request,
-			hour_token = excluded.hour_token,
-			minute_last_update = excluded.minute_last_update,
-			minute_request = excluded.minute_request,
-			minute_token = excluded.minute_token
-	`, row)
-	return err
+func putRateLimit(exec rateLimitQuerier, id string, config data.RateLimit) error {
+	return exec.UpsertRateLimit(context.Background(), newRateLimitParams(id, config))
 }
 
 func PutRateLimitSnapshot(id string, config data.RateLimit) error {
-	return putRateLimit(db, id, config)
+	return putRateLimit(queries, id, config)
 }
 
 func AddRateLimit(id string, request int64, token int64) error {
-	tx, err := db.Beginx()
+	tx, err := db.BeginTx(context.Background(), nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
+	txQueries := queries.WithTx(tx)
 
-	rateLimit, err := getRateLimit(tx, id)
+	rateLimit, err := getRateLimit(txQueries, id)
 	if err != nil {
 		return err
 	}
@@ -181,7 +138,7 @@ func AddRateLimit(id string, request int64, token int64) error {
 	rateLimit.Hour.Token += token
 	rateLimit.Minute.Token += token
 
-	if err := putRateLimit(tx, id, rateLimit); err != nil {
+	if err := putRateLimit(txQueries, id, rateLimit); err != nil {
 		return err
 	}
 
@@ -189,7 +146,7 @@ func AddRateLimit(id string, request int64, token int64) error {
 }
 
 func RateLimitIsAllowed(id string, limit data.CharacterConfigChatLimit) (bool, error) {
-	rateLimit, err := getRateLimit(db, id)
+	rateLimit, err := getRateLimit(queries, id)
 	if err != nil {
 		return false, err
 	}

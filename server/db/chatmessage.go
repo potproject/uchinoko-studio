@@ -1,31 +1,30 @@
 package db
 
-import "github.com/potproject/uchinoko-studio/data"
+import (
+	"context"
 
-type chatSessionRow struct {
-	SessionID    string `db:"session_id"`
-	CharacterID  string `db:"character_id"`
-	MessagesJSON string `db:"messages_json"`
-}
+	"github.com/potproject/uchinoko-studio/data"
+	"github.com/potproject/uchinoko-studio/db/sqlcgen"
+)
 
-func (r chatSessionRow) toMessage() (data.ChatMessage, error) {
-	messages, err := unmarshalJSONString[[]data.ChatCompletionMessage](r.MessagesJSON)
+func chatMessageFromRow(row sqlcgen.ChatSession) (data.ChatMessage, error) {
+	messages, err := unmarshalJSONString[[]data.ChatCompletionMessage](row.MessagesJson)
 	if err != nil {
 		return data.ChatMessage{}, err
 	}
 	return data.ChatMessage{Chat: messages}, nil
 }
 
-func newChatSessionRow(id string, characterID string, message data.ChatMessage) (chatSessionRow, error) {
+func newChatSessionParams(id string, characterID string, message data.ChatMessage) (sqlcgen.UpsertChatSessionParams, error) {
 	messagesJSON, err := marshalJSONString(message.Chat)
 	if err != nil {
-		return chatSessionRow{}, err
+		return sqlcgen.UpsertChatSessionParams{}, err
 	}
 
-	return chatSessionRow{
+	return sqlcgen.UpsertChatSessionParams{
 		SessionID:    id,
 		CharacterID:  characterID,
-		MessagesJSON: messagesJSON,
+		MessagesJson: messagesJSON,
 	}, nil
 }
 
@@ -36,23 +35,19 @@ func initChatMessage() data.ChatMessage {
 }
 
 func PutChatMessage(id string, characterId string, cM data.ChatMessage) error {
-	row, err := newChatSessionRow(id, characterId, cM)
+	row, err := newChatSessionParams(id, characterId, cM)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.NamedExec(`
-		INSERT INTO chat_sessions (session_id, character_id, messages_json)
-		VALUES (:session_id, :character_id, :messages_json)
-		ON CONFLICT(session_id, character_id) DO UPDATE SET
-			messages_json = excluded.messages_json
-	`, row)
-	return err
+	return queries.UpsertChatSession(context.Background(), row)
 }
 
 func GetChatMessage(id string, characterId string) (cm data.ChatMessage, empty bool, err error) {
-	var row chatSessionRow
-	err = db.Get(&row, "SELECT * FROM chat_sessions WHERE session_id = ? AND character_id = ?", id, characterId)
+	row, err := queries.GetChatSession(context.Background(), sqlcgen.GetChatSessionParams{
+		SessionID:   id,
+		CharacterID: characterId,
+	})
 	if isNotFound(err) {
 		return initChatMessage(), true, nil
 	}
@@ -60,7 +55,7 @@ func GetChatMessage(id string, characterId string) (cm data.ChatMessage, empty b
 		return data.ChatMessage{}, false, err
 	}
 
-	message, err := row.toMessage()
+	message, err := chatMessageFromRow(row)
 	if err != nil {
 		return data.ChatMessage{}, false, err
 	}
@@ -68,6 +63,8 @@ func GetChatMessage(id string, characterId string) (cm data.ChatMessage, empty b
 }
 
 func DeleteChatMessage(id string, characterId string) error {
-	_, err := db.Exec("DELETE FROM chat_sessions WHERE session_id = ? AND character_id = ?", id, characterId)
-	return err
+	return queries.DeleteChatSession(context.Background(), sqlcgen.DeleteChatSessionParams{
+		SessionID:   id,
+		CharacterID: characterId,
+	})
 }
