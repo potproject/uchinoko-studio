@@ -1,3 +1,4 @@
+-- +goose Up
 CREATE TABLE IF NOT EXISTS general_config (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     background TEXT NOT NULL,
@@ -59,3 +60,10 @@ CREATE TABLE IF NOT EXISTS rate_limits (
     minute_request INTEGER NOT NULL,
     minute_token INTEGER NOT NULL
 );
+
+-- +goose Down
+DROP TABLE IF EXISTS rate_limits;
+DROP TABLE IF EXISTS chat_sessions;
+DROP TABLE IF EXISTS characters;
+DROP TABLE IF EXISTS env_config;
+DROP TABLE IF EXISTS general_config;

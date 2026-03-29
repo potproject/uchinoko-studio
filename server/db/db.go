@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"database/sql"
-	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,9 +15,6 @@ import (
 	"github.com/potproject/uchinoko-studio/envgen"
 	_ "modernc.org/sqlite"
 )
-
-//go:embed sql/schema.sql
-var schemaDDL string
 
 var db *sql.DB
 var queries *sqlcgen.Queries
@@ -50,6 +46,12 @@ func startWithResolvedPath(resolvedPath string) error {
 	if err != nil {
 		return err
 	}
+
+	if err := applyMigrations(context.Background(), nextDB); err != nil {
+		nextDB.Close()
+		return err
+	}
+
 	nextQueries := sqlcgen.New(nextDB)
 
 	if err := closeCurrentDB(); err != nil {
@@ -110,11 +112,6 @@ func openSQLite(resolvedPath string) (*sql.DB, error) {
 		}
 	}
 
-	if err := ensureSchema(conn); err != nil {
-		conn.Close()
-		return nil, err
-	}
-
 	return conn, nil
 }
 
@@ -131,14 +128,6 @@ func resolveSQLitePath(rawPath string) (string, error) {
 	}
 
 	return filepath.Join(cleaned, "uchinoko.db"), nil
-}
-
-func ensureSchema(conn *sql.DB) error {
-	if _, err := conn.Exec(schemaDDL); err != nil {
-		return fmt.Errorf("ensure schema: %w", err)
-	}
-
-	return nil
 }
 
 func isNotFound(err error) bool {
