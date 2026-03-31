@@ -1,6 +1,9 @@
 package texttospeech
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
 func TestResolveLocalReferenceAudioPath(t *testing.T) {
 	t.Parallel()
@@ -66,5 +69,34 @@ func TestBuildDirectIrodoriReferenceAudio(t *testing.T) {
 	}
 	if fileData.Meta.Type != "gradio.FileData" {
 		t.Fatalf("unexpected meta type: %q", fileData.Meta.Type)
+	}
+}
+
+func TestBuildIrodoriPayloadMatchesCurrentRunGenerationOrder(t *testing.T) {
+	t.Parallel()
+
+	refInput := map[string]any{
+		"path": "/tmp/gradio/reference.wav",
+	}
+
+	payload := buildIrodoriPayload("Aratako/Irodori-TTS-500M-v2", "こんにちは", refInput)
+
+	if got, want := len(payload), 23; got != want {
+		t.Fatalf("unexpected payload length: got %d want %d", got, want)
+	}
+	if got := payload[5]; got != "こんにちは" {
+		t.Fatalf("unexpected text position: %#v", got)
+	}
+	if got := payload[6]; !reflect.DeepEqual(got, refInput) {
+		t.Fatalf("unexpected uploaded_audio position: %#v", got)
+	}
+	if got := payload[10]; got != "independent" {
+		t.Fatalf("unexpected cfg_guidance_mode: %#v", got)
+	}
+	if got := payload[21]; got != "0.9" {
+		t.Fatalf("unexpected speaker_kv_min_t_raw: %#v", got)
+	}
+	if got := payload[22]; got != "" {
+		t.Fatalf("unexpected speaker_kv_max_layers_raw: %#v", got)
 	}
 }

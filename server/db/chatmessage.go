@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"strings"
 
 	"github.com/potproject/uchinoko-studio/data"
 	"github.com/potproject/uchinoko-studio/db/sqlcgen"
@@ -111,4 +112,69 @@ func DeleteChatMessage(id string, characterId string) error {
 		SessionID:   id,
 		CharacterID: characterId,
 	})
+}
+
+func ListChatSessionsForOwner(ownerID string, characterID string) (data.ChatSessionList, error) {
+	rows, err := queries.ListChatSessionsByCharacter(context.Background(), characterID)
+	if err != nil {
+		return data.ChatSessionList{}, err
+	}
+
+	sessions := make([]data.ChatSessionSummary, 0, len(rows))
+	for _, row := range rows {
+		if !isOwnedChatSession(ownerID, row.SessionID) {
+			continue
+		}
+
+		message, err := loadChatMessage(context.Background(), queries, row)
+		if err != nil {
+			return data.ChatSessionList{}, err
+		}
+
+		sessions = append(sessions, data.ChatSessionSummary{
+			SessionID:    row.SessionID,
+			Title:        deriveChatSessionTitle(message),
+			Preview:      deriveChatSessionPreview(message),
+			MessageCount: len(message.Chat),
+			IsDefault:    row.SessionID == ownerID,
+		})
+	}
+
+	return data.ChatSessionList{Sessions: sessions}, nil
+}
+
+func isOwnedChatSession(ownerID string, sessionID string) bool {
+	if sessionID == ownerID {
+		return true
+	}
+	return strings.HasPrefix(sessionID, ownerID+":")
+}
+
+func deriveChatSessionTitle(message data.ChatMessage) string {
+	for _, item := range message.Chat {
+		content := strings.TrimSpace(item.Content)
+		if content == "" {
+			continue
+		}
+		if item.Role == data.ChatCompletionMessageRoleUser {
+			return content
+		}
+	}
+	for _, item := range message.Chat {
+		content := strings.TrimSpace(item.Content)
+		if content != "" {
+			return content
+		}
+	}
+	return "新しいチャット"
+}
+
+func deriveChatSessionPreview(message data.ChatMessage) string {
+	for index := len(message.Chat) - 1; index >= 0; index-- {
+		content := strings.TrimSpace(message.Chat[index].Content)
+		if content != "" {
+			return content
+		}
+	}
+	return ""
 }

@@ -92,4 +92,17 @@ export class RecognitionContent implements RecordingContentInterface {
 
     async init() {
     }
+
+    dispose() {
+        this.isRecordingAllow = false;
+        if (this.isRecognitionRunning) {
+            this.recognition.stop();
+            this.isRecognitionRunning = false;
+        }
+        this.recognition.onresult = null;
+        this.recognition.onspeechstart = null;
+        this.recognition.onspeechend = null;
+        this.recognition.onend = null;
+        this.recognition.onerror = null;
+    }
 }

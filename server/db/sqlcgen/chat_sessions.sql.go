@@ -176,6 +176,36 @@ func (q *Queries) ListChatSessions(ctx context.Context) ([]ChatSession, error) {
 	return items, nil
 }
 
+const listChatSessionsByCharacter = `-- name: ListChatSessionsByCharacter :many
+SELECT session_id, character_id
+FROM chat_sessions
+WHERE character_id = ?1
+ORDER BY session_id
+`
+
+func (q *Queries) ListChatSessionsByCharacter(ctx context.Context, characterID string) ([]ChatSession, error) {
+	rows, err := q.db.QueryContext(ctx, listChatSessionsByCharacter, characterID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ChatSession
+	for rows.Next() {
+		var i ChatSession
+		if err := rows.Scan(&i.SessionID, &i.CharacterID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const upsertChatSession = `-- name: UpsertChatSession :exec
 INSERT INTO chat_sessions (
     session_id,

@@ -6,4 +6,5 @@ export interface RecordingContentInterface {
 
     changeRecordingAllow(check: boolean): void;
     init(): Promise<void>;
+    dispose(): void;
 }

@@ -7,6 +7,7 @@ import (
 	"io"
 	"mime/multipart"
 	"runtime/debug"
+	"strings"
 	"sync"
 
 	"github.com/gofiber/contrib/websocket"
@@ -183,6 +184,10 @@ func WSTalkPlain() fiber.Handler {
 func WSTalk() func(*websocket.Conn) {
 	return func(c *websocket.Conn) {
 		id := c.Params("id")
+		sessionID := strings.TrimSpace(c.Query("sessionId"))
+		if sessionID == "" {
+			sessionID = id
+		}
 		characterId := c.Params("characterId")
 
 		character, err := db.GetCharacterConfig(characterId)
@@ -249,7 +254,7 @@ func WSTalk() func(*websocket.Conn) {
 					templature = &character.Chat.Temperature.Value
 				}
 				persistUserText := requestMode != AutoConversationInputMode
-				tokens, err = runChatStream(id, character, character.MultiVoice, general.EnableTTSOptimization, requestText, persistUserText, requestImage, chatType, getChatApiKey(chatType), chatSystemPropmt, templature, character.Chat.MaxHistory, chatModel, chunkMessage)
+				tokens, err = runChatStream(sessionID, character, character.MultiVoice, general.EnableTTSOptimization, requestText, persistUserText, requestImage, chatType, getChatApiKey(chatType), chatSystemPropmt, templature, character.Chat.MaxHistory, chatModel, chunkMessage)
 				if err != nil {
 					sendError(c, err)
 				}

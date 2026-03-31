@@ -383,6 +383,73 @@ func TestChatMessageRoundTrip(t *testing.T) {
 	}
 }
 
+func TestListChatSessionsForOwner(t *testing.T) {
+	setupTestDB(t)
+
+	characterID := "character-1"
+	ownerID := "owner-1"
+
+	for _, tc := range []struct {
+		sessionID string
+		message   data.ChatMessage
+	}{
+		{
+			sessionID: ownerID,
+			message: data.ChatMessage{
+				Chat: []data.ChatCompletionMessage{
+					{Role: data.ChatCompletionMessageRoleUser, Content: "最初の会話"},
+					{Role: data.ChatCompletionMessageRoleAssistant, Content: "こんにちは"},
+				},
+			},
+		},
+		{
+			sessionID: ownerID + ":second",
+			message: data.ChatMessage{
+				Chat: []data.ChatCompletionMessage{
+					{Role: data.ChatCompletionMessageRoleAssistant, Content: "先に返答"},
+					{Role: data.ChatCompletionMessageRoleUser, Content: "次の会話"},
+					{Role: data.ChatCompletionMessageRoleAssistant, Content: "続きです"},
+				},
+			},
+		},
+		{
+			sessionID: "other-owner:secret",
+			message: data.ChatMessage{
+				Chat: []data.ChatCompletionMessage{
+					{Role: data.ChatCompletionMessageRoleUser, Content: "見えない会話"},
+				},
+			},
+		},
+	} {
+		if err := PutChatMessage(tc.sessionID, characterID, tc.message); err != nil {
+			t.Fatalf("PutChatMessage(%s) error = %v", tc.sessionID, err)
+		}
+	}
+
+	list, err := ListChatSessionsForOwner(ownerID, characterID)
+	if err != nil {
+		t.Fatalf("ListChatSessionsForOwner() error = %v", err)
+	}
+
+	if len(list.Sessions) != 2 {
+		t.Fatalf("ListChatSessionsForOwner() len = %d, want 2", len(list.Sessions))
+	}
+
+	if list.Sessions[0].SessionID != ownerID || !list.Sessions[0].IsDefault {
+		t.Fatalf("first session = %#v, want default owner session", list.Sessions[0])
+	}
+	if list.Sessions[0].Title != "最初の会話" || list.Sessions[0].Preview != "こんにちは" || list.Sessions[0].MessageCount != 2 {
+		t.Fatalf("first session summary = %#v", list.Sessions[0])
+	}
+
+	if list.Sessions[1].SessionID != ownerID+":second" || list.Sessions[1].IsDefault {
+		t.Fatalf("second session = %#v, want secondary session", list.Sessions[1])
+	}
+	if list.Sessions[1].Title != "次の会話" || list.Sessions[1].Preview != "続きです" || list.Sessions[1].MessageCount != 3 {
+		t.Fatalf("second session summary = %#v", list.Sessions[1])
+	}
+}
+
 func TestDeleteCharacterKeepsChatSessionsAndRemovesCharacterChildren(t *testing.T) {
 	setupTestDB(t)
 

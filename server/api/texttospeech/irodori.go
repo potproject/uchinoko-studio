@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	irodoriDefaultCheckpoint = "Aratako/Irodori-TTS-500M"
+	irodoriDefaultCheckpoint = "Aratako/Irodori-TTS-500M-v2"
 	irodoriAPISuffix         = "/_run_generation"
 )
 
@@ -78,33 +78,7 @@ func irodori(endpoint string, checkpoint string, referenceAudioPath string, text
 		return nil, err
 	}
 
-	payload := []any{
-		checkpoint,
-		"cuda",
-		"bf16",
-		"cuda",
-		"bf16",
-		false,
-		text,
-		refInput,
-		40,
-		1,
-		"",
-		"independent",
-		3,
-		5,
-		"",
-		0.5,
-		1.0,
-		true,
-		"",
-		"",
-		"",
-		false,
-		"",
-		"0.9",
-		"",
-	}
+	payload := buildIrodoriPayload(checkpoint, text, refInput)
 
 	var lastErr error
 
@@ -117,6 +91,36 @@ func irodori(endpoint string, checkpoint string, referenceAudioPath string, text
 	}
 
 	return nil, lastErr
+}
+
+func buildIrodoriPayload(checkpoint string, text string, refInput any) []any {
+	// Keep this aligned with the current Gradio `/_run_generation` input order.
+	return []any{
+		checkpoint,
+		"cuda",
+		"bf16",
+		"cuda",
+		"bf16",
+		"",
+		text,
+		refInput,
+		40,
+		1,
+		"",
+		"independent",
+		3.0,
+		5.0,
+		"",
+		0.5,
+		1.0,
+		true,
+		"",
+		"",
+		"",
+		"",
+		"0.9",
+		"",
+	}
 }
 
 func buildIrodoriReferenceAudio(client *http.Client, baseURL string, referenceAudioPath string) (any, error) {

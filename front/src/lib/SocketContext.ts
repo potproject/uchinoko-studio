@@ -72,7 +72,7 @@ export class SocketContext{
         }
     }
 
-    public static async connect(id: string, charactorId: string): Promise<SocketContext> {
+    public static async connect(id: string, charactorId: string, sessionId?: string): Promise<SocketContext> {
         const wsTLS = location.protocol === 'https:' ? 'wss' : 'ws';
     
         // chromeの場合はcompressを有効にする
@@ -80,7 +80,8 @@ export class SocketContext{
         const isChrome = ua.indexOf('chrome') != -1 && ua.indexOf('edge') == -1;
         const compressed = isChrome ? '/compressed' : '';
 
-        const url = `${wsTLS}://${location.host}/v1/ws/talk/${id}/${charactorId}${compressed}`;
+        const query = sessionId && sessionId !== id ? `?${new URLSearchParams({ sessionId }).toString()}` : '';
+        const url = `${wsTLS}://${location.host}/v1/ws/talk/${id}/${charactorId}${compressed}${query}`;
         const socket = new SocketContext(url);
         await new Promise(resolve => {
             socket.onConnected = () => {
@@ -117,7 +118,13 @@ export class SocketContext{
             return new Blob([headers, part.data, '\r\n'], { type: part.contentType });
         });
         multipartParts.push(new Blob([`--${boundary}--\r\n`], { type: 'text/plain' }));
-    
+
         return new Blob(multipartParts, { type: 'multipart/mixed; boundary=' + boundary });
+    }
+
+    public disconnect() {
+        if (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING) {
+            this.socket.close();
+        }
     }
 }  

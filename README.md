@@ -33,7 +33,7 @@ See Article(Japanese Only): https://blog.potproject.net/2023/12/24/ai-web-uchino
 * Japanese Support(for now...)
 * Chat-based LLM Support: [OpenAI GPT(Cloud)](https://openai.com/gpt-4),[Anthropic Claude(Cloud)](https://www.anthropic.com/claude),[DeepSeek(Cloud)](https://www.deepseek.com),[Gemini(Cloud)](https://gemini.google.com),Local LLM(OpenAI `/v1/chat/completions` Compatible)
 * Speach-To-Text Support: [OpenAI Speech to Text API(Cloud)](https://platform.openai.com/docs/guides/speech-to-text),[Google Speech to Text API(Cloud)](https://cloud.google.com/speech-to-text),[Vosk Server(local)](https://github.com/alphacep/vosk-server),[SpeechRecognition(Web API)](https://developer.mozilla.org/docs/Web/API/SpeechRecognition)
-* Text-To-Speech Support: [Bert-Vits2(local)](https://github.com/fishaudio/Bert-VITS2), [Irodori TTS(local)](https://github.com/Aratako/Irodori-TTS), [Style-Bert-VITS2(local)](https://github.com/litagin02/Style-Bert-VITS2), [VOICEVOX(local)](https://voicevox.hiroshiba.jp/),[NijiVoice API(Cloud)](https://nijivoice.com), [Google Text To Speech API(Cloud)](https://cloud.google.com/text-to-speech),  [OpenAI Speech API(Cloud)](https://platform.openai.com/docs/guides/speech-to-text)
+* Text-To-Speech Support: [Bert-Vits2(local)](https://github.com/fishaudio/Bert-VITS2), [Irodori TTS v2(local)](https://github.com/Aratako/Irodori-TTS), [Style-Bert-VITS2(local)](https://github.com/litagin02/Style-Bert-VITS2), [VOICEVOX(local)](https://voicevox.hiroshiba.jp/),[NijiVoice API(Cloud)](https://nijivoice.com), [Google Text To Speech API(Cloud)](https://cloud.google.com/text-to-speech),  [OpenAI Speech API(Cloud)](https://platform.openai.com/docs/guides/speech-to-text)
 * More bugs...
 
 ## Getting Started
@@ -93,7 +93,8 @@ OPENAI_LOCAL_API_ENDPOINT=http://localhost:11434/
 
 #### Irodori TTS の補足
 
-* `Checkpoint`にはHugging Face上のモデルIDを設定します。空欄時は `Aratako/Irodori-TTS-500M` を使用します。
+* irodori TTSはv2のみサポートしています。v1は動作しません。
+* `Checkpoint`にはHugging Face上のモデルIDを設定します。空欄時は `Aratako/Irodori-TTS-500M-v2` を使用します。
 * `refs/ 配下パス` を指定すると、音声クローニング用の参照音声を渡せます。空欄なら通常のTTSとして動作します。
 * ローカル参照音声を使う場合は、リポジトリ直下の `refs/` フォルダに wav を置いて、UI では `sample.wav` のように入力してください。
 

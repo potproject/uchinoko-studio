@@ -1,6 +1,7 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
     import type { CharacterConfig } from "../../types/character";
+    import type { ChatSessionList } from "../../types/chat";
     import { getID } from "$lib/GetId";
     const dispatch = createEventDispatcher();
 
@@ -11,14 +12,22 @@
 
     export let data: CharacterConfig;
 
-    const onReset = () => {
+    const onReset = async () => {
         if (window.confirm("チャット履歴をリセットしますか？")) {
-            fetch(`/v1/chat/${getID()}/${data.general.id}`, {
-                method: "DELETE",
-            }).finally(() => {
-                location.reload();
-            });
+            const ownerId = getID();
+            const list = await fetch(`/v1/chat/${ownerId}/${data.general.id}/sessions`, {
+                method: "GET",
+            }).then((res) => res.json() as Promise<ChatSessionList>);
+
+            await Promise.all(list.sessions.map((session) => {
+                const query = session.sessionId === ownerId ? "" : `?${new URLSearchParams({ sessionId: session.sessionId }).toString()}`;
+                return fetch(`/v1/chat/${ownerId}/${data.general.id}${query}`, {
+                    method: "DELETE",
+                });
+            }));
+
             alert("チャット履歴をリセットしました");
+            location.reload();
         }
     };
 
@@ -201,7 +210,7 @@
                         <div class="flex items-center px-4 py-2">
                             <div class="flex-1">
                                 <label for="model_id" class="text-sm">Checkpoint</label>
-                                <input type="text" id="model_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].modelId} placeholder="Aratako/Irodori-TTS-500M" />
+                                <input type="text" id="model_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].modelId} placeholder="Aratako/Irodori-TTS-500M-v2" />
                             </div>
                         </div>
                         <div class="flex items-center px-4 py-2">

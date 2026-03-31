@@ -24,6 +24,12 @@ SELECT *
 FROM chat_sessions
 ORDER BY session_id, character_id;
 
+-- name: ListChatSessionsByCharacter :many
+SELECT *
+FROM chat_sessions
+WHERE character_id = sqlc.arg(character_id)
+ORDER BY session_id;
+
 -- name: DeleteChatMessages :exec
 DELETE FROM chat_messages
 WHERE session_id = sqlc.arg(session_id)
