@@ -2,7 +2,6 @@ package db
 
 import (
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"path/filepath"
 	"reflect"
@@ -11,17 +10,6 @@ import (
 
 	"github.com/potproject/uchinoko-studio/data"
 )
-
-func mustJSON(t *testing.T, value any) string {
-	t.Helper()
-
-	encoded, err := json.Marshal(value)
-	if err != nil {
-		t.Fatalf("json.Marshal() error = %v", err)
-	}
-
-	return string(encoded)
-}
 
 func setupTestDB(t *testing.T) string {
 	t.Helper()
@@ -141,8 +129,8 @@ func TestFreshStartDefaults(t *testing.T) {
 	if err := db.QueryRow("SELECT MAX(version_id) FROM goose_db_version").Scan(&gooseVersion); err != nil {
 		t.Fatalf("query goose_db_version error = %v", err)
 	}
-	if gooseVersion != 4 {
-		t.Fatalf("goose version = %d, want 4", gooseVersion)
+	if gooseVersion != 1 {
+		t.Fatalf("goose version = %d, want 1", gooseVersion)
 	}
 }
 
@@ -189,129 +177,8 @@ func TestStartWithExistingLegacyTablesSucceeds(t *testing.T) {
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		t.Fatalf("query goose_db_version error = %v", err)
 	}
-	if gooseVersion != 4 {
-		t.Fatalf("goose version = %d, want 4", gooseVersion)
-	}
-}
-
-func TestStartWithLegacyCharacterAndChatDataMigrates(t *testing.T) {
-	sqlitePath := filepath.Join(t.TempDir(), "database")
-	resolvedPath, err := resolveSQLitePath(sqlitePath)
-	if err != nil {
-		t.Fatalf("resolveSQLitePath() error = %v", err)
-	}
-
-	conn, err := openSQLite(resolvedPath)
-	if err != nil {
-		t.Fatalf("openSQLite() error = %v", err)
-	}
-
-	legacyStatements := []string{
-		"CREATE TABLE IF NOT EXISTS general_config (id INTEGER PRIMARY KEY CHECK (id = 1), background TEXT NOT NULL, language TEXT NOT NULL, sound_effect INTEGER NOT NULL, character_output_change INTEGER NOT NULL, enable_tts_optimization INTEGER NOT NULL, transcription_type TEXT NOT NULL, transcription_method TEXT NOT NULL, transcription_auto_threshold REAL NOT NULL, transcription_auto_silent_threshold REAL NOT NULL, transcription_auto_audio_min_length REAL NOT NULL)",
-		"CREATE TABLE IF NOT EXISTS env_config (id INTEGER PRIMARY KEY CHECK (id = 1), openai_speech_to_text_api_key TEXT NOT NULL, google_speech_to_text_api_key TEXT NOT NULL, vosk_server_endpoint TEXT NOT NULL, openai_api_key TEXT NOT NULL, anthropic_api_key TEXT NOT NULL, deepseek_api_key TEXT NOT NULL, gemini_api_key TEXT NOT NULL, openai_local_api_key TEXT NOT NULL, openai_local_api_endpoint TEXT NOT NULL, voicevox_endpoint TEXT NOT NULL, bertvits2_endpoint TEXT NOT NULL, irodori_tts_endpoint TEXT NOT NULL, nijivoice_api_key TEXT NOT NULL, stylebertvit2_endpoint TEXT NOT NULL, google_text_to_speech_api_key TEXT NOT NULL, openai_speech_api_key TEXT NOT NULL)",
-		"CREATE TABLE IF NOT EXISTS characters (id TEXT PRIMARY KEY, name TEXT NOT NULL, multi_voice INTEGER NOT NULL, voice_json TEXT NOT NULL, chat_json TEXT NOT NULL)",
-		"CREATE TABLE IF NOT EXISTS chat_sessions (session_id TEXT NOT NULL, character_id TEXT NOT NULL, messages_json TEXT NOT NULL, PRIMARY KEY (session_id, character_id))",
-		"CREATE TABLE IF NOT EXISTS rate_limits (id TEXT PRIMARY KEY, day_last_update TEXT NOT NULL, day_request INTEGER NOT NULL, day_token INTEGER NOT NULL, hour_last_update TEXT NOT NULL, hour_request INTEGER NOT NULL, hour_token INTEGER NOT NULL, minute_last_update TEXT NOT NULL, minute_request INTEGER NOT NULL, minute_token INTEGER NOT NULL)",
-	}
-	for _, stmt := range legacyStatements {
-		if _, err := conn.Exec(stmt); err != nil {
-			t.Fatalf("seed legacy schema error = %v", err)
-		}
-	}
-
-	character := sampleCharacterConfig("legacy-character", "Legacy")
-	chatMessage := data.ChatMessage{
-		Chat: []data.ChatCompletionMessage{
-			{
-				Role:    data.ChatCompletionMessageRoleUser,
-				Content: "legacy hello",
-				Image: &data.Image{
-					Extension: "png",
-					Data:      []byte{0xAA, 0xBB},
-				},
-			},
-			{
-				Role:    data.ChatCompletionMessageRoleAssistant,
-				Content: "legacy world",
-			},
-		},
-	}
-
-	if _, err := conn.Exec(
-		"INSERT INTO characters (id, name, multi_voice, voice_json, chat_json) VALUES (?, ?, ?, ?, ?)",
-		character.General.ID,
-		character.General.Name,
-		boolToInt(character.MultiVoice),
-		mustJSON(t, character.Voice),
-		mustJSON(t, character.Chat),
-	); err != nil {
-		t.Fatalf("insert legacy character error = %v", err)
-	}
-	if _, err := conn.Exec(
-		"INSERT INTO chat_sessions (session_id, character_id, messages_json) VALUES (?, ?, ?)",
-		"legacy-session",
-		character.General.ID,
-		mustJSON(t, chatMessage.Chat),
-	); err != nil {
-		t.Fatalf("insert legacy chat session error = %v", err)
-	}
-
-	if err := conn.Close(); err != nil {
-		t.Fatalf("close legacy db error = %v", err)
-	}
-
-	if err := StartWithPath(sqlitePath); err != nil {
-		t.Fatalf("StartWithPath(legacy data) error = %v", err)
-	}
-
-	t.Cleanup(func() {
-		if err := closeCurrentDB(); err != nil {
-			t.Fatalf("closeCurrentDB() error = %v", err)
-		}
-	})
-
-	gotCharacter, err := GetCharacterConfig(character.General.ID)
-	if err != nil {
-		t.Fatalf("GetCharacterConfig() error = %v", err)
-	}
-	if !reflect.DeepEqual(gotCharacter, character) {
-		t.Fatalf("GetCharacterConfig() = %#v, want %#v", gotCharacter, character)
-	}
-
-	gotChat, empty, err := GetChatMessage("legacy-session", character.General.ID)
-	if err != nil {
-		t.Fatalf("GetChatMessage() error = %v", err)
-	}
-	if empty {
-		t.Fatal("GetChatMessage() empty = true, want false")
-	}
-	if !reflect.DeepEqual(gotChat, chatMessage) {
-		t.Fatalf("GetChatMessage() = %#v, want %#v", gotChat, chatMessage)
-	}
-
-	var columnCount int
-	err = db.QueryRow(`
-		SELECT COUNT(*)
-		FROM pragma_table_info('characters')
-		WHERE name IN ('voice_json', 'chat_json')
-	`).Scan(&columnCount)
-	if err != nil {
-		t.Fatalf("pragma_table_info(characters) error = %v", err)
-	}
-	if columnCount != 0 {
-		t.Fatalf("legacy JSON columns still exist on characters: %d", columnCount)
-	}
-
-	err = db.QueryRow(`
-		SELECT COUNT(*)
-		FROM pragma_table_info('chat_sessions')
-		WHERE name = 'messages_json'
-	`).Scan(&columnCount)
-	if err != nil {
-		t.Fatalf("pragma_table_info(chat_sessions) error = %v", err)
-	}
-	if columnCount != 0 {
-		t.Fatalf("legacy messages_json column still exists: %d", columnCount)
+	if gooseVersion != 1 {
+		t.Fatalf("goose version = %d, want 1", gooseVersion)
 	}
 }
 
