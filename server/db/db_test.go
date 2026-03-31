@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"path/filepath"
 	"reflect"
@@ -10,6 +11,17 @@ import (
 
 	"github.com/potproject/uchinoko-studio/data"
 )
+
+func mustJSON(t *testing.T, value any) string {
+	t.Helper()
+
+	encoded, err := json.Marshal(value)
+	if err != nil {
+		t.Fatalf("json.Marshal() error = %v", err)
+	}
+
+	return string(encoded)
+}
 
 func setupTestDB(t *testing.T) string {
 	t.Helper()
@@ -129,8 +141,8 @@ func TestFreshStartDefaults(t *testing.T) {
 	if err := db.QueryRow("SELECT MAX(version_id) FROM goose_db_version").Scan(&gooseVersion); err != nil {
 		t.Fatalf("query goose_db_version error = %v", err)
 	}
-	if gooseVersion != 1 {
-		t.Fatalf("goose version = %d, want 1", gooseVersion)
+	if gooseVersion != 4 {
+		t.Fatalf("goose version = %d, want 4", gooseVersion)
 	}
 }
 
@@ -177,8 +189,129 @@ func TestStartWithExistingLegacyTablesSucceeds(t *testing.T) {
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		t.Fatalf("query goose_db_version error = %v", err)
 	}
-	if gooseVersion != 1 {
-		t.Fatalf("goose version = %d, want 1", gooseVersion)
+	if gooseVersion != 4 {
+		t.Fatalf("goose version = %d, want 4", gooseVersion)
+	}
+}
+
+func TestStartWithLegacyCharacterAndChatDataMigrates(t *testing.T) {
+	sqlitePath := filepath.Join(t.TempDir(), "database")
+	resolvedPath, err := resolveSQLitePath(sqlitePath)
+	if err != nil {
+		t.Fatalf("resolveSQLitePath() error = %v", err)
+	}
+
+	conn, err := openSQLite(resolvedPath)
+	if err != nil {
+		t.Fatalf("openSQLite() error = %v", err)
+	}
+
+	legacyStatements := []string{
+		"CREATE TABLE IF NOT EXISTS general_config (id INTEGER PRIMARY KEY CHECK (id = 1), background TEXT NOT NULL, language TEXT NOT NULL, sound_effect INTEGER NOT NULL, character_output_change INTEGER NOT NULL, enable_tts_optimization INTEGER NOT NULL, transcription_type TEXT NOT NULL, transcription_method TEXT NOT NULL, transcription_auto_threshold REAL NOT NULL, transcription_auto_silent_threshold REAL NOT NULL, transcription_auto_audio_min_length REAL NOT NULL)",
+		"CREATE TABLE IF NOT EXISTS env_config (id INTEGER PRIMARY KEY CHECK (id = 1), openai_speech_to_text_api_key TEXT NOT NULL, google_speech_to_text_api_key TEXT NOT NULL, vosk_server_endpoint TEXT NOT NULL, openai_api_key TEXT NOT NULL, anthropic_api_key TEXT NOT NULL, deepseek_api_key TEXT NOT NULL, gemini_api_key TEXT NOT NULL, openai_local_api_key TEXT NOT NULL, openai_local_api_endpoint TEXT NOT NULL, voicevox_endpoint TEXT NOT NULL, bertvits2_endpoint TEXT NOT NULL, irodori_tts_endpoint TEXT NOT NULL, nijivoice_api_key TEXT NOT NULL, stylebertvit2_endpoint TEXT NOT NULL, google_text_to_speech_api_key TEXT NOT NULL, openai_speech_api_key TEXT NOT NULL)",
+		"CREATE TABLE IF NOT EXISTS characters (id TEXT PRIMARY KEY, name TEXT NOT NULL, multi_voice INTEGER NOT NULL, voice_json TEXT NOT NULL, chat_json TEXT NOT NULL)",
+		"CREATE TABLE IF NOT EXISTS chat_sessions (session_id TEXT NOT NULL, character_id TEXT NOT NULL, messages_json TEXT NOT NULL, PRIMARY KEY (session_id, character_id))",
+		"CREATE TABLE IF NOT EXISTS rate_limits (id TEXT PRIMARY KEY, day_last_update TEXT NOT NULL, day_request INTEGER NOT NULL, day_token INTEGER NOT NULL, hour_last_update TEXT NOT NULL, hour_request INTEGER NOT NULL, hour_token INTEGER NOT NULL, minute_last_update TEXT NOT NULL, minute_request INTEGER NOT NULL, minute_token INTEGER NOT NULL)",
+	}
+	for _, stmt := range legacyStatements {
+		if _, err := conn.Exec(stmt); err != nil {
+			t.Fatalf("seed legacy schema error = %v", err)
+		}
+	}
+
+	character := sampleCharacterConfig("legacy-character", "Legacy")
+	chatMessage := data.ChatMessage{
+		Chat: []data.ChatCompletionMessage{
+			{
+				Role:    data.ChatCompletionMessageRoleUser,
+				Content: "legacy hello",
+				Image: &data.Image{
+					Extension: "png",
+					Data:      []byte{0xAA, 0xBB},
+				},
+			},
+			{
+				Role:    data.ChatCompletionMessageRoleAssistant,
+				Content: "legacy world",
+			},
+		},
+	}
+
+	if _, err := conn.Exec(
+		"INSERT INTO characters (id, name, multi_voice, voice_json, chat_json) VALUES (?, ?, ?, ?, ?)",
+		character.General.ID,
+		character.General.Name,
+		boolToInt(character.MultiVoice),
+		mustJSON(t, character.Voice),
+		mustJSON(t, character.Chat),
+	); err != nil {
+		t.Fatalf("insert legacy character error = %v", err)
+	}
+	if _, err := conn.Exec(
+		"INSERT INTO chat_sessions (session_id, character_id, messages_json) VALUES (?, ?, ?)",
+		"legacy-session",
+		character.General.ID,
+		mustJSON(t, chatMessage.Chat),
+	); err != nil {
+		t.Fatalf("insert legacy chat session error = %v", err)
+	}
+
+	if err := conn.Close(); err != nil {
+		t.Fatalf("close legacy db error = %v", err)
+	}
+
+	if err := StartWithPath(sqlitePath); err != nil {
+		t.Fatalf("StartWithPath(legacy data) error = %v", err)
+	}
+
+	t.Cleanup(func() {
+		if err := closeCurrentDB(); err != nil {
+			t.Fatalf("closeCurrentDB() error = %v", err)
+		}
+	})
+
+	gotCharacter, err := GetCharacterConfig(character.General.ID)
+	if err != nil {
+		t.Fatalf("GetCharacterConfig() error = %v", err)
+	}
+	if !reflect.DeepEqual(gotCharacter, character) {
+		t.Fatalf("GetCharacterConfig() = %#v, want %#v", gotCharacter, character)
+	}
+
+	gotChat, empty, err := GetChatMessage("legacy-session", character.General.ID)
+	if err != nil {
+		t.Fatalf("GetChatMessage() error = %v", err)
+	}
+	if empty {
+		t.Fatal("GetChatMessage() empty = true, want false")
+	}
+	if !reflect.DeepEqual(gotChat, chatMessage) {
+		t.Fatalf("GetChatMessage() = %#v, want %#v", gotChat, chatMessage)
+	}
+
+	var columnCount int
+	err = db.QueryRow(`
+		SELECT COUNT(*)
+		FROM pragma_table_info('characters')
+		WHERE name IN ('voice_json', 'chat_json')
+	`).Scan(&columnCount)
+	if err != nil {
+		t.Fatalf("pragma_table_info(characters) error = %v", err)
+	}
+	if columnCount != 0 {
+		t.Fatalf("legacy JSON columns still exist on characters: %d", columnCount)
+	}
+
+	err = db.QueryRow(`
+		SELECT COUNT(*)
+		FROM pragma_table_info('chat_sessions')
+		WHERE name = 'messages_json'
+	`).Scan(&columnCount)
+	if err != nil {
+		t.Fatalf("pragma_table_info(chat_sessions) error = %v", err)
+	}
+	if columnCount != 0 {
+		t.Fatalf("legacy messages_json column still exists: %d", columnCount)
 	}
 }
 
@@ -228,6 +361,23 @@ func TestCharacterCRUD(t *testing.T) {
 
 	first := sampleCharacterConfig("char-b", "Beta")
 	second := sampleCharacterConfig("char-a", "Alpha")
+	second.Voice = append(second.Voice, data.CharacterConfigVoice{
+		Name:                "Sub",
+		Type:                "bert-vits2",
+		Identification:      "sub",
+		ModelID:             "model-2",
+		ModelFile:           "voice-2.bin",
+		SpeakerID:           "9",
+		ReferenceAudioPath:  "refs/sub.wav",
+		Image:               "sub.png",
+		BackgroundImagePath: "sub-bg.png",
+		Behavior: []data.CharacterConfigVoiceBehavior{
+			{
+				Identification: "sad",
+				ImagePath:      "sad.png",
+			},
+		},
+	})
 
 	if err := PutCharacterConfig(first.General.ID, first); err != nil {
 		t.Fatalf("PutCharacterConfig(first) error = %v", err)
@@ -257,6 +407,7 @@ func TestCharacterCRUD(t *testing.T) {
 
 	second.General.Name = "Alpha Updated"
 	second.Chat.Model = "gpt-4.1-mini"
+	second.Voice = second.Voice[:1]
 	if err := PutCharacterConfig(second.General.ID, second); err != nil {
 		t.Fatalf("PutCharacterConfig(update) error = %v", err)
 	}
@@ -317,6 +468,29 @@ func TestChatMessageRoundTrip(t *testing.T) {
 		t.Fatalf("GetChatMessage() = %#v, want %#v", got, message)
 	}
 
+	updated := data.ChatMessage{
+		Chat: []data.ChatCompletionMessage{
+			{
+				Role:    data.ChatCompletionMessageRoleAssistant,
+				Content: "updated",
+			},
+		},
+	}
+	if err := PutChatMessage("session-1", "character-1", updated); err != nil {
+		t.Fatalf("PutChatMessage(update) error = %v", err)
+	}
+
+	got, empty, err = GetChatMessage("session-1", "character-1")
+	if err != nil {
+		t.Fatalf("GetChatMessage(update) error = %v", err)
+	}
+	if empty {
+		t.Fatal("GetChatMessage(update) empty = true, want false")
+	}
+	if !reflect.DeepEqual(got, updated) {
+		t.Fatalf("GetChatMessage(update) = %#v, want %#v", got, updated)
+	}
+
 	if err := DeleteChatMessage("session-1", "character-1"); err != nil {
 		t.Fatalf("DeleteChatMessage() error = %v", err)
 	}
@@ -327,6 +501,78 @@ func TestChatMessageRoundTrip(t *testing.T) {
 	}
 	if !empty {
 		t.Fatal("GetChatMessage(after delete) empty = false, want true")
+	}
+
+	var count int
+	if err := db.QueryRow(`
+		SELECT COUNT(*)
+		FROM chat_messages
+		WHERE session_id = 'session-1' AND character_id = 'character-1'
+	`).Scan(&count); err != nil {
+		t.Fatalf("count chat_messages after delete error = %v", err)
+	}
+	if count != 0 {
+		t.Fatalf("chat_messages count = %d, want 0", count)
+	}
+}
+
+func TestDeleteCharacterKeepsChatSessionsAndRemovesCharacterChildren(t *testing.T) {
+	setupTestDB(t)
+
+	character := sampleCharacterConfig("character-keep-chat", "Keeper")
+	chatMessage := data.ChatMessage{
+		Chat: []data.ChatCompletionMessage{
+			{Role: data.ChatCompletionMessageRoleUser, Content: "hello"},
+			{Role: data.ChatCompletionMessageRoleAssistant, Content: "world"},
+		},
+	}
+
+	if err := PutCharacterConfig(character.General.ID, character); err != nil {
+		t.Fatalf("PutCharacterConfig() error = %v", err)
+	}
+	if err := PutChatMessage("session-keep", character.General.ID, chatMessage); err != nil {
+		t.Fatalf("PutChatMessage() error = %v", err)
+	}
+
+	if err := DeleteCharacterConfig(character.General.ID); err != nil {
+		t.Fatalf("DeleteCharacterConfig() error = %v", err)
+	}
+
+	gotCharacter, err := GetCharacterConfig(character.General.ID)
+	if err != nil {
+		t.Fatalf("GetCharacterConfig() error = %v", err)
+	}
+	if !reflect.DeepEqual(gotCharacter, data.CharacterConfig{}) {
+		t.Fatalf("GetCharacterConfig() = %#v, want empty config", gotCharacter)
+	}
+
+	gotChat, empty, err := GetChatMessage("session-keep", character.General.ID)
+	if err != nil {
+		t.Fatalf("GetChatMessage() error = %v", err)
+	}
+	if empty {
+		t.Fatal("GetChatMessage() empty = true, want false")
+	}
+	if !reflect.DeepEqual(gotChat, chatMessage) {
+		t.Fatalf("GetChatMessage() = %#v, want %#v", gotChat, chatMessage)
+	}
+
+	for _, query := range []struct {
+		name string
+		sql  string
+	}{
+		{name: "character_chat_settings", sql: "SELECT COUNT(*) FROM character_chat_settings WHERE character_id = 'character-keep-chat'"},
+		{name: "character_chat_limits", sql: "SELECT COUNT(*) FROM character_chat_limits WHERE character_id = 'character-keep-chat'"},
+		{name: "character_voices", sql: "SELECT COUNT(*) FROM character_voices WHERE character_id = 'character-keep-chat'"},
+		{name: "character_voice_behaviors", sql: "SELECT COUNT(*) FROM character_voice_behaviors WHERE character_id = 'character-keep-chat'"},
+	} {
+		var count int
+		if err := db.QueryRow(query.sql).Scan(&count); err != nil {
+			t.Fatalf("count %s error = %v", query.name, err)
+		}
+		if count != 0 {
+			t.Fatalf("%s count = %d, want 0", query.name, count)
+		}
 	}
 }
 

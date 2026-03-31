@@ -78,6 +78,30 @@ func closeCurrentDB() error {
 	return nil
 }
 
+func withTx(ctx context.Context, fn func(*sqlcgen.Queries) error) error {
+	if db == nil || queries == nil {
+		return errors.New("database is not started")
+	}
+
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+
+	if err := fn(queries.WithTx(tx)); err != nil {
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return fmt.Errorf("rollback tx after %v: %w", err, rollbackErr)
+		}
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit tx: %w", err)
+	}
+
+	return nil
+}
+
 func openSQLite(resolvedPath string) (*sql.DB, error) {
 	if resolvedPath == "" {
 		return nil, errors.New("sqlite path is empty")
@@ -205,7 +229,7 @@ func ListAll() ([]ListAllResponse, error) {
 		return nil, err
 	}
 	for _, row := range characterRows {
-		config, err := characterConfigFromRow(row)
+		config, err := loadCharacterConfig(ctx, queries, row)
 		if err != nil {
 			return nil, err
 		}
@@ -220,7 +244,7 @@ func ListAll() ([]ListAllResponse, error) {
 		return nil, err
 	}
 	for _, row := range chatRows {
-		message, err := chatMessageFromRow(row)
+		message, err := loadChatMessage(ctx, queries, row)
 		if err != nil {
 			return nil, err
 		}

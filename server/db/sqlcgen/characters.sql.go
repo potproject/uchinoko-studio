@@ -19,8 +19,28 @@ func (q *Queries) DeleteCharacter(ctx context.Context, id string) error {
 	return err
 }
 
+const deleteCharacterChatLimits = `-- name: DeleteCharacterChatLimits :exec
+DELETE FROM character_chat_limits
+WHERE character_id = ?1
+`
+
+func (q *Queries) DeleteCharacterChatLimits(ctx context.Context, characterID string) error {
+	_, err := q.db.ExecContext(ctx, deleteCharacterChatLimits, characterID)
+	return err
+}
+
+const deleteCharacterVoices = `-- name: DeleteCharacterVoices :exec
+DELETE FROM character_voices
+WHERE character_id = ?1
+`
+
+func (q *Queries) DeleteCharacterVoices(ctx context.Context, characterID string) error {
+	_, err := q.db.ExecContext(ctx, deleteCharacterVoices, characterID)
+	return err
+}
+
 const getCharacter = `-- name: GetCharacter :one
-SELECT id, name, multi_voice, voice_json, chat_json
+SELECT id, name, multi_voice
 FROM characters
 WHERE id = ?1
 `
@@ -28,18 +48,276 @@ WHERE id = ?1
 func (q *Queries) GetCharacter(ctx context.Context, id string) (Character, error) {
 	row := q.db.QueryRowContext(ctx, getCharacter, id)
 	var i Character
+	err := row.Scan(&i.ID, &i.Name, &i.MultiVoice)
+	return i, err
+}
+
+const getCharacterChatSetting = `-- name: GetCharacterChatSetting :one
+SELECT character_id, type, model, system_prompt, temperature_enable, temperature_value, max_history
+FROM character_chat_settings
+WHERE character_id = ?1
+`
+
+func (q *Queries) GetCharacterChatSetting(ctx context.Context, characterID string) (CharacterChatSetting, error) {
+	row := q.db.QueryRowContext(ctx, getCharacterChatSetting, characterID)
+	var i CharacterChatSetting
 	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.MultiVoice,
-		&i.VoiceJson,
-		&i.ChatJson,
+		&i.CharacterID,
+		&i.Type,
+		&i.Model,
+		&i.SystemPrompt,
+		&i.TemperatureEnable,
+		&i.TemperatureValue,
+		&i.MaxHistory,
 	)
 	return i, err
 }
 
+const insertCharacterChatLimit = `-- name: InsertCharacterChatLimit :exec
+INSERT INTO character_chat_limits (
+    character_id,
+    window,
+    request_limit,
+    token_limit
+) VALUES (
+    ?1,
+    ?2,
+    ?3,
+    ?4
+)
+`
+
+type InsertCharacterChatLimitParams struct {
+	CharacterID  string
+	Window       string
+	RequestLimit int64
+	TokenLimit   int64
+}
+
+func (q *Queries) InsertCharacterChatLimit(ctx context.Context, arg InsertCharacterChatLimitParams) error {
+	_, err := q.db.ExecContext(ctx, insertCharacterChatLimit,
+		arg.CharacterID,
+		arg.Window,
+		arg.RequestLimit,
+		arg.TokenLimit,
+	)
+	return err
+}
+
+const insertCharacterVoice = `-- name: InsertCharacterVoice :exec
+INSERT INTO character_voices (
+    character_id,
+    voice_index,
+    name,
+    type,
+    identification,
+    model_id,
+    model_file,
+    speaker_id,
+    reference_audio_path,
+    image,
+    background_image_path
+) VALUES (
+    ?1,
+    ?2,
+    ?3,
+    ?4,
+    ?5,
+    ?6,
+    ?7,
+    ?8,
+    ?9,
+    ?10,
+    ?11
+)
+`
+
+type InsertCharacterVoiceParams struct {
+	CharacterID         string
+	VoiceIndex          int64
+	Name                string
+	Type                string
+	Identification      string
+	ModelID             string
+	ModelFile           string
+	SpeakerID           string
+	ReferenceAudioPath  string
+	Image               string
+	BackgroundImagePath string
+}
+
+func (q *Queries) InsertCharacterVoice(ctx context.Context, arg InsertCharacterVoiceParams) error {
+	_, err := q.db.ExecContext(ctx, insertCharacterVoice,
+		arg.CharacterID,
+		arg.VoiceIndex,
+		arg.Name,
+		arg.Type,
+		arg.Identification,
+		arg.ModelID,
+		arg.ModelFile,
+		arg.SpeakerID,
+		arg.ReferenceAudioPath,
+		arg.Image,
+		arg.BackgroundImagePath,
+	)
+	return err
+}
+
+const insertCharacterVoiceBehavior = `-- name: InsertCharacterVoiceBehavior :exec
+INSERT INTO character_voice_behaviors (
+    character_id,
+    voice_index,
+    behavior_index,
+    identification,
+    image_path
+) VALUES (
+    ?1,
+    ?2,
+    ?3,
+    ?4,
+    ?5
+)
+`
+
+type InsertCharacterVoiceBehaviorParams struct {
+	CharacterID    string
+	VoiceIndex     int64
+	BehaviorIndex  int64
+	Identification string
+	ImagePath      string
+}
+
+func (q *Queries) InsertCharacterVoiceBehavior(ctx context.Context, arg InsertCharacterVoiceBehaviorParams) error {
+	_, err := q.db.ExecContext(ctx, insertCharacterVoiceBehavior,
+		arg.CharacterID,
+		arg.VoiceIndex,
+		arg.BehaviorIndex,
+		arg.Identification,
+		arg.ImagePath,
+	)
+	return err
+}
+
+const listCharacterChatLimits = `-- name: ListCharacterChatLimits :many
+SELECT character_id, "window", request_limit, token_limit
+FROM character_chat_limits
+WHERE character_id = ?1
+ORDER BY CASE window
+    WHEN 'day' THEN 1
+    WHEN 'hour' THEN 2
+    WHEN 'minute' THEN 3
+    ELSE 4
+END
+`
+
+func (q *Queries) ListCharacterChatLimits(ctx context.Context, characterID string) ([]CharacterChatLimit, error) {
+	rows, err := q.db.QueryContext(ctx, listCharacterChatLimits, characterID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CharacterChatLimit
+	for rows.Next() {
+		var i CharacterChatLimit
+		if err := rows.Scan(
+			&i.CharacterID,
+			&i.Window,
+			&i.RequestLimit,
+			&i.TokenLimit,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listCharacterVoiceBehaviors = `-- name: ListCharacterVoiceBehaviors :many
+SELECT character_id, voice_index, behavior_index, identification, image_path
+FROM character_voice_behaviors
+WHERE character_id = ?1
+ORDER BY voice_index, behavior_index
+`
+
+func (q *Queries) ListCharacterVoiceBehaviors(ctx context.Context, characterID string) ([]CharacterVoiceBehavior, error) {
+	rows, err := q.db.QueryContext(ctx, listCharacterVoiceBehaviors, characterID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CharacterVoiceBehavior
+	for rows.Next() {
+		var i CharacterVoiceBehavior
+		if err := rows.Scan(
+			&i.CharacterID,
+			&i.VoiceIndex,
+			&i.BehaviorIndex,
+			&i.Identification,
+			&i.ImagePath,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listCharacterVoices = `-- name: ListCharacterVoices :many
+SELECT character_id, voice_index, name, type, identification, model_id, model_file, speaker_id, reference_audio_path, image, background_image_path
+FROM character_voices
+WHERE character_id = ?1
+ORDER BY voice_index
+`
+
+func (q *Queries) ListCharacterVoices(ctx context.Context, characterID string) ([]CharacterVoice, error) {
+	rows, err := q.db.QueryContext(ctx, listCharacterVoices, characterID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CharacterVoice
+	for rows.Next() {
+		var i CharacterVoice
+		if err := rows.Scan(
+			&i.CharacterID,
+			&i.VoiceIndex,
+			&i.Name,
+			&i.Type,
+			&i.Identification,
+			&i.ModelID,
+			&i.ModelFile,
+			&i.SpeakerID,
+			&i.ReferenceAudioPath,
+			&i.Image,
+			&i.BackgroundImagePath,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listCharacters = `-- name: ListCharacters :many
-SELECT id, name, multi_voice, voice_json, chat_json
+SELECT id, name, multi_voice
 FROM characters
 ORDER BY name, id
 `
@@ -53,13 +331,7 @@ func (q *Queries) ListCharacters(ctx context.Context) ([]Character, error) {
 	var items []Character
 	for rows.Next() {
 		var i Character
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.MultiVoice,
-			&i.VoiceJson,
-			&i.ChatJson,
-		); err != nil {
+		if err := rows.Scan(&i.ID, &i.Name, &i.MultiVoice); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -77,38 +349,74 @@ const upsertCharacter = `-- name: UpsertCharacter :exec
 INSERT INTO characters (
     id,
     name,
-    multi_voice,
-    voice_json,
-    chat_json
+    multi_voice
 ) VALUES (
     ?1,
     ?2,
-    ?3,
-    ?4,
-    ?5
+    ?3
 )
 ON CONFLICT(id) DO UPDATE SET
     name = excluded.name,
-    multi_voice = excluded.multi_voice,
-    voice_json = excluded.voice_json,
-    chat_json = excluded.chat_json
+    multi_voice = excluded.multi_voice
 `
 
 type UpsertCharacterParams struct {
 	ID         string
 	Name       string
 	MultiVoice int64
-	VoiceJson  string
-	ChatJson   string
 }
 
 func (q *Queries) UpsertCharacter(ctx context.Context, arg UpsertCharacterParams) error {
-	_, err := q.db.ExecContext(ctx, upsertCharacter,
-		arg.ID,
-		arg.Name,
-		arg.MultiVoice,
-		arg.VoiceJson,
-		arg.ChatJson,
+	_, err := q.db.ExecContext(ctx, upsertCharacter, arg.ID, arg.Name, arg.MultiVoice)
+	return err
+}
+
+const upsertCharacterChatSetting = `-- name: UpsertCharacterChatSetting :exec
+INSERT INTO character_chat_settings (
+    character_id,
+    type,
+    model,
+    system_prompt,
+    temperature_enable,
+    temperature_value,
+    max_history
+) VALUES (
+    ?1,
+    ?2,
+    ?3,
+    ?4,
+    ?5,
+    ?6,
+    ?7
+)
+ON CONFLICT(character_id) DO UPDATE SET
+    type = excluded.type,
+    model = excluded.model,
+    system_prompt = excluded.system_prompt,
+    temperature_enable = excluded.temperature_enable,
+    temperature_value = excluded.temperature_value,
+    max_history = excluded.max_history
+`
+
+type UpsertCharacterChatSettingParams struct {
+	CharacterID       string
+	Type              string
+	Model             string
+	SystemPrompt      string
+	TemperatureEnable int64
+	TemperatureValue  float64
+	MaxHistory        int64
+}
+
+func (q *Queries) UpsertCharacterChatSetting(ctx context.Context, arg UpsertCharacterChatSettingParams) error {
+	_, err := q.db.ExecContext(ctx, upsertCharacterChatSetting,
+		arg.CharacterID,
+		arg.Type,
+		arg.Model,
+		arg.SystemPrompt,
+		arg.TemperatureEnable,
+		arg.TemperatureValue,
+		arg.MaxHistory,
 	)
 	return err
 }

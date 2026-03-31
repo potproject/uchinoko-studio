@@ -8,14 +8,60 @@ type Character struct {
 	ID         string
 	Name       string
 	MultiVoice int64
-	VoiceJson  string
-	ChatJson   string
+}
+
+type CharacterChatLimit struct {
+	CharacterID  string
+	Window       string
+	RequestLimit int64
+	TokenLimit   int64
+}
+
+type CharacterChatSetting struct {
+	CharacterID       string
+	Type              string
+	Model             string
+	SystemPrompt      string
+	TemperatureEnable int64
+	TemperatureValue  float64
+	MaxHistory        int64
+}
+
+type CharacterVoice struct {
+	CharacterID         string
+	VoiceIndex          int64
+	Name                string
+	Type                string
+	Identification      string
+	ModelID             string
+	ModelFile           string
+	SpeakerID           string
+	ReferenceAudioPath  string
+	Image               string
+	BackgroundImagePath string
+}
+
+type CharacterVoiceBehavior struct {
+	CharacterID    string
+	VoiceIndex     int64
+	BehaviorIndex  int64
+	Identification string
+	ImagePath      string
+}
+
+type ChatMessage struct {
+	SessionID      string
+	CharacterID    string
+	MessageIndex   int64
+	Role           string
+	Content        string
+	ImageExtension string
+	ImageData      []byte
 }
 
 type ChatSession struct {
-	SessionID    string
-	CharacterID  string
-	MessagesJson string
+	SessionID   string
+	CharacterID string
 }
 
 type EnvConfig struct {

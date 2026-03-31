@@ -9,6 +9,22 @@ import (
 	"context"
 )
 
+const deleteChatMessages = `-- name: DeleteChatMessages :exec
+DELETE FROM chat_messages
+WHERE session_id = ?1
+  AND character_id = ?2
+`
+
+type DeleteChatMessagesParams struct {
+	SessionID   string
+	CharacterID string
+}
+
+func (q *Queries) DeleteChatMessages(ctx context.Context, arg DeleteChatMessagesParams) error {
+	_, err := q.db.ExecContext(ctx, deleteChatMessages, arg.SessionID, arg.CharacterID)
+	return err
+}
+
 const deleteChatSession = `-- name: DeleteChatSession :exec
 DELETE FROM chat_sessions
 WHERE session_id = ?1
@@ -26,7 +42,7 @@ func (q *Queries) DeleteChatSession(ctx context.Context, arg DeleteChatSessionPa
 }
 
 const getChatSession = `-- name: GetChatSession :one
-SELECT session_id, character_id, messages_json
+SELECT session_id, character_id
 FROM chat_sessions
 WHERE session_id = ?1
   AND character_id = ?2
@@ -40,12 +56,99 @@ type GetChatSessionParams struct {
 func (q *Queries) GetChatSession(ctx context.Context, arg GetChatSessionParams) (ChatSession, error) {
 	row := q.db.QueryRowContext(ctx, getChatSession, arg.SessionID, arg.CharacterID)
 	var i ChatSession
-	err := row.Scan(&i.SessionID, &i.CharacterID, &i.MessagesJson)
+	err := row.Scan(&i.SessionID, &i.CharacterID)
 	return i, err
 }
 
+const insertChatMessage = `-- name: InsertChatMessage :exec
+INSERT INTO chat_messages (
+    session_id,
+    character_id,
+    message_index,
+    role,
+    content,
+    image_extension,
+    image_data
+) VALUES (
+    ?1,
+    ?2,
+    ?3,
+    ?4,
+    ?5,
+    ?6,
+    ?7
+)
+`
+
+type InsertChatMessageParams struct {
+	SessionID      string
+	CharacterID    string
+	MessageIndex   int64
+	Role           string
+	Content        string
+	ImageExtension string
+	ImageData      []byte
+}
+
+func (q *Queries) InsertChatMessage(ctx context.Context, arg InsertChatMessageParams) error {
+	_, err := q.db.ExecContext(ctx, insertChatMessage,
+		arg.SessionID,
+		arg.CharacterID,
+		arg.MessageIndex,
+		arg.Role,
+		arg.Content,
+		arg.ImageExtension,
+		arg.ImageData,
+	)
+	return err
+}
+
+const listChatMessages = `-- name: ListChatMessages :many
+SELECT session_id, character_id, message_index, role, content, image_extension, image_data
+FROM chat_messages
+WHERE session_id = ?1
+  AND character_id = ?2
+ORDER BY message_index
+`
+
+type ListChatMessagesParams struct {
+	SessionID   string
+	CharacterID string
+}
+
+func (q *Queries) ListChatMessages(ctx context.Context, arg ListChatMessagesParams) ([]ChatMessage, error) {
+	rows, err := q.db.QueryContext(ctx, listChatMessages, arg.SessionID, arg.CharacterID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ChatMessage
+	for rows.Next() {
+		var i ChatMessage
+		if err := rows.Scan(
+			&i.SessionID,
+			&i.CharacterID,
+			&i.MessageIndex,
+			&i.Role,
+			&i.Content,
+			&i.ImageExtension,
+			&i.ImageData,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listChatSessions = `-- name: ListChatSessions :many
-SELECT session_id, character_id, messages_json
+SELECT session_id, character_id
 FROM chat_sessions
 ORDER BY session_id, character_id
 `
@@ -59,7 +162,7 @@ func (q *Queries) ListChatSessions(ctx context.Context) ([]ChatSession, error) {
 	var items []ChatSession
 	for rows.Next() {
 		var i ChatSession
-		if err := rows.Scan(&i.SessionID, &i.CharacterID, &i.MessagesJson); err != nil {
+		if err := rows.Scan(&i.SessionID, &i.CharacterID); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -76,24 +179,20 @@ func (q *Queries) ListChatSessions(ctx context.Context) ([]ChatSession, error) {
 const upsertChatSession = `-- name: UpsertChatSession :exec
 INSERT INTO chat_sessions (
     session_id,
-    character_id,
-    messages_json
+    character_id
 ) VALUES (
     ?1,
-    ?2,
-    ?3
+    ?2
 )
-ON CONFLICT(session_id, character_id) DO UPDATE SET
-    messages_json = excluded.messages_json
+ON CONFLICT(session_id, character_id) DO NOTHING
 `
 
 type UpsertChatSessionParams struct {
-	SessionID    string
-	CharacterID  string
-	MessagesJson string
+	SessionID   string
+	CharacterID string
 }
 
 func (q *Queries) UpsertChatSession(ctx context.Context, arg UpsertChatSessionParams) error {
-	_, err := q.db.ExecContext(ctx, upsertChatSession, arg.SessionID, arg.CharacterID, arg.MessagesJson)
+	_, err := q.db.ExecContext(ctx, upsertChatSession, arg.SessionID, arg.CharacterID)
 	return err
 }

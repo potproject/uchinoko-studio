@@ -7,25 +7,39 @@ import (
 	"github.com/potproject/uchinoko-studio/db/sqlcgen"
 )
 
-func chatMessageFromRow(row sqlcgen.ChatSession) (data.ChatMessage, error) {
-	messages, err := unmarshalJSONString[[]data.ChatCompletionMessage](row.MessagesJson)
+func loadChatMessage(ctx context.Context, q *sqlcgen.Queries, row sqlcgen.ChatSession) (data.ChatMessage, error) {
+	messageRows, err := q.ListChatMessages(ctx, sqlcgen.ListChatMessagesParams{
+		SessionID:   row.SessionID,
+		CharacterID: row.CharacterID,
+	})
 	if err != nil {
 		return data.ChatMessage{}, err
 	}
+
+	messages := make([]data.ChatCompletionMessage, 0, len(messageRows))
+	for _, messageRow := range messageRows {
+		var image *data.Image
+		if messageRow.ImageExtension != "" {
+			image = &data.Image{
+				Extension: messageRow.ImageExtension,
+				Data:      append([]byte(nil), messageRow.ImageData...),
+			}
+		}
+		messages = append(messages, data.ChatCompletionMessage{
+			Role:    messageRow.Role,
+			Content: messageRow.Content,
+			Image:   image,
+		})
+	}
+
 	return data.ChatMessage{Chat: messages}, nil
 }
 
-func newChatSessionParams(id string, characterID string, message data.ChatMessage) (sqlcgen.UpsertChatSessionParams, error) {
-	messagesJSON, err := marshalJSONString(message.Chat)
-	if err != nil {
-		return sqlcgen.UpsertChatSessionParams{}, err
-	}
-
+func newChatSessionParams(id string, characterID string) sqlcgen.UpsertChatSessionParams {
 	return sqlcgen.UpsertChatSessionParams{
-		SessionID:    id,
-		CharacterID:  characterID,
-		MessagesJson: messagesJSON,
-	}, nil
+		SessionID:   id,
+		CharacterID: characterID,
+	}
 }
 
 func initChatMessage() data.ChatMessage {
@@ -35,12 +49,42 @@ func initChatMessage() data.ChatMessage {
 }
 
 func PutChatMessage(id string, characterId string, cM data.ChatMessage) error {
-	row, err := newChatSessionParams(id, characterId, cM)
-	if err != nil {
-		return err
-	}
+	ctx := context.Background()
 
-	return queries.UpsertChatSession(context.Background(), row)
+	return withTx(ctx, func(qtx *sqlcgen.Queries) error {
+		if err := qtx.UpsertChatSession(ctx, newChatSessionParams(id, characterId)); err != nil {
+			return err
+		}
+		if err := qtx.DeleteChatMessages(ctx, sqlcgen.DeleteChatMessagesParams{
+			SessionID:   id,
+			CharacterID: characterId,
+		}); err != nil {
+			return err
+		}
+
+		for messageIndex, message := range cM.Chat {
+			imageExtension := ""
+			var imageData []byte
+			if message.Image != nil {
+				imageExtension = message.Image.Extension
+				imageData = message.Image.Data
+			}
+
+			if err := qtx.InsertChatMessage(ctx, sqlcgen.InsertChatMessageParams{
+				SessionID:      id,
+				CharacterID:    characterId,
+				MessageIndex:   int64(messageIndex),
+				Role:           message.Role,
+				Content:        message.Content,
+				ImageExtension: imageExtension,
+				ImageData:      imageData,
+			}); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }
 
 func GetChatMessage(id string, characterId string) (cm data.ChatMessage, empty bool, err error) {
@@ -55,7 +99,7 @@ func GetChatMessage(id string, characterId string) (cm data.ChatMessage, empty b
 		return data.ChatMessage{}, false, err
 	}
 
-	message, err := chatMessageFromRow(row)
+	message, err := loadChatMessage(context.Background(), queries, row)
 	if err != nil {
 		return data.ChatMessage{}, false, err
 	}
