@@ -54,6 +54,8 @@ func userRoutes(app *fiber.App) {
 
 	app.Get("/v1/config/characters", controller.GetCharacterConfigList)
 	app.Get("/v1/config/character/init", controller.GetInitCharacterConfig)
+	app.Get("/v1/memory/:ownerId/:characterId/items", controller.GetMemoryItems)
+	app.Get("/v1/memory/:ownerId/:characterId/session/:sessionId/summary", controller.GetMemorySessionSummary)
 }
 
 func managerRoutes(app *fiber.App) {
@@ -62,4 +64,8 @@ func managerRoutes(app *fiber.App) {
 	app.Post("/v1/config/env", controller.PostEnvConfig)
 	app.Post("/v1/config/character/:id", controller.PostCharacterConfig)
 	app.Delete("/v1/config/character/:id", controller.DeleteCharacterConfig)
+	app.Post("/v1/memory/:ownerId/:characterId/items", controller.PostMemoryItem)
+	app.Patch("/v1/memory/item/:id", controller.PatchMemoryItem)
+	app.Delete("/v1/memory/item/:id", controller.DeleteMemoryItem)
+	app.Post("/v1/memory/:ownerId/:characterId/rebuild", controller.RebuildCharacterMemory)
 }

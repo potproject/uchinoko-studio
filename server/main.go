@@ -13,6 +13,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/potproject/uchinoko-studio/db"
 	"github.com/potproject/uchinoko-studio/envgen"
+	"github.com/potproject/uchinoko-studio/memory"
 	"github.com/potproject/uchinoko-studio/router"
 	"tailscale.com/tsnet"
 )
@@ -32,6 +33,7 @@ func main() {
 
 func dbSetup() {
 	db.Start()
+	memory.StartWorker()
 }
 
 func exists(filename string) bool {

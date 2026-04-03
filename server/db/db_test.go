@@ -72,6 +72,15 @@ func sampleCharacterConfig(id string, name string) data.CharacterConfig {
 				Minute: data.CharacterConfigChatLimitType{Request: 2, Token: 20},
 			},
 		},
+		Memory: data.CharacterConfigMemory{
+			Enabled:                  true,
+			MaxItemsInPrompt:         6,
+			EnableRelationshipMemory: true,
+			EnableSessionSummary:     true,
+			EnableSemanticSearch:     true,
+			EmbeddingModel:           "text-embedding-3-small",
+			AllowSensitiveMemory:     false,
+		},
 	}
 }
 
@@ -129,8 +138,8 @@ func TestFreshStartDefaults(t *testing.T) {
 	if err := db.QueryRow("SELECT MAX(version_id) FROM goose_db_version").Scan(&gooseVersion); err != nil {
 		t.Fatalf("query goose_db_version error = %v", err)
 	}
-	if gooseVersion != 1 {
-		t.Fatalf("goose version = %d, want 1", gooseVersion)
+	if gooseVersion != 2 {
+		t.Fatalf("goose version = %d, want 2", gooseVersion)
 	}
 }
 
@@ -177,8 +186,8 @@ func TestStartWithExistingLegacyTablesSucceeds(t *testing.T) {
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		t.Fatalf("query goose_db_version error = %v", err)
 	}
-	if gooseVersion != 1 {
-		t.Fatalf("goose version = %d, want 1", gooseVersion)
+	if gooseVersion != 2 {
+		t.Fatalf("goose version = %d, want 2", gooseVersion)
 	}
 }
 

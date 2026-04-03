@@ -43,8 +43,44 @@ export type CharacterConfig = {
             }
         }
     };
+    memory: {
+        enabled: boolean;
+        maxItemsInPrompt: number;
+        enableRelationshipMemory: boolean;
+        enableSessionSummary: boolean;
+        enableSemanticSearch: boolean;
+        embeddingModel: string;
+        allowSensitiveMemory: boolean;
+    };
 };
 
 export type CharacterConfigList = {
     characters: CharacterConfig[];
+};
+
+export type MemoryItem = {
+    id: string;
+    characterId: string;
+    ownerId: string;
+    scope: "character" | "relationship";
+    kind: string;
+    content: string;
+    keywordsText: string;
+    pinned: boolean;
+    confidence: number;
+    salience: number;
+    source: string;
+    updatedAt: string;
+};
+
+export type MemoryItemList = {
+    items: MemoryItem[];
+};
+
+export type SessionSummary = {
+    ownerId: string;
+    characterId: string;
+    sessionId: string;
+    summary: string;
+    updatedAt: string;
 };

@@ -19,6 +19,7 @@ import (
 	"github.com/potproject/uchinoko-studio/data"
 	"github.com/potproject/uchinoko-studio/db"
 	"github.com/potproject/uchinoko-studio/envgen"
+	"github.com/potproject/uchinoko-studio/memory"
 )
 
 type TextInput struct {
@@ -183,10 +184,10 @@ func WSTalkPlain() fiber.Handler {
 // Support File Types: mp3, wav, webm, ogg, jpg, png
 func WSTalk() func(*websocket.Conn) {
 	return func(c *websocket.Conn) {
-		id := c.Params("id")
+		ownerID := c.Params("id")
 		sessionID := strings.TrimSpace(c.Query("sessionId"))
 		if sessionID == "" {
-			sessionID = id
+			sessionID = ownerID
 		}
 		characterId := c.Params("characterId")
 
@@ -204,7 +205,6 @@ func WSTalk() func(*websocket.Conn) {
 
 		chatType := character.Chat.Type
 		chatModel := character.Chat.Model
-		chatSystemPropmt := character.Chat.SystemPrompt
 
 		format := "wav"
 
@@ -217,7 +217,7 @@ func WSTalk() func(*websocket.Conn) {
 				break
 			}
 
-			allow, err := db.RateLimitIsAllowed(id, character.Chat.Limit)
+			allow, err := db.RateLimitIsAllowed(ownerID, character.Chat.Limit)
 			if err != nil {
 				sendError(c, err)
 				return
@@ -254,7 +254,7 @@ func WSTalk() func(*websocket.Conn) {
 					templature = &character.Chat.Temperature.Value
 				}
 				persistUserText := requestMode != AutoConversationInputMode
-				tokens, err = runChatStream(sessionID, character, character.MultiVoice, general.EnableTTSOptimization, requestText, persistUserText, requestImage, chatType, getChatApiKey(chatType), chatSystemPropmt, templature, character.Chat.MaxHistory, chatModel, chunkMessage)
+				tokens, err = runChatStream(ownerID, sessionID, character, character.MultiVoice, general.EnableTTSOptimization, requestText, persistUserText, requestImage, chatType, getChatApiKey(chatType), templature, character.Chat.MaxHistory, chatModel, chunkMessage)
 				if err != nil {
 					sendError(c, err)
 				}
@@ -262,7 +262,7 @@ func WSTalk() func(*websocket.Conn) {
 				if tokens != nil {
 					totalToken = (tokens.InputTokens) + (tokens.OutputTokens)
 				}
-				err = db.AddRateLimit(id, 1, int64(totalToken))
+				err = db.AddRateLimit(ownerID, 1, int64(totalToken))
 				if err != nil {
 					sendError(c, err)
 				}
@@ -352,15 +352,18 @@ func shouldDisableTTSOptimization(voices []data.CharacterConfigVoice) bool {
 	return false
 }
 
-func runChatStream(id string, characterConfig data.CharacterConfig, multi bool, ttsOptimization bool, requestText string, persistUserText bool, requestImage *data.Image, chatType string, apiKey string, chatSystemPropmt string, temperature *float32, maxHistory int64, chatModel string, chunkMessage chan api.ChunkMessage) (*data.Tokens, error) {
+func runChatStream(ownerID string, sessionID string, characterConfig data.CharacterConfig, multi bool, ttsOptimization bool, requestText string, persistUserText bool, requestImage *data.Image, chatType string, apiKey string, temperature *float32, maxHistory int64, chatModel string, chunkMessage chan api.ChunkMessage) (*data.Tokens, error) {
 	var t *data.Tokens
-	cm, _, err := db.GetChatMessage(id, characterConfig.General.ID)
+	cm, _, err := db.GetChatMessage(sessionID, characterConfig.General.ID)
 	if err != nil {
 		return t, err
 	}
-
-	if maxHistory > 0 && int64(len(cm.Chat)) > maxHistory {
+	if !characterConfig.Memory.Enabled && maxHistory > 0 && int64(len(cm.Chat)) > maxHistory {
 		cm.Chat = cm.Chat[len(cm.Chat)-int(maxHistory):]
+	}
+	finalSystemPrompt, err := memory.BuildSystemPrompt(characterConfig, ownerID, sessionID, requestText, cm.Chat)
+	if err != nil {
+		finalSystemPrompt = characterConfig.Chat.SystemPrompt
 	}
 
 	var chatStream chat.ChatStream
@@ -389,18 +392,41 @@ func runChatStream(id string, characterConfig data.CharacterConfig, multi bool, 
 		ttsOptimization = false
 	}
 
-	ncm, t, err := chatStream(apiKey, characterConfig.Voice, multi, ttsOptimization, chatSystemPropmt, temperature, chatModel, cm.Chat, requestText, persistUserText, requestImage, chunkMessage)
+	ncm, t, err := chatStream(apiKey, characterConfig.Voice, multi, ttsOptimization, finalSystemPrompt, temperature, chatModel, cm.Chat, requestText, persistUserText, requestImage, chunkMessage)
 	if err != nil {
 		return t, err
 	}
 
-	err = db.PutChatMessage(id, characterConfig.General.ID,
+	err = db.PutChatMessage(sessionID, characterConfig.General.ID,
 		data.ChatMessage{
 			Chat: ncm,
 		})
 
 	if err != nil {
 		return t, err
+	}
+	if characterConfig.Memory.Enabled && persistUserText && len(ncm) >= 2 {
+		userMessage := ncm[len(ncm)-2]
+		assistantMessage := ncm[len(ncm)-1]
+		if userMessage.Role == data.ChatCompletionMessageRoleUser && assistantMessage.Role == data.ChatCompletionMessageRoleAssistant {
+			_ = memory.EnqueueExtractTurn(memory.ExtractTurnPayload{
+				OwnerID:          ownerID,
+				CharacterID:      characterConfig.General.ID,
+				SessionID:        sessionID,
+				UserContent:      userMessage.Content,
+				AssistantContent: assistantMessage.Content,
+				UserIndex:        int64(len(ncm) - 2),
+				AssistantIndex:   int64(len(ncm) - 1),
+			})
+		}
+		if maxHistory > 0 && int64(len(ncm)) > maxHistory {
+			_ = memory.EnqueueCompactSession(memory.CompactSessionPayload{
+				OwnerID:     ownerID,
+				CharacterID: characterConfig.General.ID,
+				SessionID:   sessionID,
+				MaxHistory:  maxHistory,
+			})
+		}
 	}
 	return t, nil
 }

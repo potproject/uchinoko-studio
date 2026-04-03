@@ -4,6 +4,10 @@
 
 package sqlcgen
 
+import (
+	"database/sql"
+)
+
 type Character struct {
 	ID         string
 	Name       string
@@ -25,6 +29,17 @@ type CharacterChatSetting struct {
 	TemperatureEnable int64
 	TemperatureValue  float64
 	MaxHistory        int64
+}
+
+type CharacterMemorySetting struct {
+	CharacterID              string
+	Enabled                  int64
+	MaxItemsInPrompt         int64
+	EnableRelationshipMemory int64
+	EnableSessionSummary     int64
+	EnableSemanticSearch     int64
+	EmbeddingModel           string
+	AllowSensitiveMemory     int64
 }
 
 type CharacterVoice struct {
@@ -98,6 +113,40 @@ type GeneralConfig struct {
 	TranscriptionAutoAudioMinLength  float64
 }
 
+type MemoryItem struct {
+	ID                int64
+	PublicID          string
+	CharacterID       string
+	OwnerID           string
+	Scope             string
+	Kind              string
+	Content           string
+	NormalizedContent string
+	KeywordsText      string
+	Pinned            int64
+	Confidence        float64
+	Salience          float64
+	Source            string
+	SupersededBy      sql.NullInt64
+	EmbeddingJson     string
+	CreatedAt         string
+	UpdatedAt         string
+	LastAccessedAt    string
+}
+
+type MemoryJob struct {
+	ID          int64
+	Type        string
+	Status      string
+	UniqueKey   string
+	PayloadJson string
+	Attempts    int64
+	AvailableAt string
+	CreatedAt   string
+	UpdatedAt   string
+	LastError   string
+}
+
 type RateLimit struct {
 	ID               string
 	DayLastUpdate    string
@@ -109,4 +158,12 @@ type RateLimit struct {
 	MinuteLastUpdate string
 	MinuteRequest    int64
 	MinuteToken      int64
+}
+
+type SessionSummary struct {
+	OwnerID     string
+	CharacterID string
+	SessionID   string
+	Summary     string
+	UpdatedAt   string
 }

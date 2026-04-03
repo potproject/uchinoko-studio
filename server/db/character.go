@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -75,6 +76,7 @@ func characterConfigFromRows(row sqlcgen.Character, chatRow sqlcgen.CharacterCha
 			MaxHistory: chatRow.MaxHistory,
 			Limit:      limit,
 		},
+		Memory: memoryConfigInit(),
 	}, nil
 }
 
@@ -158,6 +160,7 @@ func CharacterInitConfig() data.CharacterConfig {
 				Minute: data.CharacterConfigChatLimitType{Request: 0, Token: 0},
 			},
 		},
+		Memory: memoryConfigInit(),
 	}
 }
 
@@ -181,6 +184,7 @@ func GetCharacterConfigList() (data.CharacterConfigList, error) {
 		if err != nil {
 			return data.CharacterConfigList{}, err
 		}
+		config.Memory = getCharacterMemoryConfig(row.ID)
 		configs = append(configs, config)
 	}
 
@@ -195,8 +199,12 @@ func GetCharacterConfig(id string) (data.CharacterConfig, error) {
 	if err != nil {
 		return data.CharacterConfig{}, err
 	}
-
-	return loadCharacterConfig(context.Background(), queries, row)
+	config, err := loadCharacterConfig(context.Background(), queries, row)
+	if err != nil {
+		return data.CharacterConfig{}, err
+	}
+	config.Memory = getCharacterMemoryConfig(row.ID)
+	return config, nil
 }
 
 func DeleteCharacterConfig(id string) error {
@@ -207,7 +215,7 @@ func PutCharacterConfig(id string, config data.CharacterConfig) error {
 	ctx := context.Background()
 	config.General.ID = id
 
-	return withTx(ctx, func(qtx *sqlcgen.Queries) error {
+	return withTxExec(ctx, func(tx *sql.Tx, qtx *sqlcgen.Queries) error {
 		if err := qtx.UpsertCharacter(ctx, newCharacterParams(config)); err != nil {
 			return err
 		}
@@ -275,6 +283,10 @@ func PutCharacterConfig(id string, config data.CharacterConfig) error {
 					return err
 				}
 			}
+		}
+
+		if err := putCharacterMemoryConfigTx(ctx, tx, config.General.ID, config.Memory); err != nil {
+			return err
 		}
 
 		return nil

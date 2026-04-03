@@ -31,6 +31,15 @@ func sampleLegacyCharacter(id string, name string) data.CharacterConfig {
 			Model:        "gpt-4o-mini",
 			SystemPrompt: "legacy prompt",
 		},
+		Memory: data.CharacterConfigMemory{
+			Enabled:                  false,
+			MaxItemsInPrompt:         6,
+			EnableRelationshipMemory: true,
+			EnableSessionSummary:     true,
+			EnableSemanticSearch:     true,
+			EmbeddingModel:           "text-embedding-3-small",
+			AllowSensitiveMemory:     false,
+		},
 	}
 }
 

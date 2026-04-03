@@ -9,6 +9,7 @@ type CharacterConfig struct {
 	MultiVoice bool                   `json:"multiVoice"`
 	Voice      []CharacterConfigVoice `json:"voice"`
 	Chat       CharacterConfigChat    `json:"chat"`
+	Memory     CharacterConfigMemory  `json:"memory"`
 }
 
 type CharacterConfigGeneral struct {
@@ -41,6 +42,16 @@ type CharacterConfigChat struct {
 	Temperature  TemperatureConfig        `json:"temperature"`
 	MaxHistory   int64                    `json:"maxHistory"`
 	Limit        CharacterConfigChatLimit `json:"limit"`
+}
+
+type CharacterConfigMemory struct {
+	Enabled                  bool   `json:"enabled"`
+	MaxItemsInPrompt         int64  `json:"maxItemsInPrompt"`
+	EnableRelationshipMemory bool   `json:"enableRelationshipMemory"`
+	EnableSessionSummary     bool   `json:"enableSessionSummary"`
+	EnableSemanticSearch     bool   `json:"enableSemanticSearch"`
+	EmbeddingModel           string `json:"embeddingModel"`
+	AllowSensitiveMemory     bool   `json:"allowSensitiveMemory"`
 }
 
 type TemperatureConfig struct {

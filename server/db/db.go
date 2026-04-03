@@ -19,6 +19,10 @@ import (
 var db *sql.DB
 var queries *sqlcgen.Queries
 
+func SQLDB() *sql.DB {
+	return db
+}
+
 func Start() {
 	if err := StartWithPath(envgen.Get().DB_FILE_PATH()); err != nil {
 		log.Fatal(err)
@@ -79,6 +83,12 @@ func closeCurrentDB() error {
 }
 
 func withTx(ctx context.Context, fn func(*sqlcgen.Queries) error) error {
+	return withTxExec(ctx, func(_ *sql.Tx, qtx *sqlcgen.Queries) error {
+		return fn(qtx)
+	})
+}
+
+func withTxExec(ctx context.Context, fn func(*sql.Tx, *sqlcgen.Queries) error) error {
 	if db == nil || queries == nil {
 		return errors.New("database is not started")
 	}
@@ -88,7 +98,7 @@ func withTx(ctx context.Context, fn func(*sqlcgen.Queries) error) error {
 		return fmt.Errorf("begin tx: %w", err)
 	}
 
-	if err := fn(queries.WithTx(tx)); err != nil {
+	if err := fn(tx, queries.WithTx(tx)); err != nil {
 		if rollbackErr := tx.Rollback(); rollbackErr != nil {
 			return fmt.Errorf("rollback tx after %v: %w", err, rollbackErr)
 		}
