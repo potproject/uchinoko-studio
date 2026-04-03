@@ -63,4 +63,13 @@ export class RecordingPushToTalkContext implements RecordingContentInterface {
     async init() {
 
     }
+
+    dispose() {
+        const state = this.mediaRecorder.getState();
+        if (state === 'recording') {
+            this.mediaRecorder.stopRecording(() => {
+                this.create();
+            });
+        }
+    }
 }

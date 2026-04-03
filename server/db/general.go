@@ -1,11 +1,58 @@
 package db
 
 import (
-	"encoding/json"
+	"context"
 
 	"github.com/potproject/uchinoko-studio/data"
-	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/potproject/uchinoko-studio/db/sqlcgen"
 )
+
+func generalConfigFromRow(row sqlcgen.GeneralConfig) data.GeneralConfig {
+	return data.GeneralConfig{
+		Background:            row.Background,
+		Language:              row.Language,
+		SoundEffect:           intToBool(row.SoundEffect),
+		CharacterOutputChange: intToBool(row.CharacterOutputChange),
+		EnableTTSOptimization: intToBool(row.EnableTtsOptimization),
+		Transcription: struct {
+			Type        string `json:"type"`
+			Method      string `json:"method"`
+			AutoSetting struct {
+				Threshold       float64 `json:"threshold"`
+				SilentThreshold float64 `json:"silentThreshold"`
+				AudioMinLength  float64 `json:"audioMinLength"`
+			} `json:"autoSetting"`
+		}{
+			Type:   row.TranscriptionType,
+			Method: row.TranscriptionMethod,
+			AutoSetting: struct {
+				Threshold       float64 `json:"threshold"`
+				SilentThreshold float64 `json:"silentThreshold"`
+				AudioMinLength  float64 `json:"audioMinLength"`
+			}{
+				Threshold:       row.TranscriptionAutoThreshold,
+				SilentThreshold: row.TranscriptionAutoSilentThreshold,
+				AudioMinLength:  row.TranscriptionAutoAudioMinLength,
+			},
+		},
+	}
+}
+
+func newGeneralConfigParams(config data.GeneralConfig) sqlcgen.UpsertGeneralConfigParams {
+	return sqlcgen.UpsertGeneralConfigParams{
+		ID:                               1,
+		Background:                       config.Background,
+		Language:                         config.Language,
+		SoundEffect:                      boolToInt(config.SoundEffect),
+		CharacterOutputChange:            boolToInt(config.CharacterOutputChange),
+		EnableTtsOptimization:            boolToInt(config.EnableTTSOptimization),
+		TranscriptionType:                config.Transcription.Type,
+		TranscriptionMethod:              config.Transcription.Method,
+		TranscriptionAutoThreshold:       config.Transcription.AutoSetting.Threshold,
+		TranscriptionAutoSilentThreshold: config.Transcription.AutoSetting.SilentThreshold,
+		TranscriptionAutoAudioMinLength:  config.Transcription.AutoSetting.AudioMinLength,
+	}
+}
 
 func generalInitConfig() data.GeneralConfig {
 	return data.GeneralConfig{
@@ -38,29 +85,18 @@ func generalInitConfig() data.GeneralConfig {
 	}
 }
 
-const generalConfigPrefix = "general_config"
-
 func GetGeneralConfig() (data.GeneralConfig, error) {
-	key := []byte(generalConfigPrefix)
-	value, err := get(key)
-	if err == leveldb.ErrNotFound {
+	row, err := queries.GetGeneralConfig(context.Background())
+	if isNotFound(err) {
 		return generalInitConfig(), nil
-	} else if err != nil {
-		return data.GeneralConfig{}, err
 	}
-	var config data.GeneralConfig
-	err = json.Unmarshal(value, &config)
 	if err != nil {
 		return data.GeneralConfig{}, err
 	}
-	return config, nil
+
+	return generalConfigFromRow(row), nil
 }
 
 func PutGeneralConfig(config data.GeneralConfig) error {
-	key := []byte(generalConfigPrefix)
-	value, err := json.Marshal(config)
-	if err != nil {
-		return err
-	}
-	return put(key, value)
+	return queries.UpsertGeneralConfig(context.Background(), newGeneralConfigParams(config))
 }

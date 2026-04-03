@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
+	"runtime/debug"
+	"strings"
 	"sync"
 
 	"github.com/gofiber/contrib/websocket"
@@ -21,6 +23,7 @@ import (
 
 type TextInput struct {
 	Text string `json:"text"`
+	Mode string `json:"mode,omitempty"`
 }
 
 type TextOutput struct {
@@ -37,6 +40,7 @@ const (
 	ChatResponseChunkOutputType = "chat-response-chunk"
 	ErrorOutputType             = "error"
 	FinishOutputType            = "finish"
+	AutoConversationInputMode   = "auto-conversation"
 )
 
 type MultipartMessage struct {
@@ -77,11 +81,11 @@ func parseMultipartMessage(message []byte) ([]MultipartMessagePart, error) {
 	return parts, nil
 }
 
-func messageProcess(mt int, msg []byte, language string, typeTranscription string, apiKey string) (text string, image *data.Image, err error) {
+func messageProcess(mt int, msg []byte, language string, typeTranscription string, apiKey string) (text string, image *data.Image, mode string, err error) {
 	if mt == websocket.BinaryMessage {
 		mm, err := parseMultipartMessage(msg)
 		if err != nil {
-			return "", nil, err
+			return "", nil, "", err
 		}
 
 		var text string
@@ -89,7 +93,7 @@ func messageProcess(mt int, msg []byte, language string, typeTranscription strin
 		for _, m := range mm {
 			discreteType, extension, err := detectBinaryFileType(m.ContentType)
 			if err != nil {
-				return "", nil, err
+				return "", nil, "", err
 			}
 
 			switch true {
@@ -106,18 +110,18 @@ func messageProcess(mt int, msg []byte, language string, typeTranscription strin
 				text, err = speechtotext.VoskServer(apiKey, m.Data, extension, language)
 			}
 			if err != nil {
-				return "", nil, err
+				return "", nil, "", err
 			}
 		}
-		return text, image, err
+		return text, image, "", err
 	}
 	if mt == websocket.TextMessage {
 		textInput := TextInput{}
 		err := json.Unmarshal(msg, &textInput)
 		if err != nil {
-			return "", nil, err
+			return "", nil, "", err
 		}
-		return textInput.Text, nil, err
+		return textInput.Text, nil, textInput.Mode, err
 	}
 	return
 }
@@ -180,6 +184,10 @@ func WSTalkPlain() fiber.Handler {
 func WSTalk() func(*websocket.Conn) {
 	return func(c *websocket.Conn) {
 		id := c.Params("id")
+		sessionID := strings.TrimSpace(c.Query("sessionId"))
+		if sessionID == "" {
+			sessionID = id
+		}
 		characterId := c.Params("characterId")
 
 		character, err := db.GetCharacterConfig(characterId)
@@ -219,7 +227,7 @@ func WSTalk() func(*websocket.Conn) {
 				return
 			}
 
-			requestText, requestImage, err := messageProcess(mt, msg, general.Language, general.Transcription.Type, getTranscriptionApiKey(general.Transcription.Type))
+			requestText, requestImage, requestMode, err := messageProcess(mt, msg, general.Language, general.Transcription.Type, getTranscriptionApiKey(general.Transcription.Type))
 			if err != nil {
 				sendError(c, err)
 				break
@@ -245,7 +253,8 @@ func WSTalk() func(*websocket.Conn) {
 				if character.Chat.Temperature.Enable {
 					templature = &character.Chat.Temperature.Value
 				}
-				tokens, err = runChatStream(id, character, character.MultiVoice, general.EnableTTSOptimization, requestText, requestImage, chatType, getChatApiKey(chatType), chatSystemPropmt, templature, character.Chat.MaxHistory, chatModel, chunkMessage)
+				persistUserText := requestMode != AutoConversationInputMode
+				tokens, err = runChatStream(sessionID, character, character.MultiVoice, general.EnableTTSOptimization, requestText, persistUserText, requestImage, chatType, getChatApiKey(chatType), chatSystemPropmt, templature, character.Chat.MaxHistory, chatModel, chunkMessage)
 				if err != nil {
 					sendError(c, err)
 				}
@@ -334,7 +343,16 @@ func runWSSend(c *websocket.Conn, outAudioMessage chan api.AudioMessage, changeV
 	}
 }
 
-func runChatStream(id string, characterConfig data.CharacterConfig, multi bool, ttsOptimization bool, requestText string, requestImage *data.Image, chatType string, apiKey string, chatSystemPropmt string, temperature *float32, maxHistory int64, chatModel string, chunkMessage chan api.ChunkMessage) (*data.Tokens, error) {
+func shouldDisableTTSOptimization(voices []data.CharacterConfigVoice) bool {
+	for _, voice := range voices {
+		if voice.Type == "irodori-tts" {
+			return true
+		}
+	}
+	return false
+}
+
+func runChatStream(id string, characterConfig data.CharacterConfig, multi bool, ttsOptimization bool, requestText string, persistUserText bool, requestImage *data.Image, chatType string, apiKey string, chatSystemPropmt string, temperature *float32, maxHistory int64, chatModel string, chunkMessage chan api.ChunkMessage) (*data.Tokens, error) {
 	var t *data.Tokens
 	cm, _, err := db.GetChatMessage(id, characterConfig.General.ID)
 	if err != nil {
@@ -367,7 +385,11 @@ func runChatStream(id string, characterConfig data.CharacterConfig, multi bool, 
 		chatStream = chat.OpenAILocalChatStream
 	}
 
-	ncm, t, err := chatStream(apiKey, characterConfig.Voice, multi, ttsOptimization, chatSystemPropmt, temperature, chatModel, cm.Chat, requestText, requestImage, chunkMessage)
+	if shouldDisableTTSOptimization(characterConfig.Voice) {
+		ttsOptimization = false
+	}
+
+	ncm, t, err := chatStream(apiKey, characterConfig.Voice, multi, ttsOptimization, chatSystemPropmt, temperature, chatModel, cm.Chat, requestText, persistUserText, requestImage, chunkMessage)
 	if err != nil {
 		return t, err
 	}
@@ -384,5 +406,19 @@ func runChatStream(id string, characterConfig data.CharacterConfig, multi bool, 
 }
 
 func sendError(c *websocket.Conn, err error) error {
-	return wsSendTextMessage(c, ErrorOutputType, err.Error())
+	if err == nil {
+		return nil
+	}
+
+	message := err.Error()
+	if envgen.Get().DEBUG() {
+		detailed := fmt.Sprintf("%+v", err)
+		if detailed != err.Error() {
+			message = detailed
+		} else {
+			message = fmt.Sprintf("%s\n\n%s", err.Error(), debug.Stack())
+		}
+	}
+
+	return wsSendTextMessage(c, ErrorOutputType, message)
 }

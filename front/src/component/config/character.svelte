@@ -1,6 +1,7 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
     import type { CharacterConfig } from "../../types/character";
+    import type { ChatSessionList } from "../../types/chat";
     import { getID } from "$lib/GetId";
     const dispatch = createEventDispatcher();
 
@@ -11,14 +12,22 @@
 
     export let data: CharacterConfig;
 
-    const onReset = () => {
+    const onReset = async () => {
         if (window.confirm("チャット履歴をリセットしますか？")) {
-            fetch(`/v1/chat/${getID()}/${data.general.id}`, {
-                method: "DELETE",
-            }).finally(() => {
-                location.reload();
-            });
+            const ownerId = getID();
+            const list = await fetch(`/v1/chat/${ownerId}/${data.general.id}/sessions`, {
+                method: "GET",
+            }).then((res) => res.json() as Promise<ChatSessionList>);
+
+            await Promise.all(list.sessions.map((session) => {
+                const query = session.sessionId === ownerId ? "" : `?${new URLSearchParams({ sessionId: session.sessionId }).toString()}`;
+                return fetch(`/v1/chat/${ownerId}/${data.general.id}${query}`, {
+                    method: "DELETE",
+                });
+            }));
+
             alert("チャット履歴をリセットしました");
+            location.reload();
         }
     };
 
@@ -159,6 +168,7 @@
                             <select id="voice" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].type}>
                                 <option value="voicevox">VOICEVOX</option>
                                 <option value="bertvits2">Bert-VITS2(FastAPI)</option>
+                                <option value="irodori-tts">Irodori TTS(Gradio)</option>
                                 <option value="stylebertvits2">Style-Bert-VITS2(FastAPI)</option>
                                 <option value="nijivoice">にじボイス API</option>
                                 <option value="google-text-to-speech">Google Text to Speech API</option>
@@ -193,6 +203,21 @@
                             <div class="flex-1">
                                 <label for="speaker_id" class="text-sm">スピーカーID</label>
                                 <input type="text" id="speaker_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].speakerId} />
+                            </div>
+                        </div>
+                    {/if}
+                    {#if data.voice[index].type === "irodori-tts"}
+                        <div class="flex items-center px-4 py-2">
+                            <div class="flex-1">
+                                <label for="model_id" class="text-sm">Checkpoint</label>
+                                <input type="text" id="model_id" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].modelId} placeholder="Aratako/Irodori-TTS-500M-v2" />
+                            </div>
+                        </div>
+                        <div class="flex items-center px-4 py-2">
+                            <div class="flex-1">
+                                <label for="reference_audio_path" class="text-sm">参照音声URLまたは refs/ 配下パス</label>
+                                <input type="text" id="reference_audio_path" class="w-full border border-gray-300 rounded p-1" bind:value={data.voice[index].referenceAudioPath} placeholder="sample.wav または https://example.com/sample.wav" />
+                                <p class="text-xs text-gray-500 mt-1">空欄なら参照音声なし。ローカル音声はリポジトリ直下の refs/ に置いてファイル名を指定します。</p>
                             </div>
                         </div>
                     {/if}
@@ -281,7 +306,7 @@
             {#if data.multiVoice}
             <div class="flex justify-between items-center p-4">
                 <button class="border border-blue-500 text-blue-500 bg-white rounded-md px-4 py-2 hover:bg-blue-500 hover:text-white" on:click={() => 
-                    data.voice = [...data.voice, { name:"", type: "voicevox", modelId: "", speakerId: "1", identification: "", modelFile: "" ,image: "", backgroundImagePath: "", behavior: []}]
+                    data.voice = [...data.voice, { name:"", type: "voicevox", modelId: "", speakerId: "1", identification: "", modelFile: "", referenceAudioPath: "", image: "", backgroundImagePath: "", behavior: []}]
                 }>
                     <i class="las la-plus"></i> 追加
                 </button>

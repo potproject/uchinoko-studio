@@ -19,6 +19,7 @@ func Route(static embed.FS) *fiber.App {
 		Browse:     true,
 	}))
 	app.Static("/images/", "./images")
+	app.Static("/refs/", "./refs")
 
 	// API
 	if envgen.Get().DEBUG() && !envgen.Get().READ_ONLY() {
@@ -40,6 +41,7 @@ func debugRoutes(app *fiber.App) {
 }
 
 func userRoutes(app *fiber.App) {
+	app.Get("/v1/chat/:id/:characterId/sessions", controller.GetChatSessions)
 	app.Get("/v1/chat/:id/:characterId", controller.GetChat)
 	app.Delete("/v1/chat/:id/:characterId", controller.DeleteChat)
 	app.Use("/v1/ws/talk/:id/:characterId", controller.WS)

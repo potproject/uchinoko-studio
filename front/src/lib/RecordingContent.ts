@@ -16,6 +16,9 @@ export class RecordingContext implements RecordingContentInterface {
     private isRecordingAllow: boolean = true;
     private recordStartTime: number = 0;
     private recordStopTime: number = 0;
+    private sourceNode?: MediaStreamAudioSourceNode;
+    private volumeNode?: AudioWorkletNode;
+    private disposed = false;
 
     public onSpeakingStart: () => void = () => { };
     public onSpeakingEnd: (ignore: boolean) => void = () => { };
@@ -45,10 +48,18 @@ export class RecordingContext implements RecordingContentInterface {
     }
 
     public changeRecordingAllow(check: boolean) {
+        if (this.isRecordingAllow === check) {
+            return;
+        }
         this.isRecordingAllow = check;
+        if (check) {
+            return;
+        }
         const state = this.mediaRecorder.getState();
         if (state === 'recording') {
-            this.mediaRecorder.stopRecording();
+            this.mediaRecorder.stopRecording(() => {
+                this.create();
+            });
             this.onSpeakingEnd(true);
             return;
         }
@@ -56,15 +67,18 @@ export class RecordingContext implements RecordingContentInterface {
 
     async init() {
         await this.audioContext.audioWorklet.addModule('audio-worklet-processors.js');
-        const volumeNode = new AudioWorkletNode(this.audioContext, 'volume-processor', {
+        this.volumeNode = new AudioWorkletNode(this.audioContext, 'volume-processor', {
             processorOptions: {
                 sampleRate: this.sampleRate,
                 threshold: this.threshold, // 音量の閾値
                 silentThreshold: this.silentThreshold, // 無音状態の閾値
             }
         });
-        const source = this.audioContext.createMediaStreamSource(this.stream);
-        volumeNode.port.onmessage = event => {
+        this.sourceNode = this.audioContext.createMediaStreamSource(this.stream);
+        this.volumeNode.port.onmessage = event => {
+            if (this.disposed) {
+                return;
+            }
             const speak = event.data.speak;
             if (speak && this.isRecordingAllow) {
                 this.mediaRecorder.startRecording();
@@ -92,6 +106,14 @@ export class RecordingContext implements RecordingContentInterface {
                 }
             }
         };
-        source.connect(volumeNode).connect(this.audioContext.destination);
+        this.sourceNode.connect(this.volumeNode).connect(this.audioContext.destination);
+    }
+
+    dispose() {
+        this.disposed = true;
+        this.changeRecordingAllow(false);
+        this.sourceNode?.disconnect();
+        this.volumeNode?.disconnect();
+        void this.audioContext.close();
     }
 }

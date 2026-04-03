@@ -72,6 +72,13 @@ func (s setter) HOST(value string) {
 	env.HOST = value
 	return
 }
+func (g getter) IRODORI_TTS_ENDPOINT() string {
+	return env.IRODORI_TTS_ENDPOINT
+}
+func (s setter) IRODORI_TTS_ENDPOINT(value string) {
+	env.IRODORI_TTS_ENDPOINT = value
+	return
+}
 func (g getter) NIJIVOICE_API_KEY() string {
 	return env.NIJIVOICE_API_KEY
 }
@@ -188,13 +195,14 @@ func (s setter) VOSK_SERVER_ENDPOINT(value string) {
 type environment struct {
 	ANTHROPIC_API_KEY             string
 	BERTVITS2_ENDPOINT            string
-	DEEPSEEK_API_KEY                string
+	DEEPSEEK_API_KEY              string
 	DB_FILE_PATH                  string
 	DEBUG                         bool
 	GEMINI_API_KEY                string
 	GOOGLE_SPEECH_TO_TEXT_API_KEY string
 	GOOGLE_TEXT_TO_SPEECH_API_KEY string
 	HOST                          string
+	IRODORI_TTS_ENDPOINT          string
 	NIJIVOICE_API_KEY             string
 	OPENAI_API_KEY                string
 	OPENAI_LOCAL_API_ENDPOINT     string
@@ -236,6 +244,7 @@ func Load() error {
 	GOOGLE_SPEECH_TO_TEXT_API_KEY := os.Getenv("GOOGLE_SPEECH_TO_TEXT_API_KEY")
 	GOOGLE_TEXT_TO_SPEECH_API_KEY := os.Getenv("GOOGLE_TEXT_TO_SPEECH_API_KEY")
 	HOST := os.Getenv("HOST")
+	IRODORI_TTS_ENDPOINT := os.Getenv("IRODORI_TTS_ENDPOINT")
 	NIJIVOICE_API_KEY := os.Getenv("NIJIVOICE_API_KEY")
 	OPENAI_API_KEY := os.Getenv("OPENAI_API_KEY")
 	OPENAI_LOCAL_API_ENDPOINT := os.Getenv("OPENAI_LOCAL_API_ENDPOINT")
@@ -297,13 +306,14 @@ func Load() error {
 	env = environment{
 		ANTHROPIC_API_KEY:             ANTHROPIC_API_KEY,
 		BERTVITS2_ENDPOINT:            BERTVITS2_ENDPOINT,
-		DEEPSEEK_API_KEY:                DEEPSEEK_API_KEY,
+		DEEPSEEK_API_KEY:              DEEPSEEK_API_KEY,
 		DB_FILE_PATH:                  DB_FILE_PATH,
 		DEBUG:                         DEBUG,
 		GEMINI_API_KEY:                GEMINI_API_KEY,
 		GOOGLE_SPEECH_TO_TEXT_API_KEY: GOOGLE_SPEECH_TO_TEXT_API_KEY,
 		GOOGLE_TEXT_TO_SPEECH_API_KEY: GOOGLE_TEXT_TO_SPEECH_API_KEY,
 		HOST:                          HOST,
+		IRODORI_TTS_ENDPOINT:          IRODORI_TTS_ENDPOINT,
 		NIJIVOICE_API_KEY:             NIJIVOICE_API_KEY,
 		OPENAI_API_KEY:                OPENAI_API_KEY,
 		OPENAI_LOCAL_API_ENDPOINT:     OPENAI_LOCAL_API_ENDPOINT,
@@ -334,6 +344,7 @@ type getterInterface interface {
 	GOOGLE_SPEECH_TO_TEXT_API_KEY() string
 	GOOGLE_TEXT_TO_SPEECH_API_KEY() string
 	HOST() string
+	IRODORI_TTS_ENDPOINT() string
 	NIJIVOICE_API_KEY() string
 	OPENAI_API_KEY() string
 	OPENAI_LOCAL_API_ENDPOINT() string
@@ -371,6 +382,7 @@ type setterInterface interface {
 	GOOGLE_SPEECH_TO_TEXT_API_KEY() string
 	GOOGLE_TEXT_TO_SPEECH_API_KEY() string
 	HOST() string
+	IRODORI_TTS_ENDPOINT() string
 	NIJIVOICE_API_KEY() string
 	OPENAI_API_KEY() string
 	OPENAI_LOCAL_API_ENDPOINT() string

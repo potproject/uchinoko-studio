@@ -1,15 +1,52 @@
 package db
 
 import (
-	"encoding/json"
+	"context"
 	"time"
 
 	"github.com/potproject/uchinoko-studio/data"
-	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/potproject/uchinoko-studio/db/sqlcgen"
 )
 
+var timeNow = time.Now
+
+func rateLimitFromRow(row sqlcgen.RateLimit) data.RateLimit {
+	return data.RateLimit{
+		Day: data.RateLimitType{
+			LastUpdate: row.DayLastUpdate,
+			Request:    row.DayRequest,
+			Token:      row.DayToken,
+		},
+		Hour: data.RateLimitType{
+			LastUpdate: row.HourLastUpdate,
+			Request:    row.HourRequest,
+			Token:      row.HourToken,
+		},
+		Minute: data.RateLimitType{
+			LastUpdate: row.MinuteLastUpdate,
+			Request:    row.MinuteRequest,
+			Token:      row.MinuteToken,
+		},
+	}
+}
+
+func newRateLimitParams(id string, rateLimit data.RateLimit) sqlcgen.UpsertRateLimitParams {
+	return sqlcgen.UpsertRateLimitParams{
+		ID:               id,
+		DayLastUpdate:    rateLimit.Day.LastUpdate,
+		DayRequest:       rateLimit.Day.Request,
+		DayToken:         rateLimit.Day.Token,
+		HourLastUpdate:   rateLimit.Hour.LastUpdate,
+		HourRequest:      rateLimit.Hour.Request,
+		HourToken:        rateLimit.Hour.Token,
+		MinuteLastUpdate: rateLimit.Minute.LastUpdate,
+		MinuteRequest:    rateLimit.Minute.Request,
+		MinuteToken:      rateLimit.Minute.Token,
+	}
+}
+
 func rateLimitInit() data.RateLimit {
-	now := time.Now()
+	now := timeNow()
 	return data.RateLimit{
 		Day: data.RateLimitType{
 			LastUpdate: now.Format("20060102"),
@@ -29,43 +66,10 @@ func rateLimitInit() data.RateLimit {
 	}
 }
 
-const rateLimitPrefix = "rate_limit_"
-
-func getRateLimit(id string) (data.RateLimit, error) {
-	key := []byte(rateLimitPrefix + id)
-	value, err := get(key)
-	if err == leveldb.ErrNotFound {
-		return rateLimitInit(), nil
-	} else if err != nil {
-		return data.RateLimit{}, err
-	}
-	var config data.RateLimit
-	err = json.Unmarshal(value, &config)
-	if err != nil {
-		return data.RateLimit{}, err
-	}
-	return config, nil
-}
-
-func putRateLimit(id string, config data.RateLimit) error {
-	key := []byte(rateLimitPrefix + id)
-	value, err := json.Marshal(config)
-	if err != nil {
-		return err
-	}
-	return put(key, value)
-}
-
-func AddRateLimit(id string, request int64, token int64) error {
-	now := time.Now()
+func normalizeRateLimit(now time.Time, rateLimit data.RateLimit) data.RateLimit {
 	dayPrefix := now.Format("20060102")
 	hourPrefix := now.Format("2006010215")
 	minutePrefix := now.Format("200601021504")
-
-	rateLimit, err := getRateLimit(id)
-	if err != nil {
-		return err
-	}
 
 	if rateLimit.Day.LastUpdate != dayPrefix {
 		rateLimit.Day.LastUpdate = dayPrefix
@@ -85,26 +89,69 @@ func AddRateLimit(id string, request int64, token int64) error {
 		rateLimit.Minute.Token = 0
 	}
 
+	return rateLimit
+}
+
+type rateLimitQuerier interface {
+	GetRateLimit(ctx context.Context, id string) (sqlcgen.RateLimit, error)
+	UpsertRateLimit(ctx context.Context, arg sqlcgen.UpsertRateLimitParams) error
+}
+
+func getRateLimit(queryer rateLimitQuerier, id string) (data.RateLimit, error) {
+	row, err := queryer.GetRateLimit(context.Background(), id)
+	if isNotFound(err) {
+		return rateLimitInit(), nil
+	}
+	if err != nil {
+		return data.RateLimit{}, err
+	}
+
+	return rateLimitFromRow(row), nil
+}
+
+func putRateLimit(exec rateLimitQuerier, id string, config data.RateLimit) error {
+	return exec.UpsertRateLimit(context.Background(), newRateLimitParams(id, config))
+}
+
+func PutRateLimitSnapshot(id string, config data.RateLimit) error {
+	return putRateLimit(queries, id, config)
+}
+
+func AddRateLimit(id string, request int64, token int64) error {
+	tx, err := db.BeginTx(context.Background(), nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	txQueries := queries.WithTx(tx)
+
+	rateLimit, err := getRateLimit(txQueries, id)
+	if err != nil {
+		return err
+	}
+
+	rateLimit = normalizeRateLimit(timeNow(), rateLimit)
 	rateLimit.Day.Request += request
 	rateLimit.Hour.Request += request
 	rateLimit.Minute.Request += request
-
 	rateLimit.Day.Token += token
 	rateLimit.Hour.Token += token
 	rateLimit.Minute.Token += token
 
-	err = putRateLimit(id, rateLimit)
-	if err != nil {
+	if err := putRateLimit(txQueries, id, rateLimit); err != nil {
 		return err
 	}
-	return nil
+
+	return tx.Commit()
 }
 
 func RateLimitIsAllowed(id string, limit data.CharacterConfigChatLimit) (bool, error) {
-	rateLimit, err := getRateLimit(id)
+	rateLimit, err := getRateLimit(queries, id)
 	if err != nil {
 		return false, err
 	}
+
+	rateLimit = normalizeRateLimit(timeNow(), rateLimit)
 
 	if rateLimit.Day.Request > limit.Day.Request && limit.Day.Request != 0 {
 		return false, nil

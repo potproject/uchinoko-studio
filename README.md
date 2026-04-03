@@ -33,7 +33,7 @@ See Article(Japanese Only): https://blog.potproject.net/2023/12/24/ai-web-uchino
 * Japanese Support(for now...)
 * Chat-based LLM Support: [OpenAI GPT(Cloud)](https://openai.com/gpt-4),[Anthropic Claude(Cloud)](https://www.anthropic.com/claude),[DeepSeek(Cloud)](https://www.deepseek.com),[Gemini(Cloud)](https://gemini.google.com),Local LLM(OpenAI `/v1/chat/completions` Compatible)
 * Speach-To-Text Support: [OpenAI Speech to Text API(Cloud)](https://platform.openai.com/docs/guides/speech-to-text),[Google Speech to Text API(Cloud)](https://cloud.google.com/speech-to-text),[Vosk Server(local)](https://github.com/alphacep/vosk-server),[SpeechRecognition(Web API)](https://developer.mozilla.org/docs/Web/API/SpeechRecognition)
-* Text-To-Speech Support: [Bert-Vits2(local)](https://github.com/fishaudio/Bert-VITS2), [Style-Bert-VITS2(local)](https://github.com/litagin02/Style-Bert-VITS2), [VOICEVOX(local)](https://voicevox.hiroshiba.jp/),[NijiVoice API(Cloud)](https://nijivoice.com), [Google Text To Speech API(Cloud)](https://cloud.google.com/text-to-speech),  [OpenAI Speech API(Cloud)](https://platform.openai.com/docs/guides/speech-to-text)
+* Text-To-Speech Support: [Bert-Vits2(local)](https://github.com/fishaudio/Bert-VITS2), [Irodori TTS v2(local)](https://github.com/Aratako/Irodori-TTS), [Style-Bert-VITS2(local)](https://github.com/litagin02/Style-Bert-VITS2), [VOICEVOX(local)](https://voicevox.hiroshiba.jp/),[NijiVoice API(Cloud)](https://nijivoice.com), [Google Text To Speech API(Cloud)](https://cloud.google.com/text-to-speech),  [OpenAI Speech API(Cloud)](https://platform.openai.com/docs/guides/speech-to-text)
 * More bugs...
 
 ## Getting Started
@@ -85,10 +85,18 @@ OPENAI_LOCAL_API_ENDPOINT=http://localhost:11434/
 
 * VOICEVOXの場合: `VOICEVOX_ENDPOINT`にVOICEVOX Engine APIのエンドポイントを設定してください。
 * BERTVITS2の場合: `BERTVITS2_ENDPOINT`にBert-VITS2 FastAPIのエンドポイントを設定してください。また、先にモデルのロードを行っていないと動作しません。
+* Irodori TTSの場合: `IRODORI_TTS_ENDPOINT`にIrodori TTSのGradioエンドポイントを設定してください。キャラクター設定の音声種別で`Irodori TTS(Gradio)`を選ぶと利用できます。
 * STYLEBERTVIT2の場合: `STYLEBERTVIT2_ENDPOINT`にStyle-Bert-VITS2 API Serverのエンドポイントを設定してください。モデルのロードは自動で行ってくれるため不要です。Bert-VITS2のAPIとの互換性はありません。
 * NijiVoice API(Cloud)の場合: `NIJIVOICE_API_KEY`を設定してください。
 * Google Text To Speech API(Cloud)の場合: `GOOGLE_TEXT_TO_SPEECH_API_KEY`を設定してください。
 * OpenAI Speech API(Cloud)の場合: `OPENAI_SPEECH_API_KEY`を設定してください。
+
+#### Irodori TTS の補足
+
+* irodori TTSはv2のみサポートしています。v1は動作しません。
+* `Checkpoint`にはHugging Face上のモデルIDを設定します。空欄時は `Aratako/Irodori-TTS-500M-v2` を使用します。
+* `refs/ 配下パス` を指定すると、音声クローニング用の参照音声を渡せます。空欄なら通常のTTSとして動作します。
+* ローカル参照音声を使う場合は、リポジトリ直下の `refs/` フォルダに wav を置いて、UI では `sample.wav` のように入力してください。
 
 ### Tailscale 
 
@@ -136,6 +144,24 @@ go run main.go
 # 立ち上がらない場合は、http://localhost:15000/ にアクセスしてください。
 # 話者(チャットプロンプト/使用するモデルの設定)などは、ブラウザより設定が可能です
 ```
+
+### Database Migrations
+
+`server/db` の SQLite スキーマは `sqlc` と `goose` で管理します。`sqlc` の schema 入力は `server/db/migrations/` を直接参照しており、アプリ起動時にも未適用 migration を自動で適用します。
+
+```bash
+# 新しい migration を作成
+cd server
+go run ./cmd/dbmigrate create add_some_column
+
+# 状態確認
+go run ./cmd/dbmigrate status
+
+# 手動適用
+go run ./cmd/dbmigrate up
+```
+
+新規 migration は `00001_xxx.sql` のようなゼロ埋め連番で作成されます。これは `sqlc` が migration ディレクトリを順番に読む都合に合わせています。
 
 ## TODO
 

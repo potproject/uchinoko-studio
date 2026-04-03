@@ -17,3 +17,15 @@ type Tokens struct {
 	InputTokens  int64 `json:"input_tokens"`
 	OutputTokens int64 `json:"output_tokens"`
 }
+
+type ChatSessionSummary struct {
+	SessionID    string `json:"sessionId"`
+	Title        string `json:"title"`
+	Preview      string `json:"preview"`
+	MessageCount int    `json:"messageCount"`
+	IsDefault    bool   `json:"isDefault"`
+}
+
+type ChatSessionList struct {
+	Sessions []ChatSessionSummary `json:"sessions"`
+}

@@ -125,4 +125,19 @@ export class PlayingContext {
 
         this.latestAudioBufferSourceNode = source;
     }
+
+    dispose() {
+        this.sendFinish = false;
+        this.playing = false;
+        this.nextTime = 0;
+        if (this.latestAudioBufferSourceNode) {
+            try {
+                this.latestAudioBufferSourceNode.stop();
+            } catch (e) {
+                console.error(e);
+            }
+            this.latestAudioBufferSourceNode.disconnect();
+            this.latestAudioBufferSourceNode = null;
+        }
+    }
 }

@@ -20,6 +20,7 @@ type ChatStream func(
 	string, // model
 	[]data.ChatCompletionMessage, // messages
 	string, // text
+	bool, // persistUserText
 	*data.Image, // image
 	chan api.ChunkMessage, // chunkMessage
 ) ([]data.ChatCompletionMessage, *data.Tokens, error)
@@ -32,6 +33,7 @@ func chatReceiver(
 	voices []data.CharacterConfigVoice,
 	chunkMessage chan api.ChunkMessage,
 	text string,
+	persistUserText bool,
 	image *data.Image,
 	cm []data.ChatCompletionMessage,
 ) ([]data.ChatCompletionMessage, error) {
@@ -103,13 +105,23 @@ func chatReceiver(
 			if image != nil && text == "" {
 				text = "image"
 			}
+			if persistUserText {
+				return append(
+					cm,
+					data.ChatCompletionMessage{
+						Role:    data.ChatCompletionMessageRoleUser,
+						Content: text,
+						Image:   image,
+					},
+					data.ChatCompletionMessage{
+						Role:    data.ChatCompletionMessageRoleAssistant,
+						Content: data.GenericTrim(allText),
+						Image:   nil,
+					},
+				), nil
+			}
 			return append(
 				cm,
-				data.ChatCompletionMessage{
-					Role:    data.ChatCompletionMessageRoleUser,
-					Content: text,
-					Image:   image,
-				},
 				data.ChatCompletionMessage{
 					Role:    data.ChatCompletionMessageRoleAssistant,
 					Content: data.GenericTrim(allText),

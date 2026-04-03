@@ -18,6 +18,7 @@ type EnvConfigResponse struct {
 	OPENAI_LOCAL_API_ENDPOINT     bool `json:"OPENAI_LOCAL_API_ENDPOINT"`
 	VOICEVOX_ENDPOINT             bool `json:"VOICEVOX_ENDPOINT"`
 	BERTVITS2_ENDPOINT            bool `json:"BERTVITS2_ENDPOINT"`
+	IRODORI_TTS_ENDPOINT          bool `json:"IRODORI_TTS_ENDPOINT"`
 	NIJIVOICE_API_KEY             bool `json:"NIJIVOICE_API_KEY"`
 	STYLEBERTVIT2_ENDPOINT        bool `json:"STYLEBERTVIT2_ENDPOINT"`
 	GOOGLE_TEXT_TO_SPEECH_API_KEY bool `json:"GOOGLE_TEXT_TO_SPEECH_API_KEY"`
@@ -48,6 +49,7 @@ func GetEnvConfig(c *fiber.Ctx) error {
 		OPENAI_LOCAL_API_ENDPOINT:     env.OPENAI_LOCAL_API_ENDPOINT() != "" || config.OPENAI_LOCAL_API_ENDPOINT != "",
 		VOICEVOX_ENDPOINT:             env.VOICEVOX_ENDPOINT() != "" || config.VOICEVOX_ENDPOINT != "",
 		BERTVITS2_ENDPOINT:            env.BERTVITS2_ENDPOINT() != "" || config.BERTVITS2_ENDPOINT != "",
+		IRODORI_TTS_ENDPOINT:          env.IRODORI_TTS_ENDPOINT() != "" || config.IRODORI_TTS_ENDPOINT != "",
 		NIJIVOICE_API_KEY:             env.NIJIVOICE_API_KEY() != "" || config.NIJIVOICE_API_KEY != "",
 		STYLEBERTVIT2_ENDPOINT:        env.STYLEBERTVIT2_ENDPOINT() != "" || config.STYLEBERTVIT2_ENDPOINT != "",
 		GOOGLE_TEXT_TO_SPEECH_API_KEY: env.GOOGLE_TEXT_TO_SPEECH_API_KEY() != "" || config.GOOGLE_TEXT_TO_SPEECH_API_KEY != "",
@@ -90,6 +92,7 @@ func PostEnvConfig(c *fiber.Ctx) error {
 		"OPENAI_LOCAL_API_ENDPOINT":     true,
 		"VOICEVOX_ENDPOINT":             true,
 		"BERTVITS2_ENDPOINT":            true,
+		"IRODORI_TTS_ENDPOINT":          true,
 		"STYLEBERTVIT2_ENDPOINT":        true,
 		"GOOGLE_TEXT_TO_SPEECH_API_KEY": true,
 		"OPENAI_SPEECH_API_KEY":         true,
@@ -172,6 +175,12 @@ func PostEnvConfig(c *fiber.Ctx) error {
 				if config.BERTVITS2_ENDPOINT != value {
 					config.BERTVITS2_ENDPOINT = value
 					envgen.Set().BERTVITS2_ENDPOINT(value)
+					changed = true
+				}
+			case "IRODORI_TTS_ENDPOINT":
+				if config.IRODORI_TTS_ENDPOINT != value {
+					config.IRODORI_TTS_ENDPOINT = value
+					envgen.Set().IRODORI_TTS_ENDPOINT(value)
 					changed = true
 				}
 			case "STYLEBERTVIT2_ENDPOINT":
