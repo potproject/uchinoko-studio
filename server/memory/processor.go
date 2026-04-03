@@ -12,11 +12,12 @@ import (
 	"github.com/potproject/uchinoko-studio/data"
 	"github.com/potproject/uchinoko-studio/db"
 	"github.com/potproject/uchinoko-studio/db/sqlcgen"
+	"github.com/potproject/uchinoko-studio/prompts"
 )
 
 type extractionResponse struct {
-	Noop     bool                  `json:"noop"`
-	Upserts  []extractedMemoryItem `json:"upserts"`
+	Noop    bool                  `json:"noop"`
+	Upserts []extractedMemoryItem `json:"upserts"`
 }
 
 type extractedMemoryItem struct {
@@ -68,11 +69,7 @@ func processExtractTurn(ctx context.Context, payload ExtractTurnPayload) error {
 		return nil
 	}
 
-	systemPrompt := `あなたは会話から長期的に覚えるべき relationship memory だけを抽出する補助器です。
-- 保存対象は preference, profile_fact, relationship_fact, promise, ongoing_topic, instruction_preference のみ。
-- あいさつ、短命な感情、その場限りの雑談、センシティブ個人情報は保存しない。
-- JSON のみを返す。
-- 形式: {"noop": boolean, "upserts":[{"kind":"...","content":"...","keywordsText":"...","confidence":0.0-1.0,"salience":0.0-1.0,"pinned":false}]}`
+	systemPrompt := prompts.MemoryExtractTurnSystem
 	userPrompt := fmt.Sprintf("ユーザー発話:\n%s\n\nアシスタント応答:\n%s", payload.UserContent, payload.AssistantContent)
 	raw, err := completeText(character, systemPrompt, userPrompt)
 	if err != nil {
@@ -145,19 +142,14 @@ func processCompactSession(ctx context.Context, payload CompactSessionPayload) e
 		return err
 	}
 
-	summaryPrompt := `あなたは長い会話履歴を今後参照しやすい session summary に圧縮する補助器です。
-- 決定事項、ユーザーの要望、未完了の話題、重要な関係性変化だけを箇条書きでまとめる。
-- 冗長にしない。
-- 300文字以上 900文字以下を目安にする。`
+	summaryPrompt := prompts.MemoryCompactSummarySystem
 	userPrompt := fmt.Sprintf("既存 summary:\n%s\n\n今回圧縮する会話:\n%s", summary.Summary, renderMessages(compactMessages))
 	newSummary, err := completeText(character, summaryPrompt, userPrompt)
 	if err != nil {
 		return err
 	}
 
-	extractPrompt := `あなたは compaction された会話から durable relationship memory を抽出する補助器です。
-- JSON のみを返す。
-- 形式: {"noop": boolean, "upserts":[{"kind":"...","content":"...","keywordsText":"...","confidence":0.0-1.0,"salience":0.0-1.0,"pinned":false}]}`
+	extractPrompt := prompts.MemoryCompactExtractSystem
 	rawExtraction, err := completeText(character, extractPrompt, renderMessages(compactMessages))
 	if err != nil {
 		return err

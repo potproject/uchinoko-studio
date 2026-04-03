@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/potproject/uchinoko-studio/data"
+	"github.com/potproject/uchinoko-studio/prompts"
 )
 
 func BuildSystemPrompt(character data.CharacterConfig, ownerID string, sessionID string, requestText string, recentMessages []data.ChatCompletionMessage) (string, error) {
@@ -55,13 +56,7 @@ func composeSystemPrompt(base string, candidates []SearchCandidate, summary data
 	}
 
 	sections := []string{strings.TrimSpace(base)}
-	sections = append(sections, strings.TrimSpace(`
-# Memory Policy
-- 以下の memory は会話履歴とは別の補助文脈です。
-- 新しい発話が memory と矛盾する場合は、現在の発話を優先してください。
-- memory が古い、曖昧、または不確かな場合は断定せず自然に確認してください。
-- character memory は人格・世界観の優先文脈として扱ってください。
-`))
+	sections = append(sections, prompts.MemoryPolicy)
 	if len(characterMemories) > 0 {
 		sections = append(sections, "# Character Memory\n"+strings.Join(characterMemories, "\n"))
 	}
