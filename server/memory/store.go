@@ -675,12 +675,87 @@ func utf8RuneCount(s string) int {
 }
 
 func buildFTSMatchQuery(query string) string {
-	query = strings.ReplaceAll(query, `"`, " ")
-	query = strings.TrimSpace(query)
-	if query == "" {
+	fragments := splitFTSFragments(query)
+	if len(fragments) == 0 {
 		return ""
 	}
-	return `"` + query + `"`
+
+	clauses := make([]string, 0, len(fragments)*2)
+	seen := map[string]bool{}
+	addClause := func(value string) {
+		value = strings.TrimSpace(value)
+		if value == "" || seen[value] {
+			return
+		}
+		seen[value] = true
+		clauses = append(clauses, `"`+value+`"`)
+	}
+
+	for _, fragment := range fragments {
+		runes := []rune(fragment)
+		if len(runes) <= 8 {
+			addClause(fragment)
+		} else {
+			addClause(string(runes[:8]))
+			addClause(string(runes[len(runes)-8:]))
+		}
+		for _, trigram := range buildRuneNGrams(fragment, 3, 12) {
+			addClause(trigram)
+		}
+		if len(clauses) >= 24 {
+			break
+		}
+	}
+
+	if len(clauses) == 0 {
+		return ""
+	}
+	return strings.Join(clauses, " OR ")
+}
+
+func splitFTSFragments(query string) []string {
+	query = strings.ReplaceAll(query, `"`, " ")
+	parts := strings.FieldsFunc(query, func(r rune) bool {
+		return unicode.IsSpace(r) || unicode.IsPunct(r) || unicode.IsSymbol(r)
+	})
+	out := make([]string, 0, len(parts))
+	seen := map[string]bool{}
+	for _, part := range parts {
+		part = NormalizeText(part)
+		if utf8RuneCount(part) < 3 || seen[part] {
+			continue
+		}
+		seen[part] = true
+		out = append(out, part)
+		if len(out) >= 8 {
+			break
+		}
+	}
+	return out
+}
+
+func buildRuneNGrams(text string, size int, limit int) []string {
+	runes := []rune(text)
+	if len(runes) < size {
+		if len(runes) == 0 {
+			return nil
+		}
+		return []string{text}
+	}
+	out := make([]string, 0, len(runes)-size+1)
+	seen := map[string]bool{}
+	for i := 0; i <= len(runes)-size; i++ {
+		part := string(runes[i : i+size])
+		if seen[part] {
+			continue
+		}
+		seen[part] = true
+		out = append(out, part)
+		if limit > 0 && len(out) >= limit {
+			break
+		}
+	}
+	return out
 }
 
 func EnqueueJob(jobType string, uniqueKey string, payload any) error {
@@ -692,7 +767,7 @@ func EnqueueJob(jobType string, uniqueKey string, payload any) error {
 		return err
 	}
 	now := nowString()
-	return sqlcgen.New(db.SQLDB()).InsertMemoryJobIgnoreConflict(context.Background(), sqlcgen.InsertMemoryJobIgnoreConflictParams{
+	err = sqlcgen.New(db.SQLDB()).InsertMemoryJobIgnoreConflict(context.Background(), sqlcgen.InsertMemoryJobIgnoreConflictParams{
 		Type:        jobType,
 		Status:      jobStatusQueued,
 		UniqueKey:   uniqueKey,
@@ -703,6 +778,7 @@ func EnqueueJob(jobType string, uniqueKey string, payload any) error {
 		UpdatedAt:   now,
 		LastError:   "",
 	})
+	return err
 }
 
 func EnqueueExtractTurn(payload ExtractTurnPayload) error {

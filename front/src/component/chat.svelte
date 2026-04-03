@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import ChatThread from "./chat-thread.svelte";
+    import ChatMemory from "./chat-memory.svelte";
     import type { CharacterConfig } from "../types/character";
     import type { GeneralConfig } from "../types/general";
     import type { ChatSessionList, ChatSessionSummary } from "../types/chat";
@@ -19,6 +20,7 @@
     let currentSessionId = defaultSessionId;
     let sessions: ChatSessionSummary[] = [];
     let sidebarOpen = false;
+    let memoryPanelOpen = false;
 
     const sessionsEndpoint = `/v1/chat/${ownerId}/${selectCharacter.general.id}/sessions`;
 
@@ -108,6 +110,9 @@
     {#if sidebarOpen}
         <button class="md:hidden absolute inset-0 bg-slate-950/30 z-20" aria-label="close sidebar" on:click={() => (sidebarOpen = false)}></button>
     {/if}
+    {#if memoryPanelOpen}
+        <button class="absolute inset-0 bg-slate-950/30 z-20" aria-label="close memory panel" on:click={() => (memoryPanelOpen = false)}></button>
+    {/if}
 
     <div class="flex h-full w-full">
         <aside class="absolute left-0 top-0 z-30 flex h-full w-80 max-w-[85vw] flex-col border-r border-slate-200 bg-white/90 backdrop-blur transition-transform duration-200 md:static md:max-w-none md:translate-x-0 {sidebarOpen ? 'translate-x-0' : '-translate-x-full'}">
@@ -148,10 +153,16 @@
         </aside>
 
         <div class="relative flex min-w-0 flex-1 flex-col">
-            <div class="absolute left-3 top-3 z-20 md:hidden">
-                <button class="rounded-full bg-white/90 p-3 text-slate-700 shadow-md backdrop-blur" on:click={() => (sidebarOpen = true)}>
+            <div class="absolute left-3 right-3 top-3 z-20 flex items-center justify-between gap-3 md:right-auto">
+                <button class="rounded-full bg-white/90 p-3 text-slate-700 shadow-md backdrop-blur md:hidden" on:click={() => (sidebarOpen = true)}>
                     <i class="las la-bars text-xl"></i>
                 </button>
+                <div class="ml-auto flex items-center gap-2">
+                    <button class="rounded-full bg-white/90 px-4 py-3 text-sm font-semibold text-slate-700 shadow-md backdrop-blur transition hover:bg-white" on:click={() => (memoryPanelOpen = !memoryPanelOpen)}>
+                        <i class={"las mr-2 " + (memoryPanelOpen ? "la-times" : "la-brain")}></i>
+                        {memoryPanelOpen ? "閉じる" : "Memory"}
+                    </button>
+                </div>
             </div>
 
             <div class="h-full w-full">
@@ -169,5 +180,14 @@
                 {/key}
             </div>
         </div>
+
+        <aside class="absolute right-0 top-0 z-30 flex h-full w-[22rem] max-w-[88vw] flex-col border-l border-slate-200 bg-white/90 shadow-2xl backdrop-blur transition-transform duration-200 {memoryPanelOpen ? 'translate-x-0' : 'translate-x-full'}">
+            <ChatMemory
+                ownerId={ownerId}
+                characterId={selectCharacter.general.id}
+                sessionId={currentSessionId}
+                memoryEnabled={selectCharacter.memory.enabled}
+            />
+        </aside>
     </div>
 </div>

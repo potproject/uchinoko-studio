@@ -13,7 +13,7 @@ func GetMemoryItems(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return c.JSON(items)
+	return c.Status(fiber.StatusOK).JSON(items)
 }
 
 func PostMemoryItem(c *fiber.Ctx) error {
@@ -27,7 +27,7 @@ func PostMemoryItem(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return c.JSON(created)
+	return c.Status(fiber.StatusOK).JSON(created)
 }
 
 func PatchMemoryItem(c *fiber.Ctx) error {
@@ -39,7 +39,7 @@ func PatchMemoryItem(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return c.JSON(updated)
+	return c.Status(fiber.StatusOK).JSON(updated)
 }
 
 func DeleteMemoryItem(c *fiber.Ctx) error {
@@ -54,12 +54,12 @@ func GetMemorySessionSummary(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return c.JSON(summary)
+	return c.Status(fiber.StatusOK).JSON(summary)
 }
 
 func RebuildCharacterMemory(c *fiber.Ctx) error {
 	if err := memory.EnqueueRebuildCharacterMemory(c.Params("ownerId"), c.Params("characterId")); err != nil {
 		return err
 	}
-	return c.JSON(fiber.Map{"status": "queued"})
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"status": "queued"})
 }

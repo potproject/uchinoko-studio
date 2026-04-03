@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { createEventDispatcher, onMount } from "svelte";
-    import type { CharacterConfig, MemoryItem, MemoryItemList, SessionSummary } from "../../types/character";
+    import { createEventDispatcher } from "svelte";
+    import type { CharacterConfig } from "../../types/character";
     import type { ChatSessionList } from "../../types/chat";
     import { getID } from "$lib/GetId";
     const dispatch = createEventDispatcher();
@@ -10,35 +10,9 @@
     let showMemory = false;
 
     let saveLoading = false;
-    let memoryLoading = false;
-    let memoryItems: MemoryItem[] = [];
-    let sessionSummary: SessionSummary | null = null;
     const ownerId = getID();
 
     export let data: CharacterConfig;
-
-    const loadMemory = async () => {
-        memoryLoading = true;
-        try {
-            const itemsRes = await fetch(`/v1/memory/${ownerId}/${data.general.id}/items`);
-            if (itemsRes.ok) {
-                const items = await itemsRes.json() as MemoryItemList;
-                memoryItems = items.items;
-            }
-            const summaryRes = await fetch(`/v1/memory/${ownerId}/${data.general.id}/session/${ownerId}/summary`);
-            if (summaryRes.ok) {
-                sessionSummary = await summaryRes.json() as SessionSummary;
-            }
-        } catch (e) {
-            console.error(e);
-        } finally {
-            memoryLoading = false;
-        }
-    };
-
-    onMount(() => {
-        loadMemory();
-    });
 
     const onReset = async () => {
         if (window.confirm("チャット履歴をリセットしますか？")) {
@@ -82,67 +56,6 @@
             });
     };
 
-    const createMemoryItem = async (scope: "character" | "relationship") => {
-        const res = await fetch(`/v1/memory/${ownerId}/${data.general.id}/items`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                scope,
-                kind: scope === "character" ? "persona_rule" : "relationship_fact",
-                content: "",
-                keywordsText: "",
-                pinned: scope === "character",
-                confidence: 1,
-                salience: 1,
-            }),
-        });
-        if (!res.ok) {
-            window.alert("Memory の追加に失敗しました");
-            return;
-        }
-        const created = await res.json() as MemoryItem;
-        memoryItems = [created, ...memoryItems];
-    };
-
-    const saveMemoryItem = async (item: MemoryItem) => {
-        const res = await fetch(`/v1/memory/item/${item.id}`, {
-            method: "PATCH",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(item),
-        });
-        if (!res.ok) {
-            window.alert("Memory の保存に失敗しました");
-            return;
-        }
-        const updated = await res.json() as MemoryItem;
-        memoryItems = memoryItems.map((v) => v.id === updated.id ? updated : v);
-    };
-
-    const deleteMemoryItem = async (item: MemoryItem) => {
-        const res = await fetch(`/v1/memory/item/${item.id}`, {
-            method: "DELETE",
-        });
-        if (!res.ok) {
-            window.alert("Memory の削除に失敗しました");
-            return;
-        }
-        memoryItems = memoryItems.filter((v) => v.id !== item.id);
-    };
-
-    const rebuildMemory = async () => {
-        const res = await fetch(`/v1/memory/${ownerId}/${data.general.id}/rebuild`, {
-            method: "POST",
-        });
-        if (!res.ok) {
-            window.alert("Memory の再構築に失敗しました");
-            return;
-        }
-        window.alert("Memory の再構築ジョブを登録しました");
-    };
 </script>
 
 <div class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 py-4">
@@ -535,19 +448,19 @@
             <div class="flex items-center px-4 py-2">
                 <div class="flex-1">
                     <input type="checkbox" id="memory_relationship" class="mr-2" bind:checked={data.memory.enableRelationshipMemory} />
-                    <label for="memory_relationship" class="text-sm">Relationship Memory を有効にする</label>
+                    <label for="memory_relationship" class="text-sm">関係メモリを有効にする</label>
                 </div>
             </div>
             <div class="flex items-center px-4 py-2">
                 <div class="flex-1">
                     <input type="checkbox" id="memory_summary" class="mr-2" bind:checked={data.memory.enableSessionSummary} />
-                    <label for="memory_summary" class="text-sm">Session Summary を有効にする</label>
+                    <label for="memory_summary" class="text-sm">セッション要約を有効にする</label>
                 </div>
             </div>
             <div class="flex items-center px-4 py-2">
                 <div class="flex-1">
                     <input type="checkbox" id="memory_semantic" class="mr-2" bind:checked={data.memory.enableSemanticSearch} />
-                    <label for="memory_semantic" class="text-sm">Semantic Search を有効にする</label>
+                    <label for="memory_semantic" class="text-sm">文脈検索を有効にする</label>
                 </div>
             </div>
             <div class="flex items-center px-4 py-2">
@@ -562,50 +475,8 @@
                     <input type="text" id="memory_embedding" class="w-full border border-gray-300 rounded p-1" bind:value={data.memory.embeddingModel} />
                 </div>
             </div>
-
-            <div class="px-4 py-2">
-                <div class="flex items-center mb-2">
-                    <div class="text-sm font-bold flex-1">Session Summary</div>
-                    <button class="border border-blue-500 text-blue-500 bg-white rounded-md px-3 py-1 hover:bg-blue-500 hover:text-white" on:click={rebuildMemory}>Rebuild</button>
-                </div>
-                <textarea class="w-full border border-gray-300 rounded p-2 resize-y" rows="5" readonly>{sessionSummary?.summary ?? ""}</textarea>
-            </div>
-
-            <div class="px-4 py-2">
-                <div class="flex items-center mb-2">
-                    <div class="text-sm font-bold flex-1">Manual Memory</div>
-                    <button class="border border-blue-500 text-blue-500 bg-white rounded-md px-3 py-1 mr-2 hover:bg-blue-500 hover:text-white" on:click={() => createMemoryItem("character")}>Character</button>
-                    <button class="border border-green-500 text-green-500 bg-white rounded-md px-3 py-1 hover:bg-green-500 hover:text-white" on:click={() => createMemoryItem("relationship")}>Relationship</button>
-                </div>
-                {#if memoryLoading}
-                    <div class="text-sm text-gray-500">Memory を読み込み中です...</div>
-                {/if}
-                {#each memoryItems as item}
-                    <div class="border border-gray-300 rounded p-3 mb-3">
-                        <div class="flex items-center mb-2">
-                            <select class="border border-gray-300 rounded p-1 mr-2" bind:value={item.scope} disabled>
-                                <option value="character">character</option>
-                                <option value="relationship">relationship</option>
-                            </select>
-                            <input type="text" class="flex-1 border border-gray-300 rounded p-1 mr-2" bind:value={item.kind} placeholder="kind" />
-                            <label class="text-xs mr-2"><input type="checkbox" class="mr-1" bind:checked={item.pinned} />pin</label>
-                            <button class="border border-blue-500 text-blue-500 bg-white rounded-md px-3 py-1 mr-2 hover:bg-blue-500 hover:text-white" on:click={() => saveMemoryItem(item)}>保存</button>
-                            <button class="border border-red-500 text-red-500 bg-white rounded-md px-3 py-1 hover:bg-red-500 hover:text-white" on:click={() => deleteMemoryItem(item)}>削除</button>
-                        </div>
-                        <textarea class="w-full border border-gray-300 rounded p-2 resize-y mb-2" rows="4" bind:value={item.content} placeholder="memory content"></textarea>
-                        <input type="text" class="w-full border border-gray-300 rounded p-1 mb-2" bind:value={item.keywordsText} placeholder="keywords" />
-                        <div class="flex items-center">
-                            <div class="flex-1 mr-2">
-                                <label class="text-xs">confidence</label>
-                                <input type="number" min="0" max="1" step="0.01" class="w-full border border-gray-300 rounded p-1" bind:value={item.confidence} />
-                            </div>
-                            <div class="flex-1">
-                                <label class="text-xs">salience</label>
-                                <input type="number" min="0" max="1" step="0.01" class="w-full border border-gray-300 rounded p-1" bind:value={item.salience} />
-                            </div>
-                        </div>
-                    </div>
-                {/each}
+            <div class="px-4 py-2 text-xs text-gray-500">
+                メモリ一覧の確認や編集は、チャット画面右上の Memory パネルから行えます。
             </div>
         {/if}
 

@@ -101,6 +101,40 @@ func TestSearchMemoryCandidatesUsesJapaneseTrigram(t *testing.T) {
 	}
 }
 
+func TestSearchMemoryCandidatesUsesJapaneseConversationFragments(t *testing.T) {
+	setupMemoryTestDB(t)
+
+	character := sampleMemoryCharacter()
+	if err := db.PutCharacterConfig(character.General.ID, character); err != nil {
+		t.Fatalf("db.PutCharacterConfig() error = %v", err)
+	}
+
+	if _, err := CreateMemoryItem(data.MemoryItem{
+		CharacterID:  character.General.ID,
+		OwnerID:      "owner-1",
+		Scope:        data.MemoryScopeRelationship,
+		Kind:         "preference",
+		Content:      "ユーザーは辛いものが好き",
+		KeywordsText: "辛いもの 好き",
+		Confidence:   0.9,
+		Salience:     0.8,
+	}); err != nil {
+		t.Fatalf("CreateMemoryItem(relationship) error = %v", err)
+	}
+
+	query := "最近どう？\n辛いもの好きって言ってたよね\n今夜は何を食べたい？"
+	candidates, err := SearchMemoryCandidates("owner-1", character.General.ID, query, character.Memory)
+	if err != nil {
+		t.Fatalf("SearchMemoryCandidates() error = %v", err)
+	}
+	if len(candidates) == 0 {
+		t.Fatal("SearchMemoryCandidates() len = 0, want >= 1")
+	}
+	if candidates[0].Item.Content != "ユーザーは辛いものが好き" {
+		t.Fatalf("SearchMemoryCandidates()[0].content = %q, want relationship memory", candidates[0].Item.Content)
+	}
+}
+
 func TestEnqueueCompactSessionDeduplicatesByUniqueKey(t *testing.T) {
 	setupMemoryTestDB(t)
 

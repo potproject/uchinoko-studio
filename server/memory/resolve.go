@@ -14,6 +14,8 @@ func BuildSystemPrompt(character data.CharacterConfig, ownerID string, sessionID
 		return character.Chat.SystemPrompt, nil
 	}
 
+	searchQuery := buildSearchQuery(requestText, recentMessages)
+
 	summary := data.SessionSummary{}
 	var err error
 	if cfg.EnableSessionSummary {
@@ -23,9 +25,19 @@ func BuildSystemPrompt(character data.CharacterConfig, ownerID string, sessionID
 		}
 	}
 
-	candidates, err := SearchMemoryCandidates(ownerID, character.General.ID, buildSearchQuery(requestText, recentMessages), cfg)
+	candidates, err := SearchMemoryCandidates(ownerID, character.General.ID, searchQuery, cfg)
 	if err != nil {
 		return "", err
+	}
+
+	characterCount := 0
+	relationshipCount := 0
+	for _, candidate := range candidates {
+		if candidate.Item.Scope == data.MemoryScopeCharacter {
+			characterCount++
+			continue
+		}
+		relationshipCount++
 	}
 
 	return composeSystemPrompt(character.Chat.SystemPrompt, candidates, summary, cfg), nil
