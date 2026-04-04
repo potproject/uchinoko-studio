@@ -1,7 +1,7 @@
 import type { CharacterConfig } from "../types/character";
 
 type TextMessage = {
-    type: 'connection' | 'chat-response' | 'chat-request' | 'chat-response-change-character' | 'chat-response-change-behavior' | 'chat-response-chunk' | 'finish' | 'error';
+    type: 'connection' | 'chat-response' | 'chat-request' | 'chat-ignored' | 'chat-response-change-character' | 'chat-response-change-behavior' | 'chat-response-chunk' | 'finish' | 'error';
     text: string;
 };
 
@@ -22,6 +22,7 @@ export class SocketContext{
     public onClosed: () => void = () => {};
 
     public onChatRequest: (text: string) => void = () => {};
+    public onChatIgnored: (text: string) => void = () => {};
     public onChatResponse: (text: string) => void = () => {};
     public onChatResponseChangeCharacter: (text: string) => void = () => {};
     public onChatResponseChangeBehavior: (text: string) => void = () => {};
@@ -43,12 +44,15 @@ export class SocketContext{
             if (data.type === 'connection') {
                 this.onConnected();
                 return;
-            } else if (data.type === 'chat-response') {
-                console.log('chat-response', data.text);
-                this.onChatResponse(data.text);
             } else if (data.type === 'chat-request') {
                 console.log('chat-request', data.text);
                 this.onChatRequest(data.text);
+            } else if (data.type === 'chat-ignored') {
+                console.log('chat-ignored', data.text);
+                this.onChatIgnored(data.text);
+            } else if (data.type === 'chat-response') {
+                console.log('chat-response', data.text);
+                this.onChatResponse(data.text);
             } else if (data.type === 'chat-response-change-character') {
                 console.log('chat-response-change-character', data.text);
                 this.onChatResponseChangeCharacter(data.text);

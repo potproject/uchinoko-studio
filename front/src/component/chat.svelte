@@ -23,6 +23,7 @@
     let memoryPanelOpen = false;
 
     const sessionsEndpoint = `/v1/chat/${ownerId}/${selectCharacter.general.id}/sessions`;
+    $: memoryEnabled = selectCharacter.memory.enabled;
 
     const createDraftSession = (sessionId: string): ChatSessionSummary => ({
         sessionId,
@@ -104,13 +105,17 @@
         touchStoredChatSession(ownerId, selectCharacter.general.id, currentSessionId);
         await loadSessions();
     });
+
+    $: if (!memoryEnabled && memoryPanelOpen) {
+        memoryPanelOpen = false;
+    }
 </script>
 
 <div class="w-full h-full relative overflow-hidden">
     {#if sidebarOpen}
         <button class="md:hidden absolute inset-0 bg-slate-950/30 z-20" aria-label="close sidebar" on:click={() => (sidebarOpen = false)}></button>
     {/if}
-    {#if memoryPanelOpen}
+    {#if memoryEnabled && memoryPanelOpen}
         <button class="absolute inset-0 bg-slate-950/30 z-20" aria-label="close memory panel" on:click={() => (memoryPanelOpen = false)}></button>
     {/if}
 
@@ -157,12 +162,14 @@
                 <button class="rounded-full bg-white/90 p-3 text-slate-700 shadow-md backdrop-blur md:hidden" on:click={() => (sidebarOpen = true)}>
                     <i class="las la-bars text-xl"></i>
                 </button>
-                <div class="ml-auto flex items-center gap-2">
-                    <button class="rounded-full bg-white/90 px-4 py-3 text-sm font-semibold text-slate-700 shadow-md backdrop-blur transition hover:bg-white" on:click={() => (memoryPanelOpen = !memoryPanelOpen)}>
-                        <i class={"las mr-2 " + (memoryPanelOpen ? "la-times" : "la-brain")}></i>
-                        {memoryPanelOpen ? "閉じる" : "Memory"}
-                    </button>
-                </div>
+                {#if memoryEnabled}
+                    <div class="ml-auto flex items-center gap-2">
+                        <button class="rounded-full bg-white/90 px-4 py-3 text-sm font-semibold text-slate-700 shadow-md backdrop-blur transition hover:bg-white" on:click={() => (memoryPanelOpen = !memoryPanelOpen)}>
+                            <i class={"las mr-2 " + (memoryPanelOpen ? "la-times" : "la-brain")}></i>
+                            {memoryPanelOpen ? "閉じる" : "Memory"}
+                        </button>
+                    </div>
+                {/if}
             </div>
 
             <div class="h-full w-full">
@@ -181,13 +188,15 @@
             </div>
         </div>
 
-        <aside class="absolute right-0 top-0 z-30 flex h-full w-[22rem] max-w-[88vw] flex-col border-l border-slate-200 bg-white/90 shadow-2xl backdrop-blur transition-transform duration-200 {memoryPanelOpen ? 'translate-x-0' : 'translate-x-full'}">
-            <ChatMemory
-                ownerId={ownerId}
-                characterId={selectCharacter.general.id}
-                sessionId={currentSessionId}
-                memoryEnabled={selectCharacter.memory.enabled}
-            />
-        </aside>
+        {#if memoryEnabled}
+            <aside class="absolute right-0 top-0 z-30 flex h-full w-[22rem] max-w-[88vw] flex-col border-l border-slate-200 bg-white/90 shadow-2xl backdrop-blur transition-transform duration-200 {memoryPanelOpen ? 'translate-x-0' : 'translate-x-full'}">
+                <ChatMemory
+                    ownerId={ownerId}
+                    characterId={selectCharacter.general.id}
+                    sessionId={currentSessionId}
+                    memoryEnabled={memoryEnabled}
+                />
+            </aside>
+        {/if}
     </div>
 </div>

@@ -35,6 +35,7 @@ type TextOutput struct {
 const (
 	ConnectionOutputType        = "connection"
 	ChatRequestOutputType       = "chat-request"
+	ChatIgnoredOutputType       = "chat-ignored"
 	ChatResponseOutputType      = "chat-response"
 	ChatResponseChangeCharacter = "chat-response-change-character"
 	ChatResponseChangeBehavior  = "chat-response-change-behavior"
@@ -43,6 +44,13 @@ const (
 	FinishOutputType            = "finish"
 	AutoConversationInputMode   = "auto-conversation"
 )
+
+var ignoredWhisperNoiseTexts = map[string]struct{}{
+	"ご視聴ありがとうございました": {},
+	"最後までご覧いただき": {},
+	"最後までご視聴いただき": {},
+	"チャンネル登録をお願いいたします": {},
+}
 
 type MultipartMessage struct {
 	Parts []MultipartMessagePart `json:"parts"`
@@ -139,6 +147,32 @@ func wsSendBinaryMessage(c *websocket.Conn, data []byte) error {
 	return c.WriteMessage(websocket.BinaryMessage, data)
 }
 
+func normalizeWhisperNoiseText(text string) string {
+	return strings.Trim(strings.ToLower(strings.TrimSpace(text)), " \t\r\n。、．.!?！？…\"'")
+}
+
+func shouldIgnoreWhisperNoise(mt int, transcriptionType string, requestText string) bool {
+	if requestText == "" {
+		return true
+	}
+
+	if mt != websocket.BinaryMessage || transcriptionType != "openai_speech_to_text" {
+		return false
+	}
+	normalized := normalizeWhisperNoiseText(requestText)
+	if normalized == "" {
+		return false
+	}
+	ok := false
+	for k := range ignoredWhisperNoiseTexts {
+		if strings.Contains(normalized, strings.ToLower(strings.TrimSpace(k))) {
+			ok = true
+			break
+		}
+	}
+	return ok
+}
+
 func getTranscriptionApiKey(transcriptionType string) string {
 	if transcriptionType == "google_speech_to_text" {
 		return envgen.Get().GOOGLE_SPEECH_TO_TEXT_API_KEY()
@@ -231,6 +265,11 @@ func WSTalk() func(*websocket.Conn) {
 			if err != nil {
 				sendError(c, err)
 				break
+			}
+
+			if shouldIgnoreWhisperNoise(mt, general.Transcription.Type, requestText) {
+				wsSendTextMessage(c, ChatIgnoredOutputType, requestText)
+				continue
 			}
 
 			wsSendTextMessage(c, ChatRequestOutputType, requestText)

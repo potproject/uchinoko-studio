@@ -47,7 +47,7 @@
     }
     let disposed = false;
     let state: ChatState = ChatState.Initializing;
-    let mute = false;
+    let mute = true;
     const syncRecordingAllow = (targetState: ChatState = state) => {
         if (!recording) {
             return;
@@ -73,6 +73,22 @@
     let currentRequestSource: RequestSource = null;
     let expectNewAssistantMessage = false;
     let receivedAudioChunkThisTurn = false;
+
+    const clearTransientUserMessage = () => {
+        if (messages.length === 0) {
+            return;
+        }
+        const lastMessage = messages[messages.length - 1];
+        if (lastMessage.type !== "my") {
+            return;
+        }
+        if (!transientTexts.has(lastMessage.text)) {
+            return;
+        }
+        messages = messages.slice(0, messages.length - 1);
+        emitSessionMeta();
+        updateChat();
+    };
 
     const clearAutoConversationTimer = () => {
         if (autoConversationTimer) {
@@ -166,7 +182,9 @@
                     playing.playAudio("audio/ka.mp3");
                 }
             }, 300);
-            playing.sendFinishAction();
+            if (receivedAudioChunkThisTurn || playing.isPlaying()) {
+                playing.sendFinishAction();
+            }
         };
 
         socket.onChatRequest = (text) => {
@@ -174,6 +192,17 @@
                 return;
             }
             changeLastMessage({ text: text });
+        };
+
+        socket.onChatIgnored = () => {
+            if (disposed) {
+                return;
+            }
+            clearTransientUserMessage();
+            currentRequestSource = null;
+            expectNewAssistantMessage = false;
+            receivedAudioChunkThisTurn = false;
+            onChangeState(ChatState.Waiting);
         };
 
         socket.onChatResponse = () => {
@@ -310,6 +339,7 @@
             recording = new RecordingContext(media, socket.mimeType, generalConfig);
         }
         await recording.init();
+        syncRecordingAllow();
 
         recording.onSpeakingStart = () => {
             if (disposed) {
